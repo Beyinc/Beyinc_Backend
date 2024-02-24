@@ -17,6 +17,8 @@ exports.dashboradDetails = async (req, res, next) => {
       members: { $in: [req.payload.user_id] },
     }).populate({ path: "members", select: ["role", "_id"] });
     const convsDetails = {}
+    const convsStatsDetails = {}
+
     let totalConvo = 0;
     let connections_approved = 0;
     let connections_pending = 0;
@@ -31,7 +33,7 @@ exports.dashboradDetails = async (req, res, next) => {
       )[0];
 
       if (!convsDetails[otherMembers.role]) {
-        convsDetails[otherMembers.role] = { "pending": 0, "approved": 0, "userCreatedConv-pending": 0, "userCreatedConv-approved": 0, "userReceivedConv-approved": 0, "userReceivedConv-pending": 0 }
+        convsDetails[otherMembers.role] = { "pending": 0, "approved": 0 }
       }
       if (convo.status == 'pending') {
         convsDetails[otherMembers.role] = { ...convsDetails[otherMembers.role], "pending": convsDetails[otherMembers.role].pending + 1 }
@@ -40,9 +42,9 @@ exports.dashboradDetails = async (req, res, next) => {
       }
 
       if (req.payload.user_id !== convo.requestedTo.toString()) {
-        convsDetails[otherMembers.role] = { ...convsDetails[otherMembers.role], [`userCreatedConv-${convo.status}`]: convsDetails[otherMembers.role][`userCreatedConv-${convo.status}`] + 1 }
+        convsStatsDetails[`userCreatedConv-${convo.status}`] = convsStatsDetails[`userCreatedConv-${convo.status}`] ? convsStatsDetails[`userCreatedConv-${convo.status}`] + 1 : 1
       } else {
-        convsDetails[otherMembers.role] = { ...convsDetails[otherMembers.role], [`userReceivedConv-${convo.status}`]: convsDetails[otherMembers.role][`userReceivedConv-${convo.status}`] + 1 }
+        convsStatsDetails[`userReceivedConv-${convo.status}`] = convsStatsDetails[`userReceivedConv-${convo.status}`] ? convsStatsDetails[`userReceivedConv-${convo.status}`] + 1 : 1
       }
 
     }
@@ -51,6 +53,7 @@ exports.dashboradDetails = async (req, res, next) => {
       total_connections: totalConvo,
       total_pitches: pitches.length,
       connections: convsDetails,
+      connectionStats: convsStatsDetails,
       pitches: pitchDetail,
       connections_approved,
       connections_pending,
