@@ -18,9 +18,13 @@ exports.dashboradDetails = async (req, res, next) => {
     }).populate({ path: "members", select: ["role", "_id"] });
     const memberIds = new Set();
     let totalConvo = 0;
+    let connections_approved = 0;
+    let connections_pending = 0;
     for (let i = 0; i < conversations.length; i++) {
       const convo = conversations[i];
       if (convo.status == "rejected") continue;
+      if (convo.status == "approved") connections_approved += 1;
+      if (convo.status == "pending") connections_pending += 1;
       totalConvo += 1;
       const otherMembers = convo.members.filter(
         (v) => v._id !== req.payload.user_id
@@ -39,6 +43,8 @@ exports.dashboradDetails = async (req, res, next) => {
       total_pitches: pitches.length,
       connections: convoDetail,
       pitches: pitchDetail,
+      connections_approved,
+      connections_pending,
     });
   } catch (err) {
     console.log(err);
