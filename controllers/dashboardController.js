@@ -24,27 +24,31 @@ exports.dashboradDetails = async (req, res, next) => {
     let connections_pending = 0;
     for (let i = 0; i < conversations.length; i++) {
       const convo = conversations[i];
-      if (convo.status == "rejected") continue;
-      if (convo.status == "approved") connections_approved += 1;
-      if (convo.status == "pending") connections_pending += 1;
-      totalConvo += 1;
+     
       const otherMembers = convo.members.filter(
         (v) => v._id.toString() !== req.payload.user_id
       )[0];
 
-      if (!convsDetails[otherMembers.role]) {
-        convsDetails[otherMembers.role] = { "pending": 0, "approved": 0 }
-      }
-      if (convo.status == 'pending') {
-        convsDetails[otherMembers.role] = { ...convsDetails[otherMembers.role], "pending": convsDetails[otherMembers.role].pending + 1 }
-      } else {
-        convsDetails[otherMembers.role] = { ...convsDetails[otherMembers.role], "approved": convsDetails[otherMembers.role].approved + 1 }
-      }
+      if (otherMembers) {
+        if (convo.status == "rejected") continue;
+        if (convo.status == "approved") connections_approved += 1;
+        if (convo.status == "pending") connections_pending += 1;
+        totalConvo += 1;
 
-      if (req.payload.user_id !== convo.requestedTo.toString()) {
-        convsStatsDetails[`userCreatedConv-${convo.status}`] = convsStatsDetails[`userCreatedConv-${convo.status}`] ? convsStatsDetails[`userCreatedConv-${convo.status}`] + 1 : 1
-      } else {
-        convsStatsDetails[`userReceivedConv-${convo.status}`] = convsStatsDetails[`userReceivedConv-${convo.status}`] ? convsStatsDetails[`userReceivedConv-${convo.status}`] + 1 : 1
+        if (!convsDetails[otherMembers.role]) {
+          convsDetails[otherMembers.role] = { "pending": 0, "approved": 0 }
+        }
+        if (convo.status == 'pending') {
+          convsDetails[otherMembers.role] = { ...convsDetails[otherMembers.role], "pending": convsDetails[otherMembers.role].pending + 1 }
+        } else {
+          convsDetails[otherMembers.role] = { ...convsDetails[otherMembers.role], "approved": convsDetails[otherMembers.role].approved + 1 }
+        }
+
+        if (req.payload.user_id !== convo.requestedTo.toString()) {
+          convsStatsDetails[`userCreatedConv-${convo.status}`] = convsStatsDetails[`userCreatedConv-${convo.status}`] ? convsStatsDetails[`userCreatedConv-${convo.status}`] + 1 : 1
+        } else {
+          convsStatsDetails[`userReceivedConv-${convo.status}`] = convsStatsDetails[`userReceivedConv-${convo.status}`] ? convsStatsDetails[`userReceivedConv-${convo.status}`] + 1 : 1
+        }
       }
 
     }
