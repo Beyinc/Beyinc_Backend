@@ -1,0 +1,11 @@
+containers: app:{
+        build: {
+            context:"."
+        }
+        ports: publish: "4000/http"
+        if args.dev {
+            dirs: {
+                "/app":"./"
+            }
+        }
+    }
