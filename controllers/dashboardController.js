@@ -17,8 +17,11 @@ exports.dashboradDetails = async (req, res, next) => {
       members: { $in: [req.payload.user_id] },
     }).populate({ path: "members", select: ["role", "_id"] });
     const memberIds = new Set();
+    let totalConvo = 0;
     for (let i = 0; i < conversations.length; i++) {
       const convo = conversations[i];
+      if (convo.status == "rejected") continue;
+      totalConvo += 1;
       const otherMembers = convo.members.filter(
         (v) => v._id !== req.payload.user_id
       );
@@ -32,7 +35,7 @@ exports.dashboradDetails = async (req, res, next) => {
       }
     }
     return res.status(200).json({
-      total_connections: conversations.length,
+      total_connections: totalConvo,
       total_pitches: pitches.length,
       connections: convoDetail,
       pitches: pitchDetail,
