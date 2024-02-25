@@ -6,6 +6,8 @@ router.route("/pendingPitch").post(pitchController.fetchPendingPitch);
 router.route("/livePitch").get(pitchController.fetchLivePitch);
 router.route("/allPitches").get(pitchController.fetchAllPitch);
 router.route("/userPitches").get(pitchController.fetchUserPitches);
+router.route("/userReceivedPitch").get(pitchController.fetchReceivedPitches);
+
 router.route("/updatePitch").post(pitchController.updateSinglePitch);
 router.route("/createPitch").post(pitchController.createPitch);
 router.route("/deletePitch").post(pitchController.deletePitch);
