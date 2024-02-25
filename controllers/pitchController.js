@@ -148,6 +148,15 @@ exports.fetchUserPitches = async (req, res, next) => {
     }
 }
 
+exports.fetchReceivedPitches = async (req, res, next) => {
+    try {
+        const result = await Pitch.find({ associatedTo: {$in: [req.payload.user_id]} }).populate({ path: 'userInfo', select: ['userName', 'image', 'role'] });
+        return res.status(200).json(result)
+    } catch (err) {
+        return res.status(400).json(err)
+    }
+}
+
 
 
 exports.userLivePitch = async (req, res, next) => {
