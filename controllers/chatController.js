@@ -230,15 +230,15 @@ exports.changeSeenStatus = async (req, res, next) => {
 
             return res.status(200).send('Message is seen')
         }
-        if (MessageExists[0]) {
-            await Conversation.updateOne({ _id: MessageExists[0].conversationId }, { $set: { seen: 'seen' } })
+        // if (MessageExists[0]) {
+        //     await Conversation.updateOne({ _id: MessageExists[0].conversationId }, { $set: { seen: 'seen' } })
 
-            return res.status(200).send('Message Already seen')
-        } else {
-            await Conversation.updateOne({ _id: conversationId }, { $set: { seen: '' } })
+        //     return res.status(200).send('Message Already seen')
+        // } else {
+        //     await Conversation.updateOne({ _id: conversationId }, { $set: { seen: '' } })
 
-            return res.status(200).send('New chat seen')
-        }
+        //     return res.status(200).send('New chat seen')
+        // }
 
 
 
