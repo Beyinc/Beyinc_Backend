@@ -346,7 +346,7 @@ exports.send_otp_mail = async (req, res, next) => {
       subject: subject,
       html: `
         <div style="max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-top: 4px solid #6a73fa; border-bottom: 4px solid #6a73fa;">
-        <img src="https://github.com/ShivaShankarGoddumarri/User-Images/assets/96565316/4dc1cd87-df3a-4aa8-81ff-5eb6c54d370a" alt="Email Banner" style="display: block; margin: 0 auto 20px; max-width: 40%; height: auto;">
+        <img src=${process.env.MAIL_LOGO} alt="Email Banner" style="display: block; margin: 0 auto 20px; max-width: 40%; height: auto;">
         <p>Hi ${to.split('@')[0]},</p>
         <p>Your one-time password for <b>BEYINC ${type}</b> is <b>${otp.toString()}</b> valid for the next 2 minutes. For safety reasons, <b>PLEASE DO NOT SHARE YOUR OTP</b> with anyone. </p>
         <div style="margin: 0 auto; background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-top: 20px; text-align: center; width: 150px;">
