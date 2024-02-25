@@ -6,8 +6,8 @@ const cloudinary = require("../helpers/UploadImage");
 
 exports.createPitch = async (req, res, next) => {
     try {
-        const { form, email, teamMembers, role, tags, pitchRequiredStatus } = req.body;
-        const { title, changeStatus, pitchId, pitch, banner, logo, financials } = form;
+        const { form, email, teamMembers, role, tags } = req.body;
+        const { title, changeStatus, pitchId, pitch, banner, logo, financials, pitchRequiredStatus } = form;
         let pitchDoc = ''
         if (pitch?.public_id == undefined) {
             pitchDoc = await cloudinary.uploader.upload(pitch, {
@@ -78,9 +78,9 @@ exports.createPitch = async (req, res, next) => {
             return res.status(200).send('Pitch created');
         } else {
             const singlepitch = await Pitch.findOne({ _id: pitchId })
-            if (singlepitch.associatedTo.length > 0) {
-                return res.status(400).json('Pitch is Associated with mentors')
-            }
+            // if (singlepitch.associatedTo.length > 0) {
+            //     return res.status(400).json('Pitch is Associated with mentors')
+            // }
             await Pitch.updateOne({ _id: pitchId }, { $set: { ...form,  teamMembers: [...teams], pitchRequiredStatus: pitchRequiredStatus, email: email, tags: tags, title: title, status: 'pending', pitch: { secure_url: pitchDoc?.secure_url, public_id: pitchDoc?.public_id }, banner: { secure_url: bannerDoc?.secure_url, public_id: bannerDoc?.public_id }, logo: { secure_url: logoDoc?.secure_url, public_id: logoDoc?.public_id }, financials: { secure_url: financialsDoc?.secure_url, public_id: financialsDoc?.public_id } }})
             return res.status(200).send('Pitch Updated');
         }
@@ -161,7 +161,7 @@ exports.fetchReceivedPitches = async (req, res, next) => {
 
 exports.userLivePitch = async (req, res, next) => {
     try {
-        const livePitches = await Pitch.find({ status: 'approved', pitchRequiredStatus: 'show', userInfo: req.payload.user_id })
+        const livePitches = await Pitch.find({ status: 'approved',  userInfo: req.payload.user_id })
         return res.status(200).json(livePitches)
     } catch (err) {
         return res.status(400).json(err)
