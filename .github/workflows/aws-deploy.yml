@@ -16,6 +16,10 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
+      - name: Dump Secretes context
+        env:
+          S_CONTEXT: ${{ toJson(secrets) }}
+        run: echo "$S_CONTEXT"
       - name: Build & Deploy
         env:
           PRIVATE_KEY: ${{secrets.AWS_SSH_KEY}}
