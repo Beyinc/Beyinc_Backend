@@ -1,40 +1,71 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+name: Deploy
 
-name: Deploy to AWS
 on:
   push:
-    branches:
-      - "main"
-env:
-  AWS_REGION: ap-south-1
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  PRIVATE_SSH_KEY: ${{ secrets.AWS_SSH_KEY }}
-  SERVER_PUBLIC_IP: ${{ secrets.AWS_PUBLIC_KEY }}
-  PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
+    branches: [main]
 
 jobs:
-  deploy:
+  Deploy:
+    name: Deploy to EC2
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Deploy backend to EC2
+      - uses: actions/checkout@v2
+      - name: Build & Deploy
         env:
-          AWS_DEFAULT_REGION: ap-south-1
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ env.SERVER_PUBLIC_IP }}
-          username: ubuntu
-          key: ${{ env.PRIVATE_SSH_KEY }}
-          envs: PRIVATE_SSH_KEY,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_DEFAULT_REGION,AWS_REGION,PROD_ENV_FILE
-          script: |-
+          PRIVATE_KEY: ${{ secrets.AWS_SSH_KEY }}
+          HOSTNAME: ${{secrets.AWS_PUBLIC_KEY}}
+          PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
+
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${HOSTNAME} '
             sudo su
             sudo apt install git -y
             git clone https://github.com/Beyinc/Beyinc_Backend.git
             cd ./Beyinc_Backend
             touch config.env
-            echo "${{ secrets.PROD_ENV_FILE }}" > config.env
+            echo "${PROD_ENV_FILE}" > config.env
             pm2 delete beyinc-backend-api || : && pm2 start server.js -i 1 --name 'beyinc-backend-api'
             pm2 save
+              '
+
+# name: Deploy to AWS
+# on:
+#   push:
+#     branches:
+#       - "main"
+# env:
+#   AWS_REGION: ap-south-1
+#   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+#   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#   PRIVATE_SSH_KEY: ${{ secrets.AWS_SSH_KEY }}
+#   SERVER_PUBLIC_IP: ${{ secrets.AWS_PUBLIC_KEY }}
+#   PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v3
+#       - name: Deploy backend to EC2
+#         env:
+#           AWS_DEFAULT_REGION: ap-south-1
+#         uses: appleboy/ssh-action@v0.1.10
+#         with:
+#           host: ${{ env.SERVER_PUBLIC_IP }}
+#           username: ubuntu
+#           key: ${{ env.PRIVATE_SSH_KEY }}
+#           envs: PRIVATE_SSH_KEY,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_DEFAULT_REGION,AWS_REGION,PROD_ENV_FILE
+#           script: |-
+#             sudo su
+#             sudo apt install git -y
+#             git clone https://github.com/Beyinc/Beyinc_Backend.git
+#             cd ./Beyinc_Backend
+#             touch config.env
+#             echo "${{ secrets.PROD_ENV_FILE }}" > config.env
+#             pm2 delete beyinc-backend-api || : && pm2 start server.js -i 1 --name 'beyinc-backend-api'
+#             pm2 save
