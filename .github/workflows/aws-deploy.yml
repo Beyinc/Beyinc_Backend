@@ -23,7 +23,7 @@ jobs:
       - name: Deploy backend to EC2
         env:
           AWS_DEFAULT_REGION: ap-south-1
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ env.SERVER_PUBLIC_IP }}
           username: ubuntu
@@ -37,3 +37,4 @@ jobs:
             touch config.env
             echo "${{ secrets.PROD_ENV_FILE }}" > config.env
             pm2 delete beyinc-backend-api || : && pm2 start server.js -i 1 --name 'beyinc-backend-api'
+            pm2 save
