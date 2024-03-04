@@ -33,7 +33,7 @@ jobs:
             cd ./Beyinc_Backend
             touch config.env
             echo "${PROD_ENV_FILE}" > config.env
-            cat .env
+            cat config.env
             pm2 delete beyinc-backend-api || : && pm2 start server.js --name 'beyinc-backend-api'
             pm2 save
               '
