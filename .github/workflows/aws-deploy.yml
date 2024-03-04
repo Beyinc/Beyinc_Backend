@@ -13,14 +13,6 @@ jobs:
     environment: aws-deploy
     steps:
       - uses: actions/checkout@v3
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-      - name: Dump Secretes context
-        env:
-          S_CONTEXT: ${{ toJson(secrets) }}
-        run: echo "$S_CONTEXT"
       - name: Build & Deploy
         env:
           PRIVATE_KEY: ${{secrets.AWS_SSH_KEY}}
@@ -28,13 +20,11 @@ jobs:
           PROD_ENV_FILE: ${{secrets.PROD_ENV_FILE}}
 
         run: |
-          echo "ubuntu@${HOSTNAME}"
-          echo ${PRIVATE_KEY}
-          echo $PRIVATE_KEY
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
           ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${HOSTNAME} '
             sudo su
             sudo apt install git -y
+            npm i -g pm2
             git clone https://github.com/Beyinc/Beyinc_Backend.git
             cd ./Beyinc_Backend
             touch config.env
