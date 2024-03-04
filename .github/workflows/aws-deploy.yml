@@ -33,6 +33,7 @@ jobs:
             cd ./Beyinc_Backend
             npm i
             touch config.env
+            echo PROD_ENV_FILE
             echo "${PROD_ENV_FILE}" > config.env
             cat config.env
             less config.env
