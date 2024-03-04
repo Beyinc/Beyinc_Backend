@@ -33,9 +33,23 @@ jobs:
             cd ./Beyinc_Backend
             npm i
             touch config.env
-            chmod 644 config.env
-            echo "$PROD_ENV_FILE"
-            echo $PROD_ENV_FILE >> config.env
+
+            echo PORT=${{ secrets.PORT }} >> config.env
+            echo API_KEY=${{ secrets.API_KEY }} >> config.env
+            echo BEYINC_SITE=${{ secrets.BEYINC_SITE }} >> config.env
+            echo ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }} >> config.env
+            echo ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }} >> config.env
+            echo REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }} >> config.env
+            echo MONGODB_URI=${{ secrets.MONGODB_URI }} >> config.env
+            echo EMAIL=${{ secrets.EMAIL }} >> config.env
+            echo EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }} >> config.env
+            echo CLOUDINARY_NAME=${{ secrets.CLOUDINARY_NAME }} >> config.env
+            echo CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }} >> config.env
+            echo CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }} >> config.env
+            echo TWILIO_ACCOUNTSID=${{ secrets.TWILIO_ACCOUNTSID }} >> config.env
+            echo TWILIO_AUTHTOKEN=${{ secrets.TWILIO_AUTHTOKEN }} >> config.env
+            echo TWILIO_PHONE=${{ secrets.TWILIO_PHONE }} >> config.env
+
             cat config.env
             less config.env
             pm2 delete beyinc-backend-api || : && pm2 start server.js --name 'beyinc-backend-api'
