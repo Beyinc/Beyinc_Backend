@@ -50,8 +50,6 @@ jobs:
             echo TWILIO_AUTHTOKEN=${{ secrets.TWILIO_AUTHTOKEN }} >> config.env
             echo TWILIO_PHONE=${{ secrets.TWILIO_PHONE }} >> config.env
 
-            cat config.env
-            less config.env
             pm2 delete beyinc-backend-api || : && pm2 start server.js --name 'beyinc-backend-api'
             pm2 save
               '
