@@ -23,11 +23,6 @@ jobs:
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
           ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${HOSTNAME} '
             sudo su -
-            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
-            . ~/.nvm/nvm.sh
-            nvm install node
-            sudo apt install git -y
-            npm i -g pm2
             rm -rf ./Beyinc_Backend
             git clone https://github.com/Beyinc/Beyinc_Backend.git
             cd ./Beyinc_Backend
@@ -35,8 +30,8 @@ jobs:
             touch config.env
             chmod 644 config.env
             echo $PROD_ENV_FILE
-            echo "${PROD_ENV_FILE}" >> config.env
-            echo "hellloooooooooooooooooooooooo"
+            echo "$PROD_ENV_FILE" > config.env
+            echo "hellloooooooooooooooooooooooo" 
             cat config.env
             less config.env
             pm2 delete beyinc-backend-api || : && pm2 start server.js --name 'beyinc-backend-api'
