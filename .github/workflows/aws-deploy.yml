@@ -34,7 +34,7 @@ jobs:
             npm i
             touch config.env
             chmod 644 config.env
-            echo "$PROD_ENV_FILE" > config.env
+            echo $PROD_ENV_FILE > config.env
             echo "hellloooooooooooooooooooooooo"
             cat config.env
             less config.env
