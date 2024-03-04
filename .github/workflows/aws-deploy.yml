@@ -10,6 +10,7 @@ jobs:
   Deploy:
     name: Deploy to EC2
     runs-on: ubuntu-latest
+    environment: aws-deploy
     steps:
       - uses: actions/checkout@v3
       - name: Dump GitHub context
