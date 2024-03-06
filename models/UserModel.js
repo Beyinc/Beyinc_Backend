@@ -41,6 +41,7 @@ const userSchema = new mongoose.Schema(
     state: { type: String },
     town: { type: String },
     country: { type: String },
+    salutation: { type: String },
     payment: [
       {
         email: {
@@ -78,6 +79,18 @@ const userSchema = new mongoose.Schema(
         year: { type: String },
         company: { type: String },
         profession: { type: String },
+        Achievements: { type: String, required: false },
+        Published: { type: String, required: false },
+        StartupExperience: { type: String, required: false },
+        Consultancy: { type: String, required: false },
+        Profession: { type: String, required: false },
+        TotalWorkExperience: { type: String, required: false },
+        Description: { type: String, required: false },
+        Customers: { type: String, required: false },
+        CompanyLocation: { type: String, required: false },
+        Banner: { type: String, required: false },
+        Logo: { type: String, required: false },
+        Services: { type: String, required: false },
       },
     ],
     educationDetails: [
@@ -89,6 +102,10 @@ const userSchema = new mongoose.Schema(
         college: { type: String },
       },
     ],
+    mentorCategories: {
+      type: String,
+      required: false,
+    },
     fee: {
       type: String,
     },
