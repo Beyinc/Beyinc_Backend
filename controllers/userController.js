@@ -81,44 +81,6 @@ exports.editProfile = async (req, res, next) => {
     // validating email and password
 
     const userDoesExist = await UserUpdate.findOne({ email: email });
-    // Checking user already exist or not
-
-    // if (userDoesExist?.documents.expertise?.public_id !== undefined) {
-    //     await cloudinary.uploader.destroy(userDoesExist?.documents.expertise.public_id, (error, result) => {
-    //         if (error) {
-    //             console.error('Error deleting image:', error);
-    //         } else {
-    //             console.log('Image deleted successfully:', result);
-    //         }
-    //     });
-    // }
-    // if (userDoesExist?.documents.acheivements?.public_id !== undefined) {
-    //     await cloudinary.uploader.destroy(userDoesExist?.documents.acheivements.public_id, (error, result) => {
-    //         if (error) {
-    //             console.error('Error deleting image:', error);
-    //         } else {
-    //             console.log('Image deleted successfully:', result);
-    //         }
-    //     });
-    // }
-    // if (userDoesExist?.documents.degree?.public_id !== undefined) {
-    //     await cloudinary.uploader.destroy(userDoesExist?.documents.degree.public_id, (error, result) => {
-    //         if (error) {
-    //             console.error('Error deleting image:', error);
-    //         } else {
-    //             console.log('Image deleted successfully:', result);
-    //         }
-    //     });
-    // }
-    // if (userDoesExist?.documents.working?.public_id !== undefined) {
-    //     await cloudinary.uploader.destroy(userDoesExist?.documents.working.public_id, (error, result) => {
-    //         if (error) {
-    //             console.error('Error deleting image:', error);
-    //         } else {
-    //             console.log('Image deleted successfully:', result);
-    //         }
-    //     });
-    // }
 
     let resume = "";
     if (documents.resume !== "" && Object.keys(documents.resume).length !== 0) {
