@@ -46,6 +46,8 @@ const userApprovalSchema = new mongoose.Schema(
         start: { type: String },
         end: { type: String },
         year: { type: String },
+        institute: { type: String },
+        areaOfBusiness: { type: String },
         company: { type: String },
         profession: { type: String },
         designation: { type: String },
@@ -58,9 +60,25 @@ const userApprovalSchema = new mongoose.Schema(
         Description: { type: String, required: false },
         Customers: { type: String, required: false },
         CompanyLocation: { type: String, required: false },
-        Banner: { type: String, required: false },
-        Logo: { type: String, required: false },
+        Banner: {
+          public_id: {
+            type: String,
+          },
+          secure_url: {
+            type: String,
+          },
+        },
+        Logo: {
+          public_id: {
+            type: String,
+          },
+          secure_url: {
+            type: String,
+          },
+        },
         Services: { type: String, required: false },
+        startupName: { type: String, required: false },
+        workingStatus: { type: String, required: false },
       },
     ],
     educationDetails: [
