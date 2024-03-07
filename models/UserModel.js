@@ -79,6 +79,7 @@ const userSchema = new mongoose.Schema(
         year: { type: String },
         company: { type: String },
         profession: { type: String },
+        designation: { type: String },
         Achievements: { type: String, required: false },
         Published: { type: String, required: false },
         StartupExperience: { type: String, required: false },
