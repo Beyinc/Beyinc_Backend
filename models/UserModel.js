@@ -74,10 +74,12 @@ const userSchema = new mongoose.Schema(
     experienceDetails: [
       {
         domain: { type: String },
+        institute: { type: String },
         start: { type: String },
         end: { type: String },
         year: { type: String },
         company: { type: String },
+        areaOfBusiness: { type: String },
         profession: { type: String },
         designation: { type: String },
         Achievements: { type: String, required: false },
@@ -89,9 +91,25 @@ const userSchema = new mongoose.Schema(
         Description: { type: String, required: false },
         Customers: { type: String, required: false },
         CompanyLocation: { type: String, required: false },
-        Banner: { type: String, required: false },
-        Logo: { type: String, required: false },
+        Banner: {
+          public_id: {
+            type: String,
+          },
+          secure_url: {
+            type: String,
+          },
+        },
+        Logo: {
+          public_id: {
+            type: String,
+          },
+          secure_url: {
+            type: String,
+          },
+        },
         Services: { type: String, required: false },
+        startupName: { type: String, required: false },
+        workingStatus: { type: String, required: false },
       },
     ],
     educationDetails: [
