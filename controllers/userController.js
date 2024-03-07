@@ -271,6 +271,63 @@ exports.editProfile = async (req, res, next) => {
         }
       }
     }
+    const updatedExperience = []
+    for (let i = 0; i < experienceDetails.length; i++){
+      let newB = ''
+      let newL = ''
+      if (experienceDetails[i]?.Banner?.public_id == undefined) {
+        if (experienceDetails[i]._id !== undefined) {
+          const prevB = await UserUpdate.findOne({ email: email, 'experienceDetails._id': experienceDetails[i]._id })
+          if (prevB && prevB.experienceDetails.find(f => f._id == experienceDetails[i]._id)?.Banner?.public_id !== undefined) {
+            await cloudinary.uploader.destroy(
+              prevB.experienceDetails.find(f => f._id == experienceDetails[i]._id)?.Banner.public_id,
+              (error, result) => {
+                if (error) {
+                  console.error("Error deleting image:", error);
+                } else {
+                  console.log("Image deleted successfully:", result);
+                }
+              }
+            );
+          }
+        }
+        if (experienceDetails[i]?.Banner !== "") {
+          newB = await cloudinary.uploader.upload(experienceDetails[i]?.Banner, {
+              folder: `${email}/editProfile/experience/Banner`,
+            });
+          
+        }
+      } else {
+        newB = experienceDetails[i]?.Banner
+      }
+      if (experienceDetails[i]?.Logo?.public_id == undefined) {
+        if (experienceDetails[i]._id !== undefined) {
+          const prevL = await UserUpdate.findOne({ email: email, 'experienceDetails._id': experienceDetails[i]._id })
+          if (prevL && prevL.experienceDetails.find(f => f._id == experienceDetails[i]._id)?.Logo?.public_id !== undefined) {
+            await cloudinary.uploader.destroy(
+              prevL.experienceDetails.find(f => f._id == experienceDetails[i]._id)?.Logo.public_id,
+              (error, result) => {
+                if (error) {
+                  console.error("Error deleting image:", error);
+                } else {
+                  console.log("Image deleted successfully:", result);
+                }
+              }
+            );
+          }
+        }
+        if (experienceDetails[i]?.Logo !== "") {
+          newL = await cloudinary.uploader.upload(experienceDetails[i]?.Logo, {
+            folder: `${email}/editProfile/experience/Logo`,
+          });
+
+        }
+      } else {
+        newL = experienceDetails[i]?.Logo
+      }
+      updatedExperience.push({ ...experienceDetails[i], Banner: newB, Logo: newL })
+
+    }
 
     if (userDoesExist) {
       const userExist = await User.findOne({ email: email });
@@ -289,7 +346,7 @@ exports.editProfile = async (req, res, next) => {
             salutation,
             mentorCategories,
             country: country,
-            experienceDetails: experienceDetails,
+            experienceDetails: updatedExperience,
             educationDetails: educationdetails,
             fee: fee,
             bio: bio,
@@ -359,7 +416,7 @@ exports.editProfile = async (req, res, next) => {
       salutation,
       mentorCategories,
       country: country,
-      experienceDetails: experienceDetails,
+      experienceDetails: updatedExperience,
       educationDetails: educationdetails,
       fee: fee,
       bio: bio,
