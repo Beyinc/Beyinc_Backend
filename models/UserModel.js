@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
+    isProfileComplete: {
+      default: false,
+      type: Boolean,
+    },
     userName: {
       type: String,
       required: true,
@@ -215,6 +219,16 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
+    //new keys
+    selectedDate: { type: String, required: false },
+    selectedProfile: { type: String, required: false },
+    selectedTime: { type: String, required: false },
+    selectedOneToOne: { type: String, required: false },
+    selectedBecomePlatform: { type: String, required: false },
+    selectedDropdownPrimary: { type: String, required: false },
+    selectedDropdownSecondary: { type: String, required: false },
+    selectedTypes: [{ type: String, required: false }],
+    selectedDomains: [{ type: String, required: false }],
   },
   {
     timestamps: true, // This adds 'createdAt' and 'updatedAt' fields

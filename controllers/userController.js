@@ -21,8 +21,9 @@ const send_Notification_mail = require("../helpers/EmailSending");
 exports.getProfile = async (req, res, next) => {
   try {
     const { id } = req.body;
+    const { user_id } = req.payload;
     const userDoesExist = await User.findOne(
-      { _id: id },
+      { _id: id ? id : user_id },
       { password: 0, chatBlockedBy: 0 }
     );
 
@@ -53,6 +54,46 @@ exports.getApprovalRequestProfile = async (req, res, next) => {
     }
   } catch (error) {
     console.log(error);
+  }
+};
+
+exports.getIsProfileComplete = async (req, res, next) => {
+  try {
+    const { user_id } = req.payload;
+    const user = await User.findById(user_id);
+    return res.status(200).json({ isProfileComplete: user.isProfileComplete });
+  } catch (error) {
+    console.log(error);
+  }
+};
+exports.updateProfileWithoutVerification = async (req, res, next) => {
+  try {
+    const { user_id } = req.payload;
+    const user = await User.findById(user_id);
+    const keys = [
+      "role",
+      "fee",
+      "skills",
+      "selectedDate",
+      "selectedProfile",
+      "selectedTime",
+      "selectedOneToOne",
+      "selectedBecomePlatform",
+      "selectedDropdownPrimary",
+      "selectedDropdownSecondary",
+      "selectedTypes",
+      "selectedDomains",
+    ];
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      if (req.body[key]) user[key] = req.body[key];
+    }
+    user.isProfileComplete = true;
+    await user.save();
+    return res.send({ message: "Successfully updated" });
+  } catch (err) {
+    console.log(err);
+    return res.status(400).send({ message: err });
   }
 };
 
@@ -271,17 +312,27 @@ exports.editProfile = async (req, res, next) => {
         }
       }
     }
-    let updatedExperience = []
-    if (role === 'Technology partner') {
+    let updatedExperience = [];
+    if (role === "Technology partner") {
       for (let i = 0; i < experienceDetails.length; i++) {
-        let newB = ''
-        let newL = ''
+        let newB = "";
+        let newL = "";
         if (experienceDetails[i]?.Banner?.public_id == undefined) {
           if (experienceDetails[i]._id !== undefined) {
-            const prevB = await UserUpdate.findOne({ email: email, 'experienceDetails._id': experienceDetails[i]._id })
-            if (prevB && prevB.experienceDetails.find(f => f._id == experienceDetails[i]._id)?.Banner?.public_id !== undefined) {
+            const prevB = await UserUpdate.findOne({
+              email: email,
+              "experienceDetails._id": experienceDetails[i]._id,
+            });
+            if (
+              prevB &&
+              prevB.experienceDetails.find(
+                (f) => f._id == experienceDetails[i]._id
+              )?.Banner?.public_id !== undefined
+            ) {
               await cloudinary.uploader.destroy(
-                prevB.experienceDetails.find(f => f._id == experienceDetails[i]._id)?.Banner.public_id,
+                prevB.experienceDetails.find(
+                  (f) => f._id == experienceDetails[i]._id
+                )?.Banner.public_id,
                 (error, result) => {
                   if (error) {
                     console.error("Error deleting image:", error);
@@ -293,20 +344,32 @@ exports.editProfile = async (req, res, next) => {
             }
           }
           if (experienceDetails[i]?.Banner !== "") {
-            newB = await cloudinary.uploader.upload(experienceDetails[i]?.Banner, {
-              folder: `${email}/editProfile/experience/Banner`,
-            });
-          
+            newB = await cloudinary.uploader.upload(
+              experienceDetails[i]?.Banner,
+              {
+                folder: `${email}/editProfile/experience/Banner`,
+              }
+            );
           }
         } else {
-          newB = experienceDetails[i]?.Banner
+          newB = experienceDetails[i]?.Banner;
         }
         if (experienceDetails[i]?.Logo?.public_id == undefined) {
           if (experienceDetails[i]._id !== undefined) {
-            const prevL = await UserUpdate.findOne({ email: email, 'experienceDetails._id': experienceDetails[i]._id })
-            if (prevL && prevL.experienceDetails.find(f => f._id == experienceDetails[i]._id)?.Logo?.public_id !== undefined) {
+            const prevL = await UserUpdate.findOne({
+              email: email,
+              "experienceDetails._id": experienceDetails[i]._id,
+            });
+            if (
+              prevL &&
+              prevL.experienceDetails.find(
+                (f) => f._id == experienceDetails[i]._id
+              )?.Logo?.public_id !== undefined
+            ) {
               await cloudinary.uploader.destroy(
-                prevL.experienceDetails.find(f => f._id == experienceDetails[i]._id)?.Logo.public_id,
+                prevL.experienceDetails.find(
+                  (f) => f._id == experienceDetails[i]._id
+                )?.Logo.public_id,
                 (error, result) => {
                   if (error) {
                     console.error("Error deleting image:", error);
@@ -318,19 +381,24 @@ exports.editProfile = async (req, res, next) => {
             }
           }
           if (experienceDetails[i]?.Logo !== "") {
-            newL = await cloudinary.uploader.upload(experienceDetails[i]?.Logo, {
-              folder: `${email}/editProfile/experience/Logo`,
-            });
-
+            newL = await cloudinary.uploader.upload(
+              experienceDetails[i]?.Logo,
+              {
+                folder: `${email}/editProfile/experience/Logo`,
+              }
+            );
           }
         } else {
-          newL = experienceDetails[i]?.Logo
+          newL = experienceDetails[i]?.Logo;
         }
-        updatedExperience.push({ ...experienceDetails[i], Banner: newB, Logo: newL })
-
+        updatedExperience.push({
+          ...experienceDetails[i],
+          Banner: newB,
+          Logo: newL,
+        });
       }
     } else {
-      updatedExperience = [...experienceDetails]
+      updatedExperience = [...experienceDetails];
     }
 
     if (userDoesExist) {
