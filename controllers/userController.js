@@ -17,6 +17,7 @@ const UserUpdate = require("../models/UpdateApproval");
 const cloudinary = require("../helpers/UploadImage");
 const Notification = require("../models/NotificationModel");
 const send_Notification_mail = require("../helpers/EmailSending");
+const jobTitles = require("../models/Roles");
 
 exports.getProfile = async (req, res, next) => {
   try {
@@ -63,14 +64,23 @@ exports.getIsProfileComplete = async (req, res, next) => {
     const user = await User.findById(user_id);
     return res.status(200).json({ isProfileComplete: user.isProfileComplete });
   } catch (error) {
+    return res.status(400).send({ message: err });
     console.log(error);
   }
 };
+
+const uploadFileWithBuffer = async (buffer, user_id) => {
+  return await cloudinary.uploader.upload(buffer, {
+    folder: `${user_id}/documents`,
+  });
+};
+
 exports.updateProfileWithoutVerification = async (req, res, next) => {
   try {
     const { user_id } = req.payload;
     const user = await User.findById(user_id);
-    const keys = [
+    const fileKeys = ["profile", "banner"];
+    const userKeys = [
       "role",
       "fee",
       "skills",
@@ -83,9 +93,50 @@ exports.updateProfileWithoutVerification = async (req, res, next) => {
       "selectedDropdownSecondary",
       "selectedTypes",
       "selectedDomains",
+      "experienceDetails",
+      "educationDetails",
     ];
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
+    const { role } = req.body;
+    const roleModel = {};
+    const step3Keys = Object.keys(req.body.step3Data ? req.body.step3Data : {});
+    for (let i = 0; i < fileKeys.length; i++) {
+      const key = fileKeys[i];
+      if (key == "profile" && req.body.step3Data[key]) {
+        const uploadedFIle = await uploadFileWithBuffer(
+          req.body.step3Data[key].data,
+          user_id
+        );
+        user.image = {
+          url: uploadedFIle.url,
+          public_id: uploadedFIle.public_id,
+        };
+        continue;
+      }
+      if (req.body.step3Data[key]) {
+        const uploadedFIle = await uploadFileWithBuffer(
+          req.body.step3Data[key].data,
+          user_id
+        );
+        user[key] = {
+          url: uploadedFIle.url,
+          public_id: uploadedFIle.public_id,
+        };
+      }
+    }
+
+    for (let i = 0; i < step3Keys.length; i++) {
+      const key = step3Keys[i];
+      if (req.body.step3Data[key]) roleModel[key] = req.body.step3Data[key];
+    }
+    const roleDetailsModel = jobTitles[role];
+    delete roleModel["profile"];
+    delete roleModel["banner"];
+    const roleModelRes = await roleDetailsModel.create(roleModel);
+    user.role_type = role;
+    user.role_details = roleModelRes._id;
+
+    for (let i = 0; i < userKeys.length; i++) {
+      const key = userKeys[i];
       if (req.body[key]) user[key] = req.body[key];
     }
     user.isProfileComplete = true;

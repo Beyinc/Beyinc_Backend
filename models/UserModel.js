@@ -33,6 +33,14 @@ const userSchema = new mongoose.Schema(
         type: String,
       },
     },
+    banner: {
+      public_id: {
+        type: String,
+      },
+      url: {
+        type: String,
+      },
+    },
     role: {
       type: String,
     },
@@ -134,6 +142,28 @@ const userSchema = new mongoose.Schema(
     },
     bio: {
       type: String,
+    },
+    role_details: {
+      type: mongoose.Schema.Types.ObjectId,
+      refPath: "role_type",
+      required: false,
+    },
+    role_type: {
+      type: String,
+      required: false,
+      enum: [
+        "Individual/Entrepreneur",
+        "Startup",
+        "Mentor",
+        "Incubator",
+        "Accelerator",
+        "Individual Investor",
+        "Institutional Investor",
+        "Trade Bodies",
+        "Government Body",
+        "Corporate",
+        "Technology Partner",
+      ],
     },
     documents: {
       resume: {
