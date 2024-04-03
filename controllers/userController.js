@@ -10,7 +10,6 @@ const {
 } = require("../helpers/jwt_helpers");
 const User = require("../models/UserModel");
 const dotenv = require("dotenv");
-const Userverify = require("../models/OtpModel");
 dotenv.config({ path: "../config.env" });
 const twilio = require("twilio");
 const UserUpdate = require("../models/UpdateApproval");
@@ -18,7 +17,6 @@ const cloudinary = require("../helpers/UploadImage");
 const Notification = require("../models/NotificationModel");
 const send_Notification_mail = require("../helpers/EmailSending");
 const jobTitles = require("../models/Roles");
-
 exports.getProfile = async (req, res, next) => {
   try {
     const { id } = req.body;
@@ -26,7 +24,7 @@ exports.getProfile = async (req, res, next) => {
     const userDoesExist = await User.findOne(
       { _id: id ? id : user_id },
       { password: 0, chatBlockedBy: 0 }
-    );
+    ).populate("role_details");
 
     // console.log(removePass);
     if (userDoesExist) {
@@ -96,9 +94,11 @@ exports.updateProfileWithoutVerification = async (req, res, next) => {
       "experienceDetails",
       "educationDetails",
     ];
-    const { role } = req.body;
+    const { role, isDraft } = req.body;
     const roleModel = {};
-    const step3Keys = Object.keys(req.body.step3Data ? req.body.step3Data : {});
+    const step3Keys = Object.keys(
+      req.body.step3Data ? req.body.step3Data : {}
+    ).filter((v) => !["_id", "__v", "createdAt", "updatedAt"].includes(v));
     for (let i = 0; i < fileKeys.length; i++) {
       const key = fileKeys[i];
       if (key == "profile" && req.body.step3Data[key]) {
@@ -132,14 +132,14 @@ exports.updateProfileWithoutVerification = async (req, res, next) => {
     delete roleModel["profile"];
     delete roleModel["banner"];
     const roleModelRes = await roleDetailsModel.create(roleModel);
-    user.role_type = role;
+    user.role_type = roleDetailsModel.modelName;
     user.role_details = roleModelRes._id;
 
     for (let i = 0; i < userKeys.length; i++) {
       const key = userKeys[i];
       if (req.body[key]) user[key] = req.body[key];
     }
-    user.isProfileComplete = true;
+    if (!isDraft) user.isProfileComplete = true;
     await user.save();
     return res.send({ message: "Successfully updated" });
   } catch (err) {
