@@ -63,6 +63,11 @@ router.route("/getUsers").post(userController.getUsers);
 
 router.route("/verifyUserPassword").post(userController.verifyUserPassword);
 router.route("/editprofile").post(userController.editProfile);
+router.route("/directeditprofile").post(userController.directeditprofile);
+router.route("/updateStatusDirect").post(userController.updateVerificationStatusDirectly);
+
+
+
 
 router.route("/getAllRequests").post(userController.getAllUserProfileRequests);
 

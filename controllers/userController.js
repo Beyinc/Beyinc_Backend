@@ -38,13 +38,10 @@ exports.getProfile = async (req, res, next) => {
 exports.getApprovalRequestProfile = async (req, res, next) => {
   try {
     const { userId } = req.body;
-    const userDoesExist = await UserUpdate.findOne(
+    const userDoesExist = await User.findOne(
       { _id: userId },
       { password: 0 }
-    ).populate({
-      path: "userInfo",
-      select: ["userName", "image", "role", "email"],
-    });
+    );
 
     if (userDoesExist) {
       return res.status(200).json(userDoesExist);
@@ -481,6 +478,363 @@ exports.editProfile = async (req, res, next) => {
   }
 };
 
+
+exports.directeditprofile = async (req, res, next) => {
+  try {
+    const {
+      userId,
+      email,
+      salutation,
+      mentorCategories,
+      userName,
+      role,
+      phone,
+      documents,
+      experienceDetails,
+      educationdetails,
+      fee,
+      bio,
+      state,
+      town,
+      country,
+      skills,
+      languagesKnown,
+    } = req.body;
+
+    // validating email and password
+
+    const userDoesExist = await User.findOne({ email: email });
+
+    let resume = "";
+    if (documents.resume !== "" && Object.keys(documents.resume).length !== 0) {
+      if (documents.resume?.public_id == undefined) {
+        if (userDoesExist?.documents.resume.public_id !== undefined) {
+          await cloudinary.uploader.destroy(
+            userDoesExist?.documents.resume.public_id,
+            (error, result) => {
+              if (error) {
+                console.error("Error deleting image:", error);
+              } else {
+                console.log("Image deleted successfully:", result);
+              }
+            }
+          );
+        }
+        resume = await cloudinary.uploader.upload(documents.resume, {
+          folder: `${email}/documents`,
+        });
+      } else {
+        resume = documents.resume;
+      }
+    } else {
+      if (userDoesExist?.documents.resume.public_id !== undefined) {
+        await cloudinary.uploader.destroy(
+          userDoesExist?.documents.resume.public_id,
+          (error, result) => {
+            if (error) {
+              console.error("Error deleting image:", error);
+            } else {
+              console.log("Image deleted successfully:", result);
+            }
+          }
+        );
+      }
+    }
+    let expertise = "";
+    if (
+      documents.expertise !== "" &&
+      Object.keys(documents.expertise).length !== 0
+    ) {
+      if (documents.expertise?.public_id == undefined) {
+        if (userDoesExist?.documents.expertise.public_id !== undefined) {
+          await cloudinary.uploader.destroy(
+            userDoesExist?.documents.expertise.public_id,
+            (error, result) => {
+              if (error) {
+                console.error("Error deleting image:", error);
+              } else {
+                console.log("Image deleted successfully:", result);
+              }
+            }
+          );
+        }
+        expertise = await cloudinary.uploader.upload(documents.expertise, {
+          folder: `${email}/documents`,
+        });
+      } else {
+        expertise = documents.expertise;
+      }
+    } else {
+      if (userDoesExist?.documents.expertise.public_id !== undefined) {
+        await cloudinary.uploader.destroy(
+          userDoesExist?.documents.expertise.public_id,
+          (error, result) => {
+            if (error) {
+              console.error("Error deleting image:", error);
+            } else {
+              console.log("Image deleted successfully:", result);
+            }
+          }
+        );
+      }
+    }
+    let acheivements = "";
+    if (
+      documents.acheivements !== "" &&
+      Object.keys(documents.acheivements).length !== 0
+    ) {
+      if (documents.acheivements?.public_id == undefined) {
+        if (userDoesExist?.documents.acheivements.public_id !== undefined) {
+          await cloudinary.uploader.destroy(
+            userDoesExist?.documents.acheivements.public_id,
+            (error, result) => {
+              if (error) {
+                console.error("Error deleting image:", error);
+              } else {
+                console.log("Image deleted successfully:", result);
+              }
+            }
+          );
+        }
+        acheivements = await cloudinary.uploader.upload(
+          documents.acheivements,
+          {
+            folder: `${email}/documents`,
+          }
+        );
+      } else {
+        acheivements = documents.acheivements;
+      }
+    } else {
+      if (userDoesExist?.documents.acheivements.public_id !== undefined) {
+        await cloudinary.uploader.destroy(
+          userDoesExist?.documents.acheivements.public_id,
+          (error, result) => {
+            if (error) {
+              console.error("Error deleting image:", error);
+            } else {
+              console.log("Image deleted successfully:", result);
+            }
+          }
+        );
+      }
+    }
+    let degree = "";
+    if (documents.degree !== "" && Object.keys(documents.degree).length !== 0) {
+      if (documents.degree?.public_id == undefined) {
+        if (userDoesExist?.documents.degree.public_id !== undefined) {
+          await cloudinary.uploader.destroy(
+            userDoesExist?.documents.degree.public_id,
+            (error, result) => {
+              if (error) {
+                console.error("Error deleting image:", error);
+              } else {
+                console.log("Image deleted successfully:", result);
+              }
+            }
+          );
+        }
+        degree = await cloudinary.uploader.upload(documents.degree, {
+          folder: `${email}/documents`,
+        });
+      } else {
+        degree = documents.degree;
+      }
+    } else {
+      if (userDoesExist?.documents.degree.public_id !== undefined) {
+        await cloudinary.uploader.destroy(
+          userDoesExist?.documents.degree.public_id,
+          (error, result) => {
+            if (error) {
+              console.error("Error deleting image:", error);
+            } else {
+              console.log("Image deleted successfully:", result);
+            }
+          }
+        );
+      }
+    }
+    let working = "";
+    if (
+      documents.working !== "" &&
+      Object.keys(documents.working).length !== 0
+    ) {
+      if (documents.working?.public_id == undefined) {
+        if (userDoesExist?.documents.working.public_id !== undefined) {
+          await cloudinary.uploader.destroy(
+            userDoesExist?.documents.working.public_id,
+            (error, result) => {
+              if (error) {
+                console.error("Error deleting image:", error);
+              } else {
+                console.log("Image deleted successfully:", result);
+              }
+            }
+          );
+        }
+        working = await cloudinary.uploader.upload(documents.working, {
+          folder: `${email}/documents`,
+        });
+      } else {
+        working = documents.working;
+      }
+    } else {
+      if (documents.working?.public_id == undefined) {
+        if (userDoesExist?.documents.working.public_id !== undefined) {
+          await cloudinary.uploader.destroy(
+            userDoesExist?.documents.working.public_id,
+            (error, result) => {
+              if (error) {
+                console.error("Error deleting image:", error);
+              } else {
+                console.log("Image deleted successfully:", result);
+              }
+            }
+          );
+        }
+      }
+    }
+    let updatedExperience = []
+    if (role === 'Technology partner') {
+      for (let i = 0; i < experienceDetails.length; i++) {
+        let newB = ''
+        let newL = ''
+        if (experienceDetails[i]?.Banner?.public_id == undefined) {
+          if (experienceDetails[i]._id !== undefined) {
+            const prevB = await UserUpdate.findOne({ email: email, 'experienceDetails._id': experienceDetails[i]._id })
+            if (prevB && prevB.experienceDetails.find(f => f._id == experienceDetails[i]._id)?.Banner?.public_id !== undefined) {
+              await cloudinary.uploader.destroy(
+                prevB.experienceDetails.find(f => f._id == experienceDetails[i]._id)?.Banner.public_id,
+                (error, result) => {
+                  if (error) {
+                    console.error("Error deleting image:", error);
+                  } else {
+                    console.log("Image deleted successfully:", result);
+                  }
+                }
+              );
+            }
+          }
+          if (experienceDetails[i]?.Banner !== "") {
+            newB = await cloudinary.uploader.upload(experienceDetails[i]?.Banner, {
+              folder: `${email}/editProfile/experience/Banner`,
+            });
+          
+          }
+        } else {
+          newB = experienceDetails[i]?.Banner
+        }
+        if (experienceDetails[i]?.Logo?.public_id == undefined) {
+          if (experienceDetails[i]._id !== undefined) {
+            const prevL = await UserUpdate.findOne({ email: email, 'experienceDetails._id': experienceDetails[i]._id })
+            if (prevL && prevL.experienceDetails.find(f => f._id == experienceDetails[i]._id)?.Logo?.public_id !== undefined) {
+              await cloudinary.uploader.destroy(
+                prevL.experienceDetails.find(f => f._id == experienceDetails[i]._id)?.Logo.public_id,
+                (error, result) => {
+                  if (error) {
+                    console.error("Error deleting image:", error);
+                  } else {
+                    console.log("Image deleted successfully:", result);
+                  }
+                }
+              );
+            }
+          }
+          if (experienceDetails[i]?.Logo !== "") {
+            newL = await cloudinary.uploader.upload(experienceDetails[i]?.Logo, {
+              folder: `${email}/editProfile/experience/Logo`,
+            });
+
+          }
+        } else {
+          newL = experienceDetails[i]?.Logo
+        }
+        updatedExperience.push({ ...experienceDetails[i], Banner: newB, Logo: newL })
+
+      }
+    } else {
+      updatedExperience = [...experienceDetails]
+    }
+
+    if (userDoesExist) {
+
+      await User.updateOne(
+        { email: email },
+        {
+          $set: {
+            userInfo: userDoesExist._id,
+            userName,
+            // image: userDoesExist?.image?.url,
+            role,
+            phone,
+            state: state,
+            town: town,
+            salutation,
+            mentorCategories,
+            country: country,
+            experienceDetails: updatedExperience,
+            educationDetails: educationdetails,
+            fee: fee,
+            bio: bio,
+            verification: "",
+            skills: skills,
+            languagesKnown: languagesKnown,
+            documents: {
+              resume: {
+                public_id: resume?.public_id,
+                secure_url: resume?.secure_url,
+              },
+              expertise: {
+                public_id: expertise?.public_id,
+                secure_url: expertise?.secure_url,
+              },
+              acheivements: {
+                public_id: acheivements?.public_id,
+                secure_url: acheivements?.secure_url,
+              },
+              degree: {
+                public_id: degree?.public_id,
+                secure_url: degree?.secure_url,
+              },
+              working: {
+                public_id: working?.public_id,
+                secure_url: working?.secure_url,
+              },
+            },
+          },
+        }
+      );
+      const updatedUser = await User.findOne({email:email})
+      const accessToken = await signAccessToken(
+        {
+          email: updatedUser.email,
+          freeCoins: updatedUser.freeCoins,
+          realCoins: updatedUser.realCoins,
+          documents: updatedUser.documents,
+          user_id: updatedUser._id,
+          role: updatedUser.role,
+          userName: updatedUser.userName,
+          image: updatedUser.image?.url,
+          verification: "",
+        },
+        `${updatedUser._id}`
+      );
+      const refreshToken = await signRefreshToken(
+        { email: updatedUser.email, _id: updatedUser._id },
+        `${updatedUser._id}`
+      );
+
+      return res.send({ accessToken: accessToken, refreshToken: refreshToken });
+    }
+
+    return res.status(400).send({ message: 'User Not Found' });
+
+  } catch (err) {
+    console.log(err);
+    return res.status(400).send({ message: err });
+  }
+};
+
 exports.updateVerification = async (req, res, next) => {
   try {
     const { userId, status } = req.body;
@@ -590,6 +944,21 @@ exports.updateVerification = async (req, res, next) => {
 
 //     }
 // }
+
+exports.updateVerificationStatusDirectly = async (req, res, next) => {
+  try {
+    const {userId, verificationStatus} = req.body;
+  const userDoesExist = await User.findOne({_id: userId})
+  if(userDoesExist){
+    await User.updateOne({_id: userId}, {verification: verificationStatus});
+    return res.status(200).json({message: 'User verification updated'})
+  }
+  return res.status(200).json({message: 'User not found'})
+  } catch (error) {
+    return res.status(200).json({message: error})
+
+  }
+}
 
 exports.verifyUserPassword = async (req, res, next) => {
   try {
@@ -751,10 +1120,7 @@ exports.getUsers = async (req, res, next) => {
 exports.getAllUserProfileRequests = async (req, res, next) => {
   try {
     const { filters } = req.body;
-    const result = await UserUpdate.find().populate({
-      path: "userInfo",
-      select: ["userName", "image", "role"],
-    });
+    const result = await User.find();
     return res.status(200).json(result);
   } catch (err) {
     return res.status(400).json("Error while fetching");
