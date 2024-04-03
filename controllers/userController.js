@@ -917,6 +917,65 @@ exports.updateVerification = async (req, res, next) => {
   }
 };
 
+exports.updateVerificationByAdmin = async (req, res, next) => {
+  try {
+    const { userId, status } = req.body;
+    // Checking user already exist or not
+    const userDoesExist = await User.findOne({ _id: userId });
+    const email = userDoesExist.email;
+    if (!userDoesExist) {
+      return res.status(404).json({ message: "User not found" });
+    }
+  
+    const adminDetails = await User.findOne({ email: process.env.ADMIN_EMAIL });
+    if (status == "approved") {
+      await User.updateOne(
+        { _id: userId },
+        { $set: { verification: status } }
+      );
+
+      await send_Notification_mail(
+        email,
+        email,
+        `Profile Update`,
+        `Your profile update request has been <b>${req.body.status}</b> by the admin`,
+        userDoesExist.userName
+      );
+      await Notification.create({
+        senderInfo: adminDetails._id,
+        receiver: userDoesExist.userInfo,
+        message: `Your profile update request has been ${req.body.status} by the admin.`,
+        type: "pitch",
+        read: false,
+      });
+    } else {
+      await User.updateOne(
+        { email: email },
+        { $set: { verification: status } }
+      );
+      await send_Notification_mail(
+        email,
+        email,
+        `Profile Update`,
+        `Your profile update request has been <b>${req.body.status}</b> by the admin and added comment: "<b>${req.body.reason}</b>"`,
+        userDoesExist.userName
+      );
+      await Notification.create({
+        senderInfo: adminDetails._id,
+        receiver: userDoesExist.userInfo,
+        message: `Your profile update request has been ${req.body.status} by the admin and added comment: "${req.body.reason}"`,
+        type: "pitch",
+        read: false,
+      });
+    }
+
+    return res.send({ message: `Profile status is ${status} !` });
+  } catch (err) {
+    console.log(err);
+    return res.status(400).send({ message: `Error in Profile updation !` });
+  }
+};
+
 // IT MAY USE FOR USER BLOCK
 // exports.chatBlock = async (req, res, next) => {
 //     try {
