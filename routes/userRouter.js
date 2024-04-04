@@ -67,6 +67,13 @@ router
 
 router.route("/verifyUserPassword").post(userController.verifyUserPassword);
 router.route("/editprofile").post(userController.editProfile);
+router.route("/directeditprofile").post(userController.directeditprofile);
+router.route("/updateStatusDirect").post(userController.updateVerificationStatusDirectly);
+router.route("/updateVerificationByAdmin").post(userController.updateVerificationByAdmin);
+
+
+
+
 
 router.route("/getAllRequests").post(userController.getAllUserProfileRequests);
 
