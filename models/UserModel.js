@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
+    isProfileComplete: {
+      default: false,
+      type: Boolean,
+    },
     userName: {
       type: String,
       required: true,
@@ -22,6 +26,14 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
     image: {
+      public_id: {
+        type: String,
+      },
+      url: {
+        type: String,
+      },
+    },
+    banner: {
       public_id: {
         type: String,
       },
@@ -131,6 +143,28 @@ const userSchema = new mongoose.Schema(
     bio: {
       type: String,
     },
+    role_details: {
+      type: mongoose.Schema.Types.ObjectId,
+      refPath: "role_type",
+      required: false,
+    },
+    role_type: {
+      type: String,
+      required: false,
+      enum: [
+        "Entrepreneur",
+        "Startup",
+        "Mentor",
+        "Incubator",
+        "Accelerator",
+        "InstituteInvestor",
+        "InstituteInvestor",
+        "TradeBody",
+        "GovernmentBody",
+        "Corporate",
+        "TechPartner",
+      ],
+    },
     documents: {
       resume: {
         public_id: {
@@ -215,6 +249,16 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
+    //new keys
+    selectedDate: { type: String, required: false },
+    selectedProfile: { type: String, required: false },
+    selectedTime: { type: String, required: false },
+    selectedOneToOne: { type: String, required: false },
+    selectedBecomePlatform: { type: String, required: false },
+    selectedDropdownPrimary: { type: String, required: false },
+    selectedDropdownSecondary: { type: String, required: false },
+    selectedTypes: [{ type: String, required: false }],
+    selectedDomains: [{ type: String, required: false }],
   },
   {
     timestamps: true, // This adds 'createdAt' and 'updatedAt' fields
