@@ -60,9 +60,20 @@ router
   .post(userController.getApprovalRequestProfile);
 
 router.route("/getUsers").post(userController.getUsers);
+router.route("/isProfileComplete").get(userController.getIsProfileComplete);
+router
+  .route("/updateProfile")
+  .post(userController.updateProfileWithoutVerification);
 
 router.route("/verifyUserPassword").post(userController.verifyUserPassword);
 router.route("/editprofile").post(userController.editProfile);
+router.route("/directeditprofile").post(userController.directeditprofile);
+router.route("/updateStatusDirect").post(userController.updateVerificationStatusDirectly);
+router.route("/updateVerificationByAdmin").post(userController.updateVerificationByAdmin);
+
+
+
+
 
 router.route("/getAllRequests").post(userController.getAllUserProfileRequests);
 
@@ -77,7 +88,5 @@ router.route("/updateProfileImage").post(userController.updateProfileImage);
 router.route("/deleteProfileImage").post(userController.deleteProfileImage);
 
 router.route("/addPayment").post(userController.addPayment);
-
-
 
 module.exports = router;
