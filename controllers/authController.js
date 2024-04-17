@@ -312,7 +312,6 @@ exports.mobile_otp = async (req, res, next) => {
   try {
     const { phone, type } = req.body;
     const phoneexist = await User.findOne({ phone: phone.slice(3) });
-    console.log(phone.slice(3));
     if (phoneexist && type !== "forgot" && type !== "login") {
       return res.status(400).json("Phone number already exists");
     }
@@ -404,7 +403,7 @@ exports.verify_otp = async (req, res, next) => {
     const EmailToken = await Userverify.findOne({ email: email });
     if (EmailToken) {
       const { otp } = await verifyEmailOtpToken(EmailToken.verifyToken);
-      console.log(otp, req.body.otp);
+      // console.log(otp, req.body.otp);
       if (req.body.otp == otp) {
         return res.status(200).json({ message: "OTP is Success" });
       } else {
