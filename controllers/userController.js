@@ -17,6 +17,7 @@ const cloudinary = require("../helpers/UploadImage");
 const Notification = require("../models/NotificationModel");
 const send_Notification_mail = require("../helpers/EmailSending");
 const jobTitles = require("../models/Roles");
+
 exports.getProfile = async (req, res, next) => {
   try {
     const { id } = req.body;
@@ -24,7 +25,13 @@ exports.getProfile = async (req, res, next) => {
     const userDoesExist = await User.findOne(
       { _id: id ? id : user_id },
       { password: 0, chatBlockedBy: 0 }
-    ).populate("role_details");
+    ).populate({
+      path: "followers",
+      select: ["userName", "image", "role", '_id'],
+    }).populate({
+      path: "following",
+      select: ["userName", "image", "role", '_id'],
+    }).populate("role_details");
 
     // console.log(removePass);
     if (userDoesExist) {
@@ -34,6 +41,52 @@ exports.getProfile = async (req, res, next) => {
     console.log(error);
   }
 };
+
+
+exports.followerController = async (req, res, next) => {
+  const { followerReqBy, followerReqTo } = req.body
+  
+  const requestBy = await User.findOne({ _id: followerReqBy })
+  const requestTo = await User.findOne({ _id: followerReqTo })
+
+  if (!requestTo.followers.includes(followerReqBy)) {
+    requestTo.followers.push(followerReqBy)
+    await requestTo.save()
+    requestBy.following.push(followerReqTo)
+    await requestBy.save()
+    const userDoesExist = await User.findOne(
+      { _id: requestTo._id},
+      { password: 0, chatBlockedBy: 0 }
+    ).populate({
+      path: "followers",
+      select: ["userName", "image", "role", '_id'],
+    }).populate({
+      path: "following",
+      select: ["userName", "image", "role", '_id'],
+    }).populate("role_details");
+    await send_Notification_mail(requestTo.email, 'Follower added!', `${requestBy.userName} is following you`, requestTo.userName)
+    await Notification.create({ senderInfo: requestBy._id, receiver: requestTo._id, message: `${requestBy.userName} is following you.`, type: 'pitch', read: false })
+
+    return res.status(200).json(userDoesExist)
+  } else {
+    requestTo.followers.splice(requestTo.followers.indexOf(followerReqBy), 1)
+    await requestTo.save()
+    requestBy.following.splice(requestBy.following.indexOf(followerReqTo), 1)
+    await requestBy.save()
+    const userDoesExist = await User.findOne(
+      { _id: requestTo._id },
+      { password: 0, chatBlockedBy: 0 }
+    ).populate({
+      path: "followers",
+      select: ["userName", "image", "role", '_id'],
+    }).populate({
+      path: "following",
+      select: ["userName", "image", "role", '_id'],
+    }).populate("role_details");
+    return res.status(200).json(userDoesExist)
+  }
+
+}
 
 exports.getApprovalRequestProfile = async (req, res, next) => {
   try {
@@ -1284,10 +1337,22 @@ exports.getUsers = async (req, res, next) => {
       let result = await User.find(
         { role: type },
         { projection: { password: 0 } }
-      );
+      ).populate({
+        path: "followers",
+        select: ["userName", "image", "role", '_id'],
+      }).populate({
+        path: "following",
+        select: ["userName", "image", "role", '_id'],
+      });
       return res.status(200).json(result);
     } else {
-      let result = await User.find({}, { password: 0 });
+      let result = await User.find({}, { password: 0 }).populate({
+        path: "followers",
+        select: ["userName", "image", "role", '_id'],
+      }).populate({
+        path: "following",
+        select: ["userName", "image", "role", '_id'],
+      });
       return res.status(200).json(result);
     }
   } catch (err) {
