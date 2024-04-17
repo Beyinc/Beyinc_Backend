@@ -69,19 +69,20 @@ exports.createPitch = async (req, res, next) => {
             delete form._id
         }
         const userExist = await User.findOne({ email: email })
+        console.log(userExist)
         const colleges = []
         for (let i = 0; i < userExist.educationDetails.length; i++) {
             colleges.push(userExist.educationDetails[i].college)
         }
         if (pitchId == '') {
-            await Pitch.create({ ...form, associatedTo: [], userInfo: userExist._id, comments: [], review: [], teamMembers: [...teams], pitchRequiredStatus: pitchRequiredStatus, email: email, tags: tags, title: title, status: 'pending', pitch: { secure_url: pitchDoc?.secure_url, public_id: pitchDoc?.public_id }, banner: { secure_url: bannerDoc?.secure_url, public_id: bannerDoc?.public_id }, logo: { secure_url: logoDoc?.secure_url, public_id: logoDoc?.public_id }, financials: { secure_url: financialsDoc?.secure_url, public_id: financialsDoc?.public_id } })
+            await Pitch.create({ ...form, associatedTo: [], userInfo: userExist._id, comments: [], review: [], teamMembers: [...teams], pitchRequiredStatus: pitchRequiredStatus, email: email, tags: tags, title: title, status: 'approved', pitch: { secure_url: pitchDoc?.secure_url, public_id: pitchDoc?.public_id }, banner: { secure_url: bannerDoc?.secure_url, public_id: bannerDoc?.public_id }, logo: { secure_url: logoDoc?.secure_url, public_id: logoDoc?.public_id }, financials: { secure_url: financialsDoc?.secure_url, public_id: financialsDoc?.public_id } })
             return res.status(200).send('Pitch created');
         } else {
             const singlepitch = await Pitch.findOne({ _id: pitchId })
             // if (singlepitch.associatedTo.length > 0) {
             //     return res.status(400).json('Pitch is Associated with mentors')
             // }
-            await Pitch.updateOne({ _id: pitchId }, { $set: { ...form,  teamMembers: [...teams], pitchRequiredStatus: pitchRequiredStatus, email: email, tags: tags, title: title, status: 'pending', pitch: { secure_url: pitchDoc?.secure_url, public_id: pitchDoc?.public_id }, banner: { secure_url: bannerDoc?.secure_url, public_id: bannerDoc?.public_id }, logo: { secure_url: logoDoc?.secure_url, public_id: logoDoc?.public_id }, financials: { secure_url: financialsDoc?.secure_url, public_id: financialsDoc?.public_id } }})
+            await Pitch.updateOne({ _id: pitchId }, { $set: { ...form, teamMembers: [...teams], pitchRequiredStatus: pitchRequiredStatus, email: email, tags: tags, title: title, status: 'approved', pitch: { secure_url: pitchDoc?.secure_url, public_id: pitchDoc?.public_id }, banner: { secure_url: bannerDoc?.secure_url, public_id: bannerDoc?.public_id }, logo: { secure_url: logoDoc?.secure_url, public_id: logoDoc?.public_id }, financials: { secure_url: financialsDoc?.secure_url, public_id: financialsDoc?.public_id } }})
             return res.status(200).send('Pitch Updated');
         }
 
@@ -127,7 +128,7 @@ exports.updateSinglePitch = async (req, res, next) => {
     try {
         const pitch = await Pitch.findOne({ _id: req.body.pitchId }).populate({ path: 'userInfo', select: [ 'userName', 'image', 'role'] });
         if (pitch) {
-            await Pitch.updateOne({ _id: req.body.pitchId }, { $set: { status: 'pending', pitchRequiredStatus: req.body.status } })
+            await Pitch.updateOne({ _id: req.body.pitchId }, { $set: { status: 'approved', pitchRequiredStatus: req.body.status } })
             await send_Notification_mail(pitch.email, pitch.email, `Pitch required status update !`, `For ${pitch.title}(${pitch._id}) required status has been updated to ${req.body.status}`, pitch.userInfo.userName)
             return res.status(200).json('Pitch updated')
         }
