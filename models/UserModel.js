@@ -6,6 +6,14 @@ const userSchema = new mongoose.Schema(
       default: false,
       type: Boolean,
     },
+    followers: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    }],
+    following: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    }],
     userName: {
       type: String,
       required: true,
