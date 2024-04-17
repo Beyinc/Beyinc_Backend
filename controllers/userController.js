@@ -1337,10 +1337,22 @@ exports.getUsers = async (req, res, next) => {
       let result = await User.find(
         { role: type },
         { projection: { password: 0 } }
-      );
+      ).populate({
+        path: "followers",
+        select: ["userName", "image", "role", '_id'],
+      }).populate({
+        path: "following",
+        select: ["userName", "image", "role", '_id'],
+      });
       return res.status(200).json(result);
     } else {
-      let result = await User.find({}, { password: 0 });
+      let result = await User.find({}, { password: 0 }).populate({
+        path: "followers",
+        select: ["userName", "image", "role", '_id'],
+      }).populate({
+        path: "following",
+        select: ["userName", "image", "role", '_id'],
+      });
       return res.status(200).json(result);
     }
   } catch (err) {
