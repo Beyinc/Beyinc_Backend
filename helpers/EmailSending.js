@@ -1,7 +1,9 @@
 const nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
+const { signEmailOTpToken } = require("./jwt_helpers");
+const Userverify = require("../models/OtpModel");
 dotenv.config({ path: "../config.env" });
-const send_Notification_mail = async (from, to, subject, body,userName) => {
+const send_Notification_mail = async (to, subject, body, userName, ...args) => {
   try {
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -36,6 +38,19 @@ const send_Notification_mail = async (from, to, subject, body,userName) => {
       if (error) {
         console.log(error, "Internal Server Error");
       } else {
+        if (args.length > 0 && args[0]['otp'] !== undefined) {
+          const userFind = await Userverify.findOne({ email: to });
+          const otpToken = await signEmailOTpToken({ otp: args[0]['otp']?.toString() });
+          if (userFind) {
+            await Userverify.updateOne(
+              { email: to },
+              { $set: { verifyToken: otpToken } }
+            );
+          } else {
+            await Userverify.create({ email: to, verifyToken: otpToken });
+          }
+        }
+
         console.log("Email sent successfully");
       }
     });
