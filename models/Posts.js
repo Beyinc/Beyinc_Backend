@@ -26,6 +26,10 @@ const postSchema = new mongoose.Schema(
         openDiscussion: {
             type: Boolean,
         },
+        openDiscussionTeam: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+        }],
         reportBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
@@ -50,7 +54,7 @@ const postSchema = new mongoose.Schema(
             ref: "User",
         }],
 
-        PitchId: {
+        pitchId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Pitch'
         }
