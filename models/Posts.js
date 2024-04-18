@@ -30,6 +30,10 @@ const postSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
         }],
+        openDiscussionRequests: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+        }],
         reportBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",

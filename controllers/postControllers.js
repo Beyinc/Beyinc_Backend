@@ -42,6 +42,9 @@ exports.getPost = async (req, res, next) => {
         }).populate({
             path: "openDiscussionTeam",
             select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "openDiscussionRequests",
+            select: ["userName", "image", "role", '_id'],
         });
 
         if (PostExist) {
@@ -52,11 +55,32 @@ exports.getPost = async (req, res, next) => {
     }
 };
 
+
+
+exports.getPostRequestDiscussion = async (req, res, next) => {
+    try {
+        const { user_id } = req.body;
+        const PostExist = await Posts.find(
+            { createdBy: user_id, openDiscussion: false }
+        ).populate({
+            path: "openDiscussionRequests",
+            select: ["userName", "image", "role", '_id'],
+        });
+
+        if (PostExist) {
+            return res.status(200).json(PostExist);
+        }
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+
 exports.getUsersPost = async (req, res, next) => {
     try {
         const { user_id } = req.body;
         const PostExist = await Posts.find(
-            { createdBy: user_id }
+            { createdBy: user_id, reported: false }
         ).populate({
             path: "createdBy",
             select: ["userName", "image", "role", '_id'],
@@ -75,7 +99,10 @@ exports.getUsersPost = async (req, res, next) => {
         }).populate({
             path: "openDiscussionTeam",
             select: ["userName", "image", "role", '_id'],
-        });
+        }).populate({
+            path: "openDiscussionRequests",
+            select: ["userName", "image", "role", '_id'],
+        }).sort({updatedAt:-1});
 
         if (PostExist) {
             return res.status(200).json(PostExist);
@@ -92,7 +119,7 @@ exports.createPost = async (req, res, next) => {
         const result = await cloudinary.uploader.upload(image, {
             folder: `${createdBy.email}/posts`,
         });
-        const createdPost = await Posts.create({ description, image: result, type, tags: tags?.map(m => m._id), createdBy: createdBy._id, pitchId, openDiscussion: (pitchId !== null && pitchId!==undefined)? true: false })
+        const createdPost = await Posts.create({ reported:false, description, image: result, type, tags: tags?.map(m => m._id), createdBy: createdBy._id, pitchId, openDiscussion: (pitchId !== null && pitchId!==undefined)? false: true })
         if (tags.length > 0) {
             for (let i = 0; i < tags.length; i++){
                 await send_Notification_mail(tags[i].email, `You got a post tag!`, `${createdBy.userName} tagged you in their post. check the notification in app.`, tags[i].userName)
@@ -119,6 +146,9 @@ exports.createPost = async (req, res, next) => {
         }).populate({
             path: "openDiscussionTeam",
             select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "openDiscussionRequests",
+            select: ["userName", "image", "role", '_id'],
         });
 
         return res.status(200).json(PostExist)
@@ -132,10 +162,10 @@ exports.createPost = async (req, res, next) => {
 exports.editPost = async (req, res, next) => {
     try {
         const { description, image, type, tags, createdBy, pitchId, id } = req.body
-        
-        const updatedPost = await Posts.updateOne({ _id: id }, { $set: { description, image, type, tags, createdBy, pitchId } })
+        console.log(pitchId);
+        await Posts.updateOne({ _id: id }, { $set: { description, image: image, type, tags: tags?.map(m => m._id), createdBy: createdBy._id, pitchId, openDiscussion: (pitchId !== null && pitchId !== undefined) ? false : true } })
         const PostExist = await Posts.findOne(
-            { _id: updatedPost._id }
+            { _id: id }
         ).populate({
             path: "createdBy",
             select: ["userName", "image", "role", '_id'],
@@ -154,6 +184,9 @@ exports.editPost = async (req, res, next) => {
         }).populate({
             path: "openDiscussionTeam",
             select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "openDiscussionRequests",
+            select: ["userName", "image", "role", '_id'],
         });
 
         return res.status(200).json(PostExist)
@@ -169,7 +202,7 @@ exports.reportPost = async (req, res, next) => {
     try {
         const { id, reportBy, reason } = req.body
         const PostExist = await Posts.findOne(
-            { _id: id, reported: false }
+            { _id: id}
         ).populate({
             path: "createdBy",
             select: ["userName", 'email', "image", "role", '_id'],
@@ -187,6 +220,9 @@ exports.reportPost = async (req, res, next) => {
             select: ["userName", "image", "role", '_id'],
         }).populate({
             path: "openDiscussionTeam",
+            select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "openDiscussionRequests",
             select: ["userName", "image", "role", '_id'],
         });
         await Posts.updateOne({ _id: id }, { $set: { reportBy, reportedTime: new Date(), reported: true,reportReason: reason } })
@@ -212,6 +248,101 @@ exports.updatereportPost = async (req, res, next) => {
         console.log(error);
     }
 };
+
+
+exports.requestIntoOpenDiscussion = async (req, res, next) => {
+    try {
+        const { id, user_id } = req.body
+
+        const requestedUser = await User.findOne({_id: user_id})
+
+        const postExists = await Posts.findOne({ _id: id }).populate({
+            path: "createdBy",
+            select: ["userName", 'email', "image", "role", '_id'],
+        })
+        postExists.openDiscussionRequests.push(user_id)
+        postExists.save()
+
+        const PostExist = await Posts.findOne(
+            { _id: id }
+        ).populate({
+            path: "createdBy",
+            select: ["userName", 'email', "image", "role", '_id'],
+        }).populate({
+            path: "tags",
+            select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "pitchId",
+            select: ["title", '_id'],
+        }).populate({
+            path: "likes",
+            select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "disLikes",
+            select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "openDiscussionTeam",
+            select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "openDiscussionRequests",
+            select: ["userName", "image", "role", '_id'],
+        });
+        await send_Notification_mail(postExists.createdBy.email, `Request for post discussion!`, `${requestedUser.userName} want to join in discussion for post ${postExists._id}`, postExists.createdBy.userName)
+        await Notification.create({ senderInfo: requestedUser._id, receiver: postExists.createdBy._id, message: `${requestedUser.userName} want to join in discussion for post ${postExists._id}. `, type: 'pitch', read: false })
+
+        return res.status(200).json(PostExist)
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+
+exports.updaterequestIntoOpenDiscussion = async (req, res, next) => {
+    try {
+        const { id, user_id, type } = req.body
+        const requestedUser = await User.findOne({ _id: user_id })
+        const postExists = await Posts.findOne({ _id: id }).populate({
+            path: "createdBy",
+            select: ["userName", 'email', "image", "role", '_id'],
+        })
+        if (type == 'add'){
+            postExists.openDiscussionTeam.push(user_id)
+            await send_Notification_mail(requestedUser.email, `Adding into the post discussion!`, `${postExists.createdBy.userName} approved your request for post discussion. check the notification in app.`, requestedUser.userName)
+            await Notification.create({ senderInfo: postExists.createdBy._id, receiver: requestedUser._id, message: `${postExists.createdBy.userName} approved your request for post discussion.`, type: 'postDiscussion', postId: postExists._id, read: false })
+
+        }
+        postExists.openDiscussionRequests.splice(postExists.openDiscussionRequests.indexOf(user_id), 1)
+        postExists.save()
+        const PostExist = await Posts.findOne(
+            { _id: id}
+        ).populate({
+            path: "createdBy",
+            select: ["userName", 'email', "image", "role", '_id'],
+        }).populate({
+            path: "tags",
+            select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "pitchId",
+            select: ["title", '_id'],
+        }).populate({
+            path: "likes",
+            select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "disLikes",
+            select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "openDiscussionTeam",
+            select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "openDiscussionRequests",
+            select: ["userName", "image", "role", '_id'],
+        });
+        return res.status(200).json(PostExist)
+    } catch (error) {
+        console.log(error);
+    }
+};
+
 
 
 exports.likePost = async (req, res, next) => {
@@ -246,6 +377,9 @@ exports.likePost = async (req, res, next) => {
             select: ["userName", "image", "role", '_id'],
         }).populate({
             path: "openDiscussionTeam",
+            select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "openDiscussionRequests",
             select: ["userName", "image", "role", '_id'],
         });
 
@@ -291,6 +425,9 @@ exports.DisLikePost = async (req, res, next) => {
         }).populate({
             path: "openDiscussionTeam",
             select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "openDiscussionRequests",
+            select: ["userName", "image", "role", '_id'],
         });
 
         return res.status(200).json(PostExist);
@@ -304,6 +441,17 @@ exports.DisLikePost = async (req, res, next) => {
 exports.deletePost = async (req, res, next) => {
     try {
         const { id } = req.body;
+        const result = await Posts.findOne({ _id: id })
+        await cloudinary.uploader.destroy(
+            result.image.public_id,
+            (error, result) => {
+                if (error) {
+                    console.error("Error deleting image:", error);
+                } else {
+                    console.log("Image deleted successfully:", result);
+                }
+            }
+        );
         await Posts.deleteOne(
             { _id: id }
         )
