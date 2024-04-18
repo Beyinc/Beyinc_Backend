@@ -1049,7 +1049,6 @@ exports.updateVerification = async (req, res, next) => {
 
       await send_Notification_mail(
         email,
-        email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin`,
         userDoesExist.userName
@@ -1067,7 +1066,6 @@ exports.updateVerification = async (req, res, next) => {
         { $set: { verification: status } }
       );
       await send_Notification_mail(
-        email,
         email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin and added comment: "<b>${req.body.reason}</b>"`,
@@ -1108,7 +1106,6 @@ exports.updateVerificationByAdmin = async (req, res, next) => {
 
       await send_Notification_mail(
         email,
-        email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin`,
         userDoesExist.userName
@@ -1126,7 +1123,6 @@ exports.updateVerificationByAdmin = async (req, res, next) => {
         { $set: { verification: status } }
       );
       await send_Notification_mail(
-        email,
         email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin and added comment: "<b>${req.body.reason}</b>"`,
@@ -1388,7 +1384,6 @@ exports.addUserReviewStars = async (req, res, next) => {
         );
         await send_Notification_mail(
           user.email,
-          user.email,
           `Added Stars to the pitch!`,
           `${reviewSentUser.userName} has added ${req.body.review.review} stars to your profile. Check notification for more info.`,
           user.userName
@@ -1408,7 +1403,6 @@ exports.addUserReviewStars = async (req, res, next) => {
         { $push: { review: req.body.review, reviewBy: reviewUser._id } }
       );
       await send_Notification_mail(
-        user.email,
         user.email,
         `Added Stars to the pitch!`,
         `${user.userName} has added ${req.body.review.review} . Check notification for more info.`,
