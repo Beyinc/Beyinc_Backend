@@ -10,6 +10,8 @@ const pitchRouter = require("./routes/pitchRouter");
 const pitchCommentRouter = require("./routes/PitchCommentRouter");
 
 const NotificationRouter = require("./routes/NotificationRouter");
+const PostRouter = require("./routes/postRouter");
+
 
 const rolerouter = require("./routes/rolesRouter");
 
@@ -48,6 +50,9 @@ app.use("/api/notification", verifyAccessToken, NotificationRouter);
 app.use("/api/pitch", verifyAccessToken, pitchRouter);
 
 app.use("/api/notification", verifyAccessToken, NotificationRouter);
+
+app.use("/api/posts", verifyAccessToken, PostRouter);
+
 
 app.use("/api/role", rolerouter);
 
