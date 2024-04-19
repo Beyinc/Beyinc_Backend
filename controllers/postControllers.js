@@ -125,8 +125,8 @@ exports.createPost = async (req, res, next) => {
         const createdPost = await Posts.create({ reported:false, description, image: result, type, tags: tags?.map(m => m._id), createdBy: createdBy._id, pitchId, openDiscussion: (pitchId !== null && pitchId!==undefined)? false: true })
         if (tags.length > 0) {
             for (let i = 0; i < tags.length; i++){
-                await send_Notification_mail(tags[i].email, `You got a post tag!`, `${createdBy.userName} tagged you in their post. check the notification in app.`, tags[i].userName)
-                await Notification.create({ senderInfo: createdBy._id, receiver: tags[i]._id, message: `${createdBy.userName} tagged you in their post. check the notification in app.`, type: 'pitch', read: false })
+                await send_Notification_mail(tags[i].email, `You got a post tag!`, `${createdBy.userName} tagged you in their post. check the notification in app.`, tags[i].userName, `/posts/${createdPost._id}`)
+                await Notification.create({ senderInfo: createdBy._id, receiver: tags[i]._id, message: `${createdBy.userName} tagged you in their post. check the notification in app.`, type: 'post', read: false })
             }
         }
         const PostExist = await Posts.findOne(
@@ -233,8 +233,15 @@ exports.reportPost = async (req, res, next) => {
 
         // Push a new report into the 'reportBy' array
         await Posts.updateOne({ _id: id }, { $push: { reportBy: { user: reportBy, reportedTime: new Date(), reason: reason } } });
-        await send_Notification_mail(PostExist.createdBy.email, `Report created to your post!`, `Report created to the post ${PostExist._id} admin will verify it.`, PostExist.createdBy.userName)
-
+        await send_Notification_mail(PostExist.createdBy.email, `Report created to your post!`, `Report created to the post ${PostExist._id} admin will verify it.`, PostExist.createdBy.userName, `/posts/${id}`)
+        await Notification.create({
+            senderInfo: reportBy,
+            receiver: PostExist.createdBy._id,
+            message: `Report created to the post. Admin will verify it`,
+            type: "report",
+            postId: id,
+            read: false,
+        });
 
         return res.status(200).json('Reported Successfully')
     } catch (error) {
@@ -294,7 +301,7 @@ exports.updatereportPost = async (req, res, next) => {
                     }
                 }
             );
-            await send_Notification_mail(result.createdBy.email, `Post deleted by admin!`, `Your Post has been deleted by admin due to inappropriate content`, result.createdBy.userName)
+            await send_Notification_mail(result.createdBy.email, `Post deleted by admin!`, `Your Post has been deleted by admin due to inappropriate content`, result.createdBy.userName, '/editProfile')
             await PostComment.deleteMany({ postId: id })
             await Posts.deleteOne(
                 { _id: id }
@@ -349,7 +356,7 @@ exports.requestIntoOpenDiscussion = async (req, res, next) => {
             path: "openDiscussionRequests",
             select: ["userName", "image", "role", '_id'],
         });
-        await send_Notification_mail(postExists.createdBy.email, `Request for post discussion!`, `${requestedUser.userName} want to join in discussion for post ${postExists._id}`, postExists.createdBy.userName)
+        await send_Notification_mail(postExists.createdBy.email, `Request for post discussion!`, `${requestedUser.userName} want to join in discussion for post ${postExists._id}`, postExists.createdBy.userName, `/posts/${postExists._id}`)
         await Notification.create({ senderInfo: requestedUser._id, receiver: postExists.createdBy._id, message: `${requestedUser.userName} want to join in discussion. `, type: 'postDiscussion', postId: postExists._id, read: false })
 
         return res.status(200).json(PostExist)
@@ -369,7 +376,7 @@ exports.updaterequestIntoOpenDiscussion = async (req, res, next) => {
         })
         if (type == 'add'){
             postExists.openDiscussionTeam.push(user_id)
-            await send_Notification_mail(requestedUser.email, `Adding into the post discussion!`, `${postExists.createdBy.userName} approved your request for post discussion. check the notification in app.`, requestedUser.userName)
+            await send_Notification_mail(requestedUser.email, `Adding into the post discussion!`, `${postExists.createdBy.userName} approved your request for post discussion. check the notification in app.`, requestedUser.userName, `/posts/${postExists._id}`)
             await Notification.create({ senderInfo: postExists.createdBy._id, receiver: requestedUser._id, message: `${postExists.createdBy.userName} approved your request for post discussion.`, type: 'postDiscussion', postId: postExists._id, read: false })
 
         }
