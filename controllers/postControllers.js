@@ -357,7 +357,7 @@ exports.likePost = async (req, res, next) => {
         if (post.disLikes?.includes(req.payload.user_id)) {
             post.disLikes = post.disLikes.filter((v) => v != req.payload.user_id);
         }
-        post.save();
+        await post.save();
         const PostExist = await Posts.findOne(
             { _id: req.body.id }
         ).populate({
@@ -404,7 +404,7 @@ exports.DisLikePost = async (req, res, next) => {
         if (post.likes?.includes(req.payload.user_id)) {
             post.likes = post.likes.filter((v) => v != req.payload.user_id);
         }
-        post.save();
+        await post.save();
         const PostExist = await Posts.findOne(
             { _id: req.body.id }
         ).populate({
