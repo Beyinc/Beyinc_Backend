@@ -261,7 +261,7 @@ exports.requestIntoOpenDiscussion = async (req, res, next) => {
             select: ["userName", 'email', "image", "role", '_id'],
         })
         postExists.openDiscussionRequests.push(user_id)
-        postExists.save()
+        await postExists.save()
 
         const PostExist = await Posts.findOne(
             { _id: id }
@@ -312,7 +312,7 @@ exports.updaterequestIntoOpenDiscussion = async (req, res, next) => {
 
         }
         postExists.openDiscussionRequests.splice(postExists.openDiscussionRequests.indexOf(user_id), 1)
-        postExists.save()
+        await postExists.save()
         const PostExist = await Posts.findOne(
             { _id: id}
         ).populate({

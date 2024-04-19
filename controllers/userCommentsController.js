@@ -57,7 +57,7 @@ exports.likeComment = async (req, res, next) => {
         if (comment.Dislikes?.includes(req.payload.user_id)) {
             comment.Dislikes = comment.Dislikes.filter((v) => v != req.payload.user_id);
         }
-        comment.save();
+        await comment.save();
         return res.status(200).json("comment liked");
     } catch (err) {
         console.log(err);
@@ -79,7 +79,7 @@ exports.DislikelikeComment = async (req, res, next) => {
         if (comment.likes?.includes(req.payload.user_id)) {
             comment.likes = comment.likes.filter((v) => v != req.payload.user_id);
         }
-        comment.save();
+        await comment.save();
         return res.status(200).json("comment Disliked");
     } catch (err) {
         console.log(err);

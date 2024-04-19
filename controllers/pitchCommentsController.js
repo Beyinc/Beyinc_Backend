@@ -26,7 +26,7 @@ exports.addPitchComment = async (req, res, next) => {
         if (parentCommentId !== undefined) {
             await PitchComment.updateOne({ _id: parentCommentId }, { $push: { subComments: newComment._id}})
         }
-        newComment.save()
+        await newComment.save()
         return res.status(200).json("Comment Added");
     } catch (err) {
         return res.status(400).json(err);
@@ -68,7 +68,7 @@ exports.likePitchComment = async (req, res, next) => {
         if (comment.Dislikes?.includes(req.payload.user_id)) {
             comment.Dislikes = comment.Dislikes.filter((v) => v != req.payload.user_id);
         }
-        comment.save();
+        await comment.save();
         return res.status(200).json("comment liked");
     } catch (err) {
         console.log(err);
@@ -90,7 +90,7 @@ exports.DispitchlikelikeComment = async (req, res, next) => {
         if (comment.likes?.includes(req.payload.user_id)) {
             comment.likes = comment.likes.filter((v) => v != req.payload.user_id);
         }
-        comment.save();
+        await comment.save();
         return res.status(200).json("comment Disliked");
     } catch (err) {
         console.log(err);
