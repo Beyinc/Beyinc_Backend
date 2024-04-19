@@ -61,9 +61,11 @@ exports.getPost = async (req, res, next) => {
 exports.getPostRequestDiscussion = async (req, res, next) => {
     try {
         const { user_id } = req.body;
-        const PostExist = await Posts.find(
-            { createdBy: user_id, openDiscussion: false }
-        ).populate({
+        const PostExist = await Posts.find({
+            createdBy: user_id,
+            openDiscussion: false,
+            $expr: { $gt: [{ $size: "$openDiscussionRequests" }, 0] }
+        }).populate({
             path: "openDiscussionRequests",
             select: ["userName", "image", "role", '_id'],
         });
