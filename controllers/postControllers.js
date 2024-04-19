@@ -230,7 +230,7 @@ exports.reportPost = async (req, res, next) => {
 
         // Push a new report into the 'reportBy' array
         await Posts.updateOne({ _id: id }, { $push: { reportBy: { user: reportBy, reportedTime: new Date(), reason: reason } } });
-        await send_Notification_mail(PostExist.createdBy.email, `Report created to your post!`, `Report created to the post ${PostExist._id} admin will verify it."`, PostExist.createdBy.userName)
+        await send_Notification_mail(PostExist.createdBy.email, `Report created to your post!`, `Report created to the post ${PostExist._id} admin will verify it.`, PostExist.createdBy.userName)
 
 
         return res.status(200).json('Reported Successfully')
