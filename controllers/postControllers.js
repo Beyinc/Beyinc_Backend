@@ -264,7 +264,7 @@ exports.getReportedPosts = async (req, res, next) => {
         }).populate({
             path: "openDiscussionRequests",
             select: ["userName", "image", "role", '_id'],
-        })
+        }).sort({ updatedAt: -1 })
         return res.status(200).json(reportedposts)
     } catch (error) {
         console.log(error);
