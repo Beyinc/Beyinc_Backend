@@ -237,7 +237,7 @@ exports.reportPost = async (req, res, next) => {
         await Notification.create({
             senderInfo: reportBy,
             receiver: PostExist.createdBy._id,
-            message: `Report created to the post ${PostExist._id} admin will verify it`,
+            message: `Report created to the post. Admin will verify it`,
             type: "report",
             postId: id,
             read: false,

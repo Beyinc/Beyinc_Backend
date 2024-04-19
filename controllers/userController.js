@@ -1112,7 +1112,7 @@ exports.updateVerificationByAdmin = async (req, res, next) => {
       );
       await Notification.create({
         senderInfo: adminDetails._id,
-        receiver: userDoesExist.userInfo,
+        receiver: userDoesExist._id,
         message: `Your profile update request has been ${req.body.status} by the admin.`,
         type: "user",
         read: false,
