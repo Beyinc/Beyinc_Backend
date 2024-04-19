@@ -64,7 +64,7 @@ exports.followerController = async (req, res, next) => {
       path: "following",
       select: ["userName", "image", "role", '_id'],
     }).populate("role_details");
-    await send_Notification_mail(requestTo.email, 'Follower added!', `${requestBy.userName} is following you`, requestTo.userName)
+    await send_Notification_mail(requestTo.email, 'Follower added!', `${requestBy.userName} is following you`, requestTo.userName, `/user/${followerReqBy}`)
     await Notification.create({ senderInfo: requestBy._id, receiver: requestTo._id, message: `${requestBy.userName} is following you.`, type: 'pitch', read: false })
 
     return res.status(200).json(userDoesExist)
@@ -1051,7 +1051,7 @@ exports.updateVerification = async (req, res, next) => {
         email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin`,
-        userDoesExist.userName
+        userDoesExist.userName, '/editProfile'
       );
       await Notification.create({
         senderInfo: adminDetails._id,
@@ -1069,7 +1069,7 @@ exports.updateVerification = async (req, res, next) => {
         email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin and added comment: "<b>${req.body.reason}</b>"`,
-        userDoesExist.userName
+        userDoesExist.userName, '/editProfile'
       );
       await Notification.create({
         senderInfo: adminDetails._id,
@@ -1108,7 +1108,7 @@ exports.updateVerificationByAdmin = async (req, res, next) => {
         email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin`,
-        userDoesExist.userName
+        userDoesExist.userName, '/editProfile'
       );
       await Notification.create({
         senderInfo: adminDetails._id,
@@ -1126,7 +1126,7 @@ exports.updateVerificationByAdmin = async (req, res, next) => {
         email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin and added comment: "<b>${req.body.reason}</b>"`,
-        userDoesExist.userName
+        userDoesExist.userName, '/editProfile'
       );
       await Notification.create({
         senderInfo: adminDetails._id,
@@ -1386,7 +1386,7 @@ exports.addUserReviewStars = async (req, res, next) => {
           user.email,
           `Added Stars to the pitch!`,
           `${reviewSentUser.userName} has added ${req.body.review.review} stars to your profile. Check notification for more info.`,
-          user.userName
+          user.userName, '/editProfile'
         );
         await Notification.create({
           senderInfo: reviewSentUser._id,
@@ -1406,7 +1406,7 @@ exports.addUserReviewStars = async (req, res, next) => {
         user.email,
         `Added Stars to the pitch!`,
         `${user.userName} has added ${req.body.review.review} . Check notification for more info.`,
-        user.userName
+        user.userName, '/editProfile'
       );
       await Notification.create({
         senderInfo: user._id,
