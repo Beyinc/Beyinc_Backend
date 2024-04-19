@@ -80,7 +80,7 @@ exports.getUsersPost = async (req, res, next) => {
     try {
         const { user_id } = req.body;
         const PostExist = await Posts.find(
-            { createdBy: user_id, reported: false }
+            { createdBy: user_id }
         ).populate({
             path: "createdBy",
             select: ["userName", "image", "role", '_id'],
@@ -225,7 +225,11 @@ exports.reportPost = async (req, res, next) => {
             path: "openDiscussionRequests",
             select: ["userName", "image", "role", '_id'],
         });
-        await Posts.updateOne({ _id: id }, { $set: { reportBy, reportedTime: new Date(), reported: true,reportReason: reason } })
+        // Update the 'reported' field to true
+        await Posts.updateOne({ _id: id }, { $set: { reported: true } });
+
+        // Push a new report into the 'reportBy' array
+        await Posts.updateOne({ _id: id }, { $push: { reportBy: { user: reportBy, reportedTime: new Date(), reason: reason } } });
         await send_Notification_mail(PostExist.createdBy.email, `Report created to your post!`, `Report created to the post ${PostExist._id} admin will verify it."`, PostExist.createdBy.userName)
 
 
@@ -236,11 +240,66 @@ exports.reportPost = async (req, res, next) => {
 };
 
 
+exports.getReportedPosts = async (req, res, next) => { 
+
+    try {
+        const reportedposts = await Posts.find({ reported: true }).populate({
+            path: "createdBy",
+            select: ["userName", 'email', "image", "role", '_id'],
+        }).populate({
+            path: "tags",
+            select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "pitchId",
+            select: ["title", '_id'],
+        }).populate({
+            path: "likes",
+            select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "disLikes",
+            select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "openDiscussionTeam",
+            select: ["userName", "image", "role", '_id'],
+        }).populate({
+            path: "openDiscussionRequests",
+            select: ["userName", "image", "role", '_id'],
+        })
+        return res.status(200).json(reportedposts)
+    } catch (error) {
+        console.log(error);
+    }
+
+}
+
+
 exports.updatereportPost = async (req, res, next) => {
     try {
-        const { id } = req.body
+        const { id, postDecide } = req.body
+        const result = await Posts.findOne({ _id: id }).populate({
+            path: "createdBy",
+            select: ["userName", 'email', "image", "role", '_id'],
+        })
+        if (postDecide == 'delete') {
+            await cloudinary.uploader.destroy(
+                result.image.public_id,
+                (error, result) => {
+                    if (error) {
+                        console.error("Error deleting image:", error);
+                    } else {
+                        console.log("Image deleted successfully:", result);
+                    }
+                }
+            );
+            await send_Notification_mail(result.createdBy.email, `Post deleted by admin!`, `Your Post has been deleted by admin due to inappropriate content`, result.createdBy.userName)
 
-        await Posts.updateOne({ _id: id }, { $set: { reportBy: '', reportedTime: '', reported: false, reportReason: '' } })
+            await Posts.deleteOne(
+                { _id: id }
+            )
+
+            return res.status(200).json('Post deleted');
+        }
+        await Posts.updateOne({ _id: id }, { $set: { reportBy: [], reported: false } })
 
 
         return res.status(200).json('Report removed')

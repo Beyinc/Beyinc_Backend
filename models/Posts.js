@@ -34,16 +34,20 @@ const postSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
         }],
-        reportBy: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
-        },
-        reportReason: {
-            type: String,
-        },
-        reportedTime: {
-            type: Date
-        },
+        reportBy: [{
+            user: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "User",
+            },
+            reportedTime: {
+                type: Date
+            },
+            reason: {
+                type: String
+            },
+        }],
+        
+        
         tags: [{
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",

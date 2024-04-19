@@ -16,6 +16,8 @@ router.route("/updaterequestIntoOpenDiscussion").post(postControllers.updaterequ
 
 
 router.route("/addReport").post(postControllers.reportPost);
+router.route("/getReportedPosts").get(postControllers.getReportedPosts);
+
 router.route("/updateReport").post(postControllers.updatereportPost);
 
 
