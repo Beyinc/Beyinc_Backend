@@ -288,7 +288,7 @@ exports.requestIntoOpenDiscussion = async (req, res, next) => {
             select: ["userName", "image", "role", '_id'],
         });
         await send_Notification_mail(postExists.createdBy.email, `Request for post discussion!`, `${requestedUser.userName} want to join in discussion for post ${postExists._id}`, postExists.createdBy.userName)
-        await Notification.create({ senderInfo: requestedUser._id, receiver: postExists.createdBy._id, message: `${requestedUser.userName} want to join in discussion for post ${postExists._id}. `, type: 'postDiscussion', postId: postExists._id, read: false })
+        await Notification.create({ senderInfo: requestedUser._id, receiver: postExists.createdBy._id, message: `${requestedUser.userName} want to join in discussion. `, type: 'postDiscussion', postId: postExists._id, read: false })
 
         return res.status(200).json(PostExist)
     } catch (error) {
