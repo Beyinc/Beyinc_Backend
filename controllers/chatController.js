@@ -115,7 +115,7 @@ exports.updateMessageRequest = async (req, res, next) => {
             const selectedPitch = await Pitch.findOne({ _id: conversationExists.pitchId })
             if (selectedPitch) {
                 selectedPitch.associatedTo.push(receiverExist._id)
-                selectedPitch.save()
+                await selectedPitch.save()
             }
             await Conversation.updateOne({ _id: req.body.conversationId }, { $set: { status: req.body.status } })
             await send_Notification_mail(senderExist.email, `Message Update from ${receiverExist.userName}`, `${receiverExist.userName} has ${req.body.status} your message request and added reason: "${req.body.rejectReason}"`, senderExist.userName)
