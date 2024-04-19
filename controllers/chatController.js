@@ -82,7 +82,7 @@ exports.directConversationCreation = async (req, res, next) => {
                 await send_Notification_mail(receiverInfo.email, `Message Request from ${senderInfo.userName}`, `${senderInfo.userName} sent a message request please check the notification section.`, receiverInfo.userName, '/conversations')
                 return res.status(200).send(`Conversation with ${receiverInfo.userName} created`)
             }
-            await Notification.create({ senderInfo: senderInfo._id, receiver: receiverInfo._id, message: `${senderInfo.userName} has created a direct conversation with you.`, type: 'pitch', read: false })
+            await Notification.create({ senderInfo: senderInfo._id, receiver: receiverInfo._id, message: `${senderInfo.userName} has created a direct conversation with you.`, type: 'chat', read: false })
             return res.status(200).send(`Conversation with ${receiverInfo.userName} created`)
         } else {
             const text = conversationExists[0].status == 'pending' ? `Already request sent. It is in ${conversationExists[0].status} status` : `Already conversation exists with this user`
@@ -108,7 +108,7 @@ exports.updateMessageRequest = async (req, res, next) => {
                 await Conversation.deleteOne({ _id: req.body.conversationId })
                 await send_Notification_mail(senderExist.email, `Message Update from ${receiverExist.userName}`, `${receiverExist.userName} has ${req.body.status} your message request and added reason: "${req.body.rejectReason}"`, senderExist.userName, '/conversations')
                 await send_Notification_mail(receiverExist.email, `Message Update`, `You have ${req.body.status} the message request sent by ${senderExist.userName}"`, receiverExist.userName, '/conversations')
-                await Notification.create({ senderInfo: receiverExist._id, receiver: senderExist._id, message: `${receiverExist.userName} has ${req.body.status} your message request and added reason: "${req.body.rejectReason}"`, type: 'pitch', read: false })
+                await Notification.create({ senderInfo: receiverExist._id, receiver: senderExist._id, message: `${receiverExist.userName} has ${req.body.status} your message request and added reason: "${req.body.rejectReason}"`, type: 'chat', read: false })
                 return res.status(200).send(`Message ${req.body.status}`)
             }
             // After approve pitch will associate with this conversation
@@ -120,7 +120,7 @@ exports.updateMessageRequest = async (req, res, next) => {
             await Conversation.updateOne({ _id: req.body.conversationId }, { $set: { status: req.body.status } })
             await send_Notification_mail(senderExist.email, `Message Update from ${receiverExist.userName}`, `${receiverExist.userName} has ${req.body.status} your message request and added reason: "${req.body.rejectReason}"`, senderExist.userName, '/conversations')
             await send_Notification_mail(receiverExist.email, `Message Update`, `You have ${req.body.status} the message request sent by ${senderExist.userName}"`, receiverExist.userName, '/conversations')
-            await Notification.create({ senderInfo: receiverExist._id, receiver: senderExist._id, message: `${receiverExist.userName} has ${req.body.status} your message request and added reason: "${req.body.rejectReason}"`, type: 'pitch', read: false })
+            await Notification.create({ senderInfo: receiverExist._id, receiver: senderExist._id, message: `${receiverExist.userName} has ${req.body.status} your message request and added reason: "${req.body.rejectReason}"`, type: 'chat', read: false })
             return res.status(200).send(`Message ${req.body.status}`)
         }
         return res.status(400).send('Conversation not found')

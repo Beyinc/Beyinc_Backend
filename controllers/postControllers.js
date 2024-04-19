@@ -126,7 +126,7 @@ exports.createPost = async (req, res, next) => {
         if (tags.length > 0) {
             for (let i = 0; i < tags.length; i++){
                 await send_Notification_mail(tags[i].email, `You got a post tag!`, `${createdBy.userName} tagged you in their post. check the notification in app.`, tags[i].userName, `/posts/${createdPost._id}`)
-                await Notification.create({ senderInfo: createdBy._id, receiver: tags[i]._id, message: `${createdBy.userName} tagged you in their post. check the notification in app.`, type: 'pitch', read: false })
+                await Notification.create({ senderInfo: createdBy._id, receiver: tags[i]._id, message: `${createdBy.userName} tagged you in their post. check the notification in app.`, type: 'post', read: false })
             }
         }
         const PostExist = await Posts.findOne(
@@ -234,7 +234,14 @@ exports.reportPost = async (req, res, next) => {
         // Push a new report into the 'reportBy' array
         await Posts.updateOne({ _id: id }, { $push: { reportBy: { user: reportBy, reportedTime: new Date(), reason: reason } } });
         await send_Notification_mail(PostExist.createdBy.email, `Report created to your post!`, `Report created to the post ${PostExist._id} admin will verify it.`, PostExist.createdBy.userName, `/posts/${id}`)
-
+        await Notification.create({
+            senderInfo: reportBy,
+            receiver: PostExist.createdBy._id,
+            message: `Report created to the post ${PostExist._id} admin will verify it`,
+            type: "report",
+            postId: id,
+            read: false,
+        });
 
         return res.status(200).json('Reported Successfully')
     } catch (error) {

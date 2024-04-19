@@ -65,7 +65,7 @@ exports.followerController = async (req, res, next) => {
       select: ["userName", "image", "role", '_id'],
     }).populate("role_details");
     await send_Notification_mail(requestTo.email, 'Follower added!', `${requestBy.userName} is following you`, requestTo.userName, `/user/${followerReqBy}`)
-    await Notification.create({ senderInfo: requestBy._id, receiver: requestTo._id, message: `${requestBy.userName} is following you.`, type: 'pitch', read: false })
+    await Notification.create({ senderInfo: requestBy._id, receiver: requestTo._id, message: `${requestBy.userName} is following you.`, type: 'followerRequest', read: false })
 
     return res.status(200).json(userDoesExist)
   } else {
@@ -1057,7 +1057,7 @@ exports.updateVerification = async (req, res, next) => {
         senderInfo: adminDetails._id,
         receiver: userDoesExist.userInfo,
         message: `Your profile update request has been ${req.body.status} by the admin.`,
-        type: "pitch",
+        type: "user",
         read: false,
       });
     } else {
@@ -1075,7 +1075,7 @@ exports.updateVerification = async (req, res, next) => {
         senderInfo: adminDetails._id,
         receiver: userDoesExist.userInfo,
         message: `Your profile update request has been ${req.body.status} by the admin and added comment: "${req.body.reason}"`,
-        type: "pitch",
+        type: "user",
         read: false,
       });
     }
@@ -1114,7 +1114,7 @@ exports.updateVerificationByAdmin = async (req, res, next) => {
         senderInfo: adminDetails._id,
         receiver: userDoesExist.userInfo,
         message: `Your profile update request has been ${req.body.status} by the admin.`,
-        type: "pitch",
+        type: "user",
         read: false,
       });
     } else {
@@ -1132,7 +1132,7 @@ exports.updateVerificationByAdmin = async (req, res, next) => {
         senderInfo: adminDetails._id,
         receiver: userDoesExist.userInfo,
         message: `Your profile update request has been ${req.body.status} by the admin and added comment: "${req.body.reason}"`,
-        type: "pitch",
+        type: "user",
         read: false,
       });
     }
@@ -1392,7 +1392,7 @@ exports.addUserReviewStars = async (req, res, next) => {
           senderInfo: reviewSentUser._id,
           receiver: user._id,
           message: `${reviewSentUser.userName} has added ${req.body.review.review} stars to your profile.`,
-          type: "pitch",
+          type: "user",
           read: false,
         });
         return res.status(200).json("Review updated");
@@ -1412,7 +1412,7 @@ exports.addUserReviewStars = async (req, res, next) => {
         senderInfo: user._id,
         receiver: user._id,
         message: `${user.userName} has added ${req.body.review.review} .`,
-        type: "pitch",
+        type: "user",
         read: false,
       });
       return res.status(200).json("Review added");
