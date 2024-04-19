@@ -3,6 +3,7 @@ const Notification = require("../models/NotificationModel")
 const Pitch = require("../models/PitchModel")
 const User = require("../models/UserModel")
 const cloudinary = require("../helpers/UploadImage");
+const PitchComment = require("../models/PitchCommentModel");
 
 exports.createPitch = async (req, res, next) => {
     try {
@@ -107,6 +108,8 @@ exports.deletePitch = async (req, res, next) => {
         if (pitch.associatedTo.length > 0) {
             return res.status(400).json('Pitch is Associated with mentors')  
         }
+        await PitchComment.deleteMany({ pitchId: req.body.pitchId })
+
         await Pitch.deleteOne({ _id: req.body.pitchId })
         return res.status(200).json('Pitch is deleted')
     } catch (err) {

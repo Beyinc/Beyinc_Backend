@@ -18,6 +18,7 @@ const Notification = require("../models/NotificationModel");
 const send_Notification_mail = require("../helpers/EmailSending");
 const jobTitles = require("../models/Roles");
 const Posts = require("../models/Posts");
+const PostComment = require("../models/PostCommentModel");
 
 exports.getPost = async (req, res, next) => {
     try {
@@ -292,7 +293,7 @@ exports.updatereportPost = async (req, res, next) => {
                 }
             );
             await send_Notification_mail(result.createdBy.email, `Post deleted by admin!`, `Your Post has been deleted by admin due to inappropriate content`, result.createdBy.userName)
-
+            await PostComment.deleteMany({ postId: id })
             await Posts.deleteOne(
                 { _id: id }
             )
@@ -511,6 +512,7 @@ exports.deletePost = async (req, res, next) => {
                 }
             }
         );
+        await PostComment.deleteMany({ postId: id })
         await Posts.deleteOne(
             { _id: id }
         )
