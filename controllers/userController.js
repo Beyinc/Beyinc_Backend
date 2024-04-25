@@ -655,6 +655,7 @@ exports.directeditprofile = async (req, res, next) => {
   try {
     const {
       userId,
+      twitter, linkedin,
       email,
       salutation,
       mentorCategories,
@@ -935,7 +936,7 @@ exports.directeditprofile = async (req, res, next) => {
         {
           $set: {
             userInfo: userDoesExist._id,
-            userName,
+            userName, twitter, linkedin,
             // image: userDoesExist?.image?.url,
             role,
             phone,

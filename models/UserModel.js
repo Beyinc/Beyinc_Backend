@@ -19,6 +19,12 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    twitter: {
+      type: String,
+    },
+    linkedin: {
+      type: String,
+    },
     email: {
       type: String,
       required: true,
