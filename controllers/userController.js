@@ -94,7 +94,13 @@ exports.getApprovalRequestProfile = async (req, res, next) => {
     const userDoesExist = await User.findOne(
       { _id: userId },
       { password: 0 }
-    );
+    ).populate({
+      path: "followers",
+      select: ["userName", "image", "role", '_id'],
+    }).populate({
+      path: "following",
+      select: ["userName", "image", "role", '_id'],
+    });
 
     if (userDoesExist) {
       return res.status(200).json(userDoesExist);
@@ -655,6 +661,7 @@ exports.directeditprofile = async (req, res, next) => {
   try {
     const {
       userId,
+      twitter, linkedin,
       email,
       salutation,
       mentorCategories,
@@ -935,7 +942,7 @@ exports.directeditprofile = async (req, res, next) => {
         {
           $set: {
             userInfo: userDoesExist._id,
-            userName,
+            userName, twitter, linkedin,
             // image: userDoesExist?.image?.url,
             role,
             phone,
@@ -1297,7 +1304,7 @@ exports.deleteProfileImage = async (req, res, next) => {
       { _id: userId },
       {
         $set: {
-          image: "",
+          image: "", verification: 'rejected'
         },
       }
     );
