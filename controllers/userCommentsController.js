@@ -73,7 +73,11 @@ exports.likeComment = async (req, res, next) => {
             comment.Dislikes = comment.Dislikes.filter((v) => v != req.payload.user_id);
         }
         await comment.save();
-        return res.status(200).json("comment liked");
+        const comments = await UserComment.find({ userId: req.payload.user_id }).populate({
+            path: "commentBy",
+            select: ["userName", "image", "role"],
+        }).populate({ path: 'likes', select: ["userName", "image", "role"] }).populate({ path: 'Dislikes', select: ["userName", "image", "role"] }).sort({ createdAt: -1 });
+        return res.status(200).json(comments);
     } catch (err) {
         console.log(err);
         return res.status(400).json(err);
@@ -95,7 +99,11 @@ exports.DislikelikeComment = async (req, res, next) => {
             comment.likes = comment.likes.filter((v) => v != req.payload.user_id);
         }
         await comment.save();
-        return res.status(200).json("comment Disliked");
+        const comments = await UserComment.find({ userId: req.payload.user_id }).populate({
+            path: "commentBy",
+            select: ["userName", "image", "role"],
+        }).populate({ path: 'likes', select: ["userName", "image", "role"] }).populate({ path: 'Dislikes', select: ["userName", "image", "role"] }).sort({ createdAt: -1 });
+        return res.status(200).json(comments);
     } catch (err) {
         console.log(err);
         return res.status(400).json(err);
