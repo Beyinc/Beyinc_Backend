@@ -1298,7 +1298,7 @@ exports.deleteProfileImage = async (req, res, next) => {
       { _id: userId },
       {
         $set: {
-          image: "",
+          image: "", verification: 'rejected'
         },
       }
     );
