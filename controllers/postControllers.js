@@ -126,7 +126,7 @@ exports.createPost = async (req, res, next) => {
         if (tags.length > 0) {
             for (let i = 0; i < tags.length; i++){
                 await send_Notification_mail(tags[i].email, `You got a post tag!`, `${createdBy.userName} tagged you in their post. check the notification in app.`, tags[i].userName, `/posts/${createdPost._id}`)
-                await Notification.create({ senderInfo: createdBy._id, receiver: tags[i]._id, message: `${createdBy.userName} tagged you in their post. check the notification in app.`, type: 'post', read: false })
+                await Notification.create({ senderInfo: createdBy._id, receiver: tags[i]._id, message: `${createdBy.userName} tagged you in their post. check the notification in app.`, type: 'postDiscussion', postId: createdPost._id, read: false })
             }
         }
         const PostExist = await Posts.findOne(
