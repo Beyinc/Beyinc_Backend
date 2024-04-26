@@ -253,7 +253,7 @@ exports.reportPost = async (req, res, next) => {
 exports.getReportedPosts = async (req, res, next) => { 
 
     try {
-        const reportedposts = await Posts.find({ reported: true }).populate({
+        const reportedposts = await Posts.find({ reported: true, $expr: { $gt: [{ $size: "$reportBy" }, 1] } }).populate({
             path: "createdBy",
             select: ["userName", 'email', "image", "role", '_id'],
         }).populate({
