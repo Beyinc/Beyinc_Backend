@@ -118,11 +118,11 @@ exports.getUsersPost = async (req, res, next) => {
 
 exports.createPost = async (req, res, next) => {
     try {
-        const { description, image, type, tags, createdBy, pitchId } = req.body
+        const { description, image, type, tags, createdBy, pitchId, openDiscussion } = req.body
         const result = await cloudinary.uploader.upload(image, {
             folder: `${createdBy.email}/posts`,
         });
-        const createdPost = await Posts.create({ reported:false, description, image: result, type, tags: tags?.map(m => m._id), createdBy: createdBy._id, pitchId, openDiscussion: (pitchId !== null && pitchId!==undefined)? false: true })
+        const createdPost = await Posts.create({ reported: false, description, image: result, type, tags: tags?.map(m => m._id), createdBy: createdBy._id, pitchId, openDiscussion: openDiscussion })
         if (tags.length > 0) {
             for (let i = 0; i < tags.length; i++){
                 await send_Notification_mail(tags[i].email, `You got a post tag!`, `${createdBy.userName} tagged you in their post. check the notification in app.`, tags[i].userName, `/posts/${createdPost._id}`)
