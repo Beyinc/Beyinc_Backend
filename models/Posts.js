@@ -5,6 +5,9 @@ const postSchema = new mongoose.Schema(
         description: {
             type: String,
         },
+        link: {
+            type: String,
+        },
         image: {
             public_id: {
                 type: String,
