@@ -164,9 +164,9 @@ exports.createPost = async (req, res, next) => {
 
 exports.editPost = async (req, res, next) => {
     try {
-        const { description, image, type, tags, createdBy, pitchId, id } = req.body
+        const { description, image, type, tags, createdBy, pitchId, id, link } = req.body
         console.log(pitchId);
-        await Posts.updateOne({ _id: id }, { $set: { description, image: image, type, tags: tags?.map(m => m._id), createdBy: createdBy._id, pitchId, openDiscussion: (pitchId !== null && pitchId !== undefined) ? false : true } })
+        await Posts.updateOne({ _id: id }, { $set: { description, link, image: image, type, tags: tags?.map(m => m._id), createdBy: createdBy._id, pitchId, openDiscussion: (pitchId !== null && pitchId !== undefined) ? false : true } })
         const PostExist = await Posts.findOne(
             { _id: id }
         ).populate({
