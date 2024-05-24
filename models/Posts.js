@@ -23,7 +23,7 @@ const postSchema = new mongoose.Schema(
         type: {
             type: String,
         },
-        title: {
+        postTitle: {
             type: String,
         },
         fullDetails: {
