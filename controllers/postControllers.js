@@ -165,9 +165,30 @@ exports.createPost = async (req, res, next) => {
 exports.editPost = async (req, res, next) => {
     try {
         const { description, image, type, tags, createdBy, pitchId, id, link, fullDetails, groupDiscussion, postTitle } = req.body
-        const result = await cloudinary.uploader.upload(image, {
-            folder: `${createdBy.email}/posts`,
-        });
+        
+        const PostDoesExist =  await Posts.findOne(
+            { _id: id }
+        )
+        let result = ''
+        if(image.public_id==undefined){
+            if (PostDoesExist?.image.public_id !== undefined) {
+                await cloudinary.uploader.destroy(
+                  PostDoesExist?.image.public_id,
+                  (error, result) => {
+                    if (error) {
+                      console.error("Error deleting image:", error);
+                    } else {
+                      console.log("Image deleted successfully:", result);
+                    }
+                  }
+                );
+              }
+            result = await cloudinary.uploader.upload(image, {
+                folder: `${createdBy.email}/posts`,
+            });
+        } else {
+            result = image
+        }
         await Posts.updateOne({ _id: id }, { $set: { description, link, fullDetails, groupDiscussion, postTitle, image: result, type, tags: tags?.map(m => m._id), createdBy: createdBy._id, pitchId, openDiscussion: (pitchId !== null && pitchId !== undefined) ? false : true } })
         const PostExist = await Posts.findOne(
             { _id: id }
