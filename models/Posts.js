@@ -23,6 +23,15 @@ const postSchema = new mongoose.Schema(
         type: {
             type: String,
         },
+        postTitle: {
+            type: String,
+        },
+        fullDetails: {
+            type: String,
+        },
+        groupDiscussion: {
+            type: String,
+        },
         reported: {
             type: Boolean,
         },
