@@ -42,6 +42,16 @@ exports.getProfile = async (req, res, next) => {
   }
 };
 
+exports.recommendedUsers = async (req, res, next) =>{
+  try {
+    const { userId } = req.body;
+    const data = await User.find({followers: {$nin:[userId]}, _id:{$ne:userId}}).limit(3);
+    return res.status(200).json(data);
+  } catch (error) {
+    console.log(error);
+  }
+}
+
 
 exports.followerController = async (req, res, next) => {
   const { followerReqBy, followerReqTo } = req.body
