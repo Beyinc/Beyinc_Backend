@@ -42,15 +42,22 @@ exports.getProfile = async (req, res, next) => {
   }
 };
 
-exports.recommendedUsers = async (req, res, next) =>{
+exports.recommendedUsers = async (req, res, next) => {
   try {
     const { userId } = req.body;
-    const data = await User.find({followers: {$nin:[userId]}, _id:{$ne:userId}}).limit(3);
+    const data = await User.find({
+      followers: { $nin: [userId] },
+      _id: { $ne: userId }
+    })
+    .sort({ rating: -1 }) 
+    .limit(3);
     return res.status(200).json(data);
   } catch (error) {
     console.log(error);
+    return res.status(500).json({ error: 'Internal Server Error' }); 
   }
 }
+
 
 
 exports.followerController = async (req, res, next) => {
