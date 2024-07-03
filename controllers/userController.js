@@ -17,6 +17,8 @@ const cloudinary = require("../helpers/UploadImage");
 const Notification = require("../models/NotificationModel");
 const send_Notification_mail = require("../helpers/EmailSending");
 const jobTitles = require("../models/Roles");
+const { $_match } = require("@hapi/joi/lib/base");
+const mongoose = require("mongoose");
 
 exports.getProfile = async (req, res, next) => {
   try {
@@ -42,22 +44,54 @@ exports.getProfile = async (req, res, next) => {
   }
 };
 
+
+
 exports.recommendedUsers = async (req, res, next) => {
   try {
     const { userId } = req.body;
-    const data = await User.find({
-      followers: { $nin: [userId] },
-      _id: { $ne: userId }
-    })
-    .sort({ rating: -1 }) 
-    .limit(3);
+    const loggedInUserId = new mongoose.Types.ObjectId(userId);
+
+    const data = await User.aggregate([
+      {$match:{followers:{$nin:[loggedInUserId]},_id:{$ne:loggedInUserId}}},
+      {
+        $project: {
+            _id: 1,
+            followers: 1,
+            userName:1,
+            role:1,
+            image:1,
+            totalReviewSum: { $avg: "$review.review" } 
+        }
+    },
+      { $sort: { totalReviewSum: -1 } }, {$limit: 3}
+  ]);
     return res.status(200).json(data);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ error: 'Internal Server Error' }); 
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
-}
+};
 
+
+exports.removeFollower = async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    await User.updateMany(
+      { followers: userId },
+      { $pull: { followers: userId } }
+    );
+    await User.updateOne({_id: userId},{$set:{following:[]}})
+
+    return res.status(200).json({ message: 'User ID removed from all followers' });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 
 
 exports.followerController = async (req, res, next) => {

@@ -1,6 +1,8 @@
 const express = require("express");
 const authRouter = require("./routes/authRouter");
 const userRouter = require("./routes/userRouter");
+const testingRouter = require("./routes/testingRouter");
+
 const userCommentRouter = require("./routes/userCommentsRouter");
 const helperRouter = require("./routes/helperRouter");
 const dashboardRouter = require("./routes/dashboardRouter");
@@ -44,6 +46,9 @@ app.use("/api/chat", verifyAccessToken, chatRouter);
 app.use("/api/dashboard", verifyAccessToken, dashboardRouter);
 
 app.use("/api/userDetails", verifyAccessToken, userRouter);
+
+app.use("/api/test", testingRouter);
+
 
 app.use("/api/pitch", verifyAccessToken, pitchCommentRouter);
 app.use("/api/post", verifyAccessToken, postCommentRouter);

@@ -69,6 +69,7 @@ exports.getAllPosts = async (req, res, next) => {
     const limit = pageSize-page;
 
     const data = await Posts.find({})
+    .sort({ createdAt: -1 }) 
       .skip(skip)
       .limit(limit)
       .populate({
@@ -102,6 +103,41 @@ exports.getAllPosts = async (req, res, next) => {
     return res.status(200).json(data);
   } catch (error) {
     console.log(error);
+  }
+};
+
+
+exports.getTopTrendingPosts = async (req, res, next) => {
+  try {
+    const data = await Posts.aggregate([
+      {
+        $addFields: {
+          likesCount: { $size: { $ifNull: ["$likes", []] } }, 
+          dislikesCount: { $size: { $ifNull: ["$disLikes", []] } },
+        },
+      },
+      {
+        $addFields: {
+          score: {
+            $add: [
+              { $multiply: ["$likesCount", 2] },
+              { $multiply: ["$dislikesCount", -1] },
+            ],
+          },
+        },
+      },
+      {
+        $sort: { score: -1 },
+      },
+      {
+        $limit: 2,
+      },
+    ]);
+
+    return res.status(200).json(data);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server Error', error });
   }
 };
 

@@ -59,6 +59,10 @@ router.route("/followerControl").post(userController.followerController);
 
 router.route("/recommendedUsers").post(userController.recommendedUsers);
 
+router.route("/removeFollower").post(userController.removeFollower);
+
+
+
 
 router
   .route("/getApprovalRequestProfile")
