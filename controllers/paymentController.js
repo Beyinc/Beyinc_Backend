@@ -66,6 +66,39 @@ exports.fetchUserBalance = async (req, res, next) => {
     }
 };
 
+exports.addBenificiaryAccount = async (req, res, next) => {
+    try { 
+        const { userId, userName, email, phone, accountNumber, ifsc } = req.body;
+        const beneficiaryDetails = {
+            name: userName,
+            email: email,
+            contact: phone,
+           
+        };
+        const userExist = await User.findOne({ _id: userId })
+        if (beneficiaryDetails?.account_number !== '' && beneficiaryDetails?.ifsc_code !== '') {
+            if (userExist.beneficiaryId == null || userExist.beneficiaryId==undefined ) {
+                const benificaryInfo = await razorpay.customers.create(beneficiaryDetails);
+
+                const bankDetails = {
+                    beneficiary_name: userName,
+                    account_number: accountNumber,
+                    ifsc_code: ifsc,
+                }
+                await razorpay.customers.addBankAccount(benificaryInfo.id, bankDetails)
+                await User.updateOne({ _id: userId }, { $set: { accountNumber: accountNumber, ifsc: ifsc, beneficiaryId: benificaryInfo.id } })
+                return res.status(200).json('Bank account added');
+            }
+            return res.status(200).json('Bank account already there');
+
+           
+        }
+    }
+    catch (error) {
+        console.log(error)
+        return res.status(400).json(error.error.description);
+    }
+}
 
 exports.transferCoins = async (req, res, next) => {
     const { senderId, receiverId, amount } = req.body;

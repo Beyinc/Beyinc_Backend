@@ -736,15 +736,7 @@ exports.directeditprofile = async (req, res, next) => {
 
     // validating email and password
 
-    const beneficiaryDetails = {
-      userName,
-      email,
-      phone,
-      type: 'bank_account',
-      accountNumber,
-      ifsc,
-    };
-
+   
 
     const userDoesExist = await User.findOne({ email: email });
 
@@ -1047,10 +1039,7 @@ exports.directeditprofile = async (req, res, next) => {
           },
         }
       );
-      if (beneficiaryDetails?.accountNumber !== '' && beneficiaryDetails?.ifsc !=='') {
-        const benificaryInfo = await razorpay.customers.create(beneficiaryDetails);
-        console.log(benificaryInfo);
-      }
+     
       // await User.updateOne(
       //   { email: email },
       //   {

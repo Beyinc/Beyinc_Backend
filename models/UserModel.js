@@ -77,7 +77,7 @@ const userSchema = new mongoose.Schema(
     },
     beneficiaryId: {
       type: String,
-      required: true,
+      default: null,
     },
     transactions: [{
       sendTo: {
