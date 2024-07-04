@@ -19,6 +19,7 @@ const rolerouter = require("./routes/rolesRouter");
 
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpecs = require("./swagger");
+const paymentRoute = require("./routes/paymentRoutes");
 
 const { verifyAccessToken } = require("./helpers/jwt_helpers");
 
@@ -59,5 +60,7 @@ app.use("/api/posts", verifyAccessToken, PostRouter);
 
 
 app.use("/api/role", rolerouter);
+
+app.use("/api/razorpay",paymentRoute );  
 
 module.exports = app;
