@@ -61,9 +61,35 @@ const userSchema = new mongoose.Schema(
     verification: {
       type: String,
     },
-    freeCoins: {
-      type: String,
+    freeMoney: {
+      type: Number,
     },
+    realMoney: {
+      type: Number,
+    },
+    accountNumber: {
+      type: String,
+      required: true,
+    },
+    ifsc: {
+      type: String,
+      required: true,
+    },
+    beneficiaryId: {
+      type: String,
+      required: true,
+    },
+    transactions: [{
+      sendTo: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+      transaction_id: {
+        type: String,
+      }, transactionAmount: {
+        type: String,
+      }
+    }],
     state: { type: String },
     town: { type: String },
     country: { type: String },
@@ -94,9 +120,6 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
-    realCoins: {
-      type: String,
-    },
     experienceDetails: [
       {
         domain: { type: String },
