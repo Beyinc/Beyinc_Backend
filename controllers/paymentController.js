@@ -112,12 +112,18 @@ exports.transferCoins = async (req, res, next) => {
     try {
         const sender = await User.findById(senderId);
         const receiver = await User.findById(receiverId);
-
+        if (sender.realMoney == undefined) {
+            sender.realMoney = 0
+            await sender.save();
+        }
+        if (receiver.realMoney == undefined) {
+            receiver.realMoney = 0
+            await receiver.save();
+        }
         if (sender.realMoney < amount) {
             return res.status(400).json({ error: 'Insufficient realMoney' });
         }
-
-
+        
         sender.realMoney -= amount;
         await sender.save();
 
