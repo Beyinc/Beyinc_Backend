@@ -69,11 +69,11 @@ exports.fetchUserBalance = async (req, res, next) => {
 
 exports.addBenificiaryAccount = async (req, res, next) => {
     try {
-        const { userId, userName, email, phone, accountNumber, ifsc } = req.body;
+        const { userId, userName, email, phone, accountNumber, ifsc, upi } = req.body;
         const beneficiaryDetails = {
             name: userName,
             email: email,
-            contact: phone,
+            contact: phone, upi
 
         };
         const userExist = await Benificiary.findOne({ customer: userId })
@@ -88,7 +88,7 @@ exports.addBenificiaryAccount = async (req, res, next) => {
                     ifsc_code: ifsc,
                 }
                 const benificiaryData = await razorpay.customers.addBankAccount(customerInfo.id, bankDetails)
-                await Benificiary.create({ accountNumber: accountNumber, customerId: customerInfo.id,  ifsc: ifsc, beneficiaryId: benificiaryData.id, user: userId })
+                await Benificiary.create({ accountNumber: accountNumber, customerId: customerInfo.id,  ifsc: ifsc, beneficiaryId: benificiaryData.id, user: userId, upi})
                 return res.status(200).json('Bank account added');
             }
             return res.status(400).json('Account Number and ifsc is required');

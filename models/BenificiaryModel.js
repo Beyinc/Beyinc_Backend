@@ -16,6 +16,11 @@ const benificiarySchema = new mongoose.Schema(
             required: true,
             default: null,
         },
+        upi: {
+            type: String,
+            required: true,
+            default: null,
+        },
         ifsc: {
             type: String,
             required: true,
