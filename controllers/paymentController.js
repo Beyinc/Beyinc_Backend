@@ -128,7 +128,8 @@ exports.transferCoins = async (req, res, next) => {
 
         return res.json({ success: true });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        console.log(error)
+        return res.status(500).json(error);
     }
 }
 
