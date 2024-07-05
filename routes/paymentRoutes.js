@@ -11,7 +11,7 @@ const router = express.Router();
 
 router.route("/checkout").post(checkout);
 
-// router.route("/paymentverification").post(paymentVerification);
+router.route("/paymentverification").post(paymentVerification);
 
 // API endpoint to get Razorpay API key
 router.route('/getkey').get((req, res) => {
