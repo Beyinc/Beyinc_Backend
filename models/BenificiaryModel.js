@@ -2,9 +2,14 @@ const mongoose = require("mongoose");
 
 const benificiarySchema = new mongoose.Schema(
     {
-        customer: {
+        user: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
+        },
+        customerId: {
+            type: String,
+            required: true,
+            default: null,
         },
         accountNumber: {
             type: String,

@@ -80,15 +80,15 @@ exports.addBenificiaryAccount = async (req, res, next) => {
         if (!userExist) {
 
             if (beneficiaryDetails?.account_number !== '' && beneficiaryDetails?.ifsc_code !== '') {
-                const benificaryInfo = await razorpay.customers.create(beneficiaryDetails);
+                const customerInfo = await razorpay.customers.create(beneficiaryDetails);
 
                 const bankDetails = {
                     beneficiary_name: userName,
                     account_number: accountNumber,
                     ifsc_code: ifsc,
                 }
-                await razorpay.customers.addBankAccount(benificaryInfo.id, bankDetails)
-                await Benificiary.create({ accountNumber: accountNumber, ifsc: ifsc, beneficiaryId: benificaryInfo.id, customer: userId })
+                const benificiaryData = await razorpay.customers.addBankAccount(customerInfo.id, bankDetails)
+                await Benificiary.create({ accountNumber: accountNumber, customerId: customerInfo.id,  ifsc: ifsc, beneficiaryId: benificiaryData.id, user: userId })
                 return res.status(200).json('Bank account added');
             }
             return res.status(400).json('Account Number and ifsc is required');
@@ -112,6 +112,7 @@ exports.transferCoins = async (req, res, next) => {
     try {
         const sender = await User.findById(senderId);
         const receiver = await User.findById(receiverId);
+        const receiverBenificiaryDetails = await Benificiary.findById(receiverId)
 
         if (sender.balance < amount) {
             return res.status(400).json({ error: 'Insufficient balance' });
@@ -128,7 +129,7 @@ exports.transferCoins = async (req, res, next) => {
 
         const payoutResponse = await axios.post('/api/payouts/transfer', {
             amount: amount,
-            beneficiary_id: receiver.beneficiary_id,
+            beneficiary_id: receiverBenificiaryDetails.beneficiaryId,
         });
 
         return res.json({ success: true, payoutResponse: payoutResponse.data });
