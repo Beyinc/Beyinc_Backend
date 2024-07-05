@@ -112,7 +112,6 @@ exports.transferCoins = async (req, res, next) => {
     try {
         const sender = await User.findById(senderId);
         const receiver = await User.findById(receiverId);
-        const receiverBenificiaryDetails = await Benificiary.findById(receiverId)
 
         if (sender.realMoney < amount) {
             return res.status(400).json({ error: 'Insufficient realMoney' });
@@ -127,16 +126,21 @@ exports.transferCoins = async (req, res, next) => {
         await receiver.save();
 
 
-        // const payoutResponse = await axios.post('/api/payouts/transfer', {
-        //     amount: amount,
-        //     beneficiary_id: receiverBenificiaryDetails.beneficiaryId,
-        // });
-
         return res.json({ success: true });
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
 }
+
+exports.redeemMoney = async (req, res, next) => {
+    const receiverBenificiaryDetails = await Benificiary.findById(req.body.receiverId)
+    const receiver = await User.findById(receiverId);
+    const payoutResponse = await axios.post('/api/payouts/transfer', {
+        amount: receiver.realMoney,
+        beneficiary_id: receiverBenificiaryDetails.beneficiaryId,
+    });
+    return res.json({ success: true });
+ }
 
 
 exports.payOutTransfer = async (req, res, next) => {
