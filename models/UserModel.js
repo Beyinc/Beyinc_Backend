@@ -67,29 +67,6 @@ const userSchema = new mongoose.Schema(
     realMoney: {
       type: Number,
     },
-    accountNumber: {
-      type: String,
-      required: true,
-    },
-    ifsc: {
-      type: String,
-      required: true,
-    },
-    beneficiaryId: {
-      type: String,
-      default: null,
-    },
-    transactions: [{
-      sendTo: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-      transaction_id: {
-        type: String,
-      }, transactionAmount: {
-        type: String,
-      }
-    }],
     state: { type: String },
     town: { type: String },
     country: { type: String },
