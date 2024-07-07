@@ -17,6 +17,9 @@ const cloudinary = require("../helpers/UploadImage");
 const Notification = require("../models/NotificationModel");
 const send_Notification_mail = require("../helpers/EmailSending");
 const jobTitles = require("../models/Roles");
+const { $_match } = require("@hapi/joi/lib/base");
+const mongoose = require("mongoose");
+
 exports.getProfile = async (req, res, next) => {
   try {
     const { id } = req.body;
@@ -24,7 +27,13 @@ exports.getProfile = async (req, res, next) => {
     const userDoesExist = await User.findOne(
       { _id: id ? id : user_id },
       { password: 0, chatBlockedBy: 0 }
-    ).populate("role_details");
+    ).populate({
+      path: "followers",
+      select: ["userName", "image", "role", '_id'],
+    }).populate({
+      path: "following",
+      select: ["userName", "image", "role", '_id'],
+    }).populate("role_details");
 
     // console.log(removePass);
     if (userDoesExist) {
@@ -35,13 +44,114 @@ exports.getProfile = async (req, res, next) => {
   }
 };
 
+
+
+exports.recommendedUsers = async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+    const loggedInUserId = new mongoose.Types.ObjectId(userId);
+
+    const data = await User.aggregate([
+      {$match:{followers:{$nin:[loggedInUserId]},_id:{$ne:loggedInUserId}}},
+      {
+        $project: {
+            _id: 1,
+            followers: 1,
+            userName:1,
+            role:1,
+            image:1,
+            totalReviewSum: { $avg: "$review.review" } 
+        }
+    },
+      { $sort: { totalReviewSum: -1 } }, {$limit: 3}
+  ]);
+    return res.status(200).json(data);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
+exports.removeFollower = async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    await User.updateMany(
+      { followers: userId },
+      { $pull: { followers: userId } }
+    );
+    await User.updateOne({_id: userId},{$set:{following:[]}})
+
+    return res.status(200).json({ message: 'User ID removed from all followers' });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
+exports.followerController = async (req, res, next) => {
+  const { followerReqBy, followerReqTo } = req.body
+  
+  const requestBy = await User.findOne({ _id: followerReqBy })
+  const requestTo = await User.findOne({ _id: followerReqTo })
+
+  if (!requestTo.followers.includes(followerReqBy)) {
+    requestTo.followers.push(followerReqBy)
+    await requestTo.save()
+    requestBy.following.push(followerReqTo)
+    await requestBy.save()
+    const userDoesExist = await User.findOne(
+      { _id: requestTo._id},
+      { password: 0, chatBlockedBy: 0 }
+    ).populate({
+      path: "followers",
+      select: ["userName", "image", "role", '_id'],
+    }).populate({
+      path: "following",
+      select: ["userName", "image", "role", '_id'],
+    }).populate("role_details");
+    await send_Notification_mail(requestTo.email, 'Follower added!', `${requestBy.userName} is following you`, requestTo.userName, `/user/${followerReqBy}`)
+    await Notification.create({ senderInfo: requestBy._id, receiver: requestTo._id, message: `${requestBy.userName} is following you.`, type: 'followerRequest', read: false })
+
+    return res.status(200).json(userDoesExist)
+  } else {
+    requestTo.followers.splice(requestTo.followers.indexOf(followerReqBy), 1)
+    await requestTo.save()
+    requestBy.following.splice(requestBy.following.indexOf(followerReqTo), 1)
+    await requestBy.save()
+    const userDoesExist = await User.findOne(
+      { _id: requestTo._id },
+      { password: 0, chatBlockedBy: 0 }
+    ).populate({
+      path: "followers",
+      select: ["userName", "image", "role", '_id'],
+    }).populate({
+      path: "following",
+      select: ["userName", "image", "role", '_id'],
+    }).populate("role_details");
+    return res.status(200).json(userDoesExist)
+  }
+
+}
+
 exports.getApprovalRequestProfile = async (req, res, next) => {
   try {
     const { userId } = req.body;
     const userDoesExist = await User.findOne(
       { _id: userId },
       { password: 0 }
-    );
+    ).populate({
+      path: "followers",
+      select: ["userName", "image", "role", '_id'],
+    }).populate({
+      path: "following",
+      select: ["userName", "image", "role", '_id'],
+    });
 
     if (userDoesExist) {
       return res.status(200).json(userDoesExist);
@@ -602,6 +712,7 @@ exports.directeditprofile = async (req, res, next) => {
   try {
     const {
       userId,
+      twitter, linkedin,
       email,
       salutation,
       mentorCategories,
@@ -882,7 +993,7 @@ exports.directeditprofile = async (req, res, next) => {
         {
           $set: {
             userInfo: userDoesExist._id,
-            userName,
+            userName, twitter, linkedin,
             // image: userDoesExist?.image?.url,
             role,
             phone,
@@ -996,16 +1107,15 @@ exports.updateVerification = async (req, res, next) => {
 
       await send_Notification_mail(
         email,
-        email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin`,
-        userDoesExist.userName
+        userDoesExist.userName, '/editProfile'
       );
       await Notification.create({
         senderInfo: adminDetails._id,
         receiver: userDoesExist.userInfo,
         message: `Your profile update request has been ${req.body.status} by the admin.`,
-        type: "pitch",
+        type: "user",
         read: false,
       });
     } else {
@@ -1015,16 +1125,15 @@ exports.updateVerification = async (req, res, next) => {
       );
       await send_Notification_mail(
         email,
-        email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin and added comment: "<b>${req.body.reason}</b>"`,
-        userDoesExist.userName
+        userDoesExist.userName, '/editProfile'
       );
       await Notification.create({
         senderInfo: adminDetails._id,
         receiver: userDoesExist.userInfo,
         message: `Your profile update request has been ${req.body.status} by the admin and added comment: "${req.body.reason}"`,
-        type: "pitch",
+        type: "user",
         read: false,
       });
     }
@@ -1055,16 +1164,15 @@ exports.updateVerificationByAdmin = async (req, res, next) => {
 
       await send_Notification_mail(
         email,
-        email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin`,
-        userDoesExist.userName
+        userDoesExist.userName, '/editProfile'
       );
       await Notification.create({
         senderInfo: adminDetails._id,
-        receiver: userDoesExist.userInfo,
+        receiver: userDoesExist._id,
         message: `Your profile update request has been ${req.body.status} by the admin.`,
-        type: "pitch",
+        type: "user",
         read: false,
       });
     } else {
@@ -1074,16 +1182,15 @@ exports.updateVerificationByAdmin = async (req, res, next) => {
       );
       await send_Notification_mail(
         email,
-        email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin and added comment: "<b>${req.body.reason}</b>"`,
-        userDoesExist.userName
+        userDoesExist.userName, '/editProfile'
       );
       await Notification.create({
         senderInfo: adminDetails._id,
         receiver: userDoesExist.userInfo,
         message: `Your profile update request has been ${req.body.status} by the admin and added comment: "${req.body.reason}"`,
-        type: "pitch",
+        type: "user",
         read: false,
       });
     }
@@ -1248,7 +1355,7 @@ exports.deleteProfileImage = async (req, res, next) => {
       { _id: userId },
       {
         $set: {
-          image: "",
+          image: "", verification: 'rejected'
         },
       }
     );
@@ -1284,10 +1391,22 @@ exports.getUsers = async (req, res, next) => {
       let result = await User.find(
         { role: type },
         { projection: { password: 0 } }
-      );
+      ).populate({
+        path: "followers",
+        select: ["userName", "image", "role", '_id'],
+      }).populate({
+        path: "following",
+        select: ["userName", "image", "role", '_id'],
+      });
       return res.status(200).json(result);
     } else {
-      let result = await User.find({}, { password: 0 });
+      let result = await User.find({}, { password: 0 }).populate({
+        path: "followers",
+        select: ["userName", "image", "role", '_id'],
+      }).populate({
+        path: "following",
+        select: ["userName", "image", "role", '_id'],
+      });
       return res.status(200).json(result);
     }
   } catch (err) {
@@ -1323,16 +1442,15 @@ exports.addUserReviewStars = async (req, res, next) => {
         );
         await send_Notification_mail(
           user.email,
-          user.email,
           `Added Stars to the pitch!`,
           `${reviewSentUser.userName} has added ${req.body.review.review} stars to your profile. Check notification for more info.`,
-          user.userName
+          user.userName, '/editProfile'
         );
         await Notification.create({
           senderInfo: reviewSentUser._id,
           receiver: user._id,
           message: `${reviewSentUser.userName} has added ${req.body.review.review} stars to your profile.`,
-          type: "pitch",
+          type: "user",
           read: false,
         });
         return res.status(200).json("Review updated");
@@ -1344,16 +1462,15 @@ exports.addUserReviewStars = async (req, res, next) => {
       );
       await send_Notification_mail(
         user.email,
-        user.email,
         `Added Stars to the pitch!`,
         `${user.userName} has added ${req.body.review.review} . Check notification for more info.`,
-        user.userName
+        user.userName, '/editProfile'
       );
       await Notification.create({
         senderInfo: user._id,
         receiver: user._id,
         message: `${user.userName} has added ${req.body.review.review} .`,
-        type: "pitch",
+        type: "user",
         read: false,
       });
       return res.status(200).json("Review added");

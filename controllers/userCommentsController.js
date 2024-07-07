@@ -23,7 +23,11 @@ exports.addUserComment = async (req, res, next) => {
     try {
         const { userId, comment, commentBy } = req.body
         await UserComment.create({ comment: comment, commentBy: commentBy, userId: userId })
-        return res.status(200).json("Comment Added");
+        const comments = await UserComment.find({ userId: userId }).populate({
+            path: "commentBy",
+            select: ["userName", "image", "role"],
+        }).populate({ path: 'likes', select: ["userName", "image", "role"] }).populate({ path: 'Dislikes', select: ["userName", "image", "role"] }).sort({ createdAt: -1 });
+        return res.status(200).json(comments);
     } catch (err) {
         return res.status(400).json(err);
     }
@@ -36,7 +40,18 @@ exports.getUserComment = async (req, res, next) => {
         const comments = await UserComment.find({ userId: userId }).populate({
             path: "commentBy",
             select: ["userName", "image", "role"],
-        }).populate({ path: 'likes', select: ["userName", "image", "role"] }).populate({ path: 'Dislikes', select: ["userName", "image", "role"] });
+        }).populate({ path: 'likes', select: ["userName", "image", "role"] }).populate({ path: 'Dislikes', select: ["userName", "image", "role"] }).sort({ createdAt: -1 });
+        return res.status(200).json(comments);
+    } catch (err) {
+        return res.status(400).json(err);
+    }
+};
+
+
+exports.deleteUserComment = async (req, res, next) => {
+    try {
+        const { userId } = req.body
+        const comments = await UserComment.deleteOne({ userId: userId });
         return res.status(200).json(comments);
     } catch (err) {
         return res.status(400).json(err);
@@ -57,8 +72,12 @@ exports.likeComment = async (req, res, next) => {
         if (comment.Dislikes?.includes(req.payload.user_id)) {
             comment.Dislikes = comment.Dislikes.filter((v) => v != req.payload.user_id);
         }
-        comment.save();
-        return res.status(200).json("comment liked");
+        await comment.save();
+        const comments = await UserComment.find({ userId: req.body.comment_owner }).populate({
+            path: "commentBy",
+            select: ["userName", "image", "role"],
+        }).populate({ path: 'likes', select: ["userName", "image", "role"] }).populate({ path: 'Dislikes', select: ["userName", "image", "role"] }).sort({ createdAt: -1 });
+        return res.status(200).json(comments);
     } catch (err) {
         console.log(err);
         return res.status(400).json(err);
@@ -79,8 +98,12 @@ exports.DislikelikeComment = async (req, res, next) => {
         if (comment.likes?.includes(req.payload.user_id)) {
             comment.likes = comment.likes.filter((v) => v != req.payload.user_id);
         }
-        comment.save();
-        return res.status(200).json("comment Disliked");
+        await comment.save();
+        const comments = await UserComment.find({ userId: req.body.comment_owner }).populate({
+            path: "commentBy",
+            select: ["userName", "image", "role"],
+        }).populate({ path: 'likes', select: ["userName", "image", "role"] }).populate({ path: 'Dislikes', select: ["userName", "image", "role"] }).sort({ createdAt: -1 });
+        return res.status(200).json(comments);
     } catch (err) {
         console.log(err);
         return res.status(400).json(err);

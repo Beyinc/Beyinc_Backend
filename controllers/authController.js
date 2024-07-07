@@ -118,8 +118,8 @@ exports.googleSSORegister = async (req, res, next) => {
         { email: email, user_id: newUser._id },
         `${newUser._id}`
       );
-      await send_Notification_mail(email, 'Beyinc System generated password for you', `Your temporary password is <b>${userName}@Beyinc1</b>. If you want to change password please logout and change that in forgot password page`, userName)
-      await send_Notification_mail(process.env.ADMIN_EMAIL, 'New User joined!', `A new user <b>${userName}</b> is joined into our app.`, process.env.ADMIN_EMAIL)
+      await send_Notification_mail(email, 'Beyinc System generated password for you', `Your temporary password is <b>${userName}@Beyinc1</b>. If you want to change password please logout and change that in forgot password page`, userName, '')
+      await send_Notification_mail(process.env.ADMIN_EMAIL, 'New User joined!', `A new user <b>${userName}</b> is joined into our app.`, process.env.ADMIN_EMAIL, '')
 
       return res.send({ accessToken: accessToken, refreshToken: refreshToken });
     }
@@ -312,7 +312,6 @@ exports.mobile_otp = async (req, res, next) => {
   try {
     const { phone, type } = req.body;
     const phoneexist = await User.findOne({ phone: phone.slice(3) });
-    console.log(phone.slice(3));
     if (phoneexist && type !== "forgot" && type !== "login") {
       return res.status(400).json("Phone number already exists");
     }
@@ -391,7 +390,7 @@ exports.send_otp_mail = async (req, res) => {
   try {
     const { to, subject, type } = req.body;
     const otp = Math.floor(100000 + Math.random() * 900000);
-    await send_Notification_mail(to, subject, `Your one-time password for <b>Frontend ${type}</b> is <b>${otp.toString()}</b> valid for the next 2 minutes. For safety reasons, <b>PLEASE DO NOT SHARE YOUR OTP</b> with anyone.`, to, { otp: otp });
+    await send_Notification_mail(to, subject, `Your one-time password for <b>Frontend ${type}</b> is <b>${otp.toString()}</b> valid for the next 2 minutes. For safety reasons, <b>PLEASE DO NOT SHARE YOUR OTP</b> with anyone.`, to, '', { otp: otp });
     return res.status(200).send("Email sent successfully");
   } catch (err) {
     console.log(err);
@@ -404,7 +403,7 @@ exports.verify_otp = async (req, res, next) => {
     const EmailToken = await Userverify.findOne({ email: email });
     if (EmailToken) {
       const { otp } = await verifyEmailOtpToken(EmailToken.verifyToken);
-      console.log(otp, req.body.otp);
+      // console.log(otp, req.body.otp);
       if (req.body.otp == otp) {
         return res.status(200).json({ message: "OTP is Success" });
       } else {
