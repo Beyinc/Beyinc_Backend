@@ -23,7 +23,6 @@ const rolerouter = require("./routes/rolesRouter");
 
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpecs = require("./swagger");
-const paymentRoute = require("./routes/paymentRoutes");
 
 const { verifyAccessToken } = require("./helpers/jwt_helpers");
 
@@ -55,7 +54,6 @@ app.use("/api/test", testingRouter);
 
 app.use("/api/pitch", verifyAccessToken, pitchCommentRouter);
 app.use("/api/post", verifyAccessToken, postCommentRouter);
-app.use("/api/payment", verifyAccessToken, paymentRouter);
 
 
 
@@ -70,6 +68,8 @@ app.use("/api/posts", verifyAccessToken, PostRouter);
 
 app.use("/api/role", rolerouter);
 
-app.use("/api/razorpay",paymentRoute );  
+app.use("/api/payment", verifyAccessToken, paymentRouter);
+
+
 
 module.exports = app;
