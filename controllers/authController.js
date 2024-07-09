@@ -21,6 +21,7 @@ const send_Notification_mail = require("../helpers/EmailSending");
 exports.register = async (req, res, next) => {
   try {
     const { email, password, role, userName } = req.body;
+
     // validating email and password
     const validating_email_password = await authSchema.validateAsync(req.body);
 
@@ -90,7 +91,6 @@ exports.register = async (req, res, next) => {
   }
 };
 
-
 exports.googleSSORegister = async (req, res, next) => {
   try {
     const { email, userName, role } = req.body;
@@ -100,14 +100,11 @@ exports.googleSSORegister = async (req, res, next) => {
     if (!userDoesExist) {
       // hashing password
       const salt = await bcrypt.genSalt(10);
-      const passwordHashing = await bcrypt.hash(
-        `${userName}@Beyinc1`,
-        salt
-      );
+      const passwordHashing = await bcrypt.hash(`${userName}@Beyinc1`, salt);
       const newUser = await User.create({
-        email, role,
+        email,
+        role,
         password: passwordHashing,
-        phone: '',
         userName,
       });
       const accessToken = await signAccessToken(
@@ -118,8 +115,20 @@ exports.googleSSORegister = async (req, res, next) => {
         { email: email, user_id: newUser._id },
         `${newUser._id}`
       );
-      await send_Notification_mail(email, 'Beyinc System generated password for you', `Your temporary password is <b>${userName}@Beyinc1</b>. If you want to change password please logout and change that in forgot password page`, userName, '')
-      await send_Notification_mail(process.env.ADMIN_EMAIL, 'New User joined!', `A new user <b>${userName}</b> is joined into our app.`, process.env.ADMIN_EMAIL, '')
+      await send_Notification_mail(
+        email,
+        "Beyinc System generated password for you",
+        `Your temporary password is <b>${userName}@Beyinc1</b>. If you want to change password please logout and change that in forgot password page`,
+        userName,
+        ""
+      );
+      await send_Notification_mail(
+        process.env.ADMIN_EMAIL,
+        "New User joined!",
+        `A new user <b>${userName}</b> is joined into our app.`,
+        process.env.ADMIN_EMAIL,
+        ""
+      );
 
       return res.send({ accessToken: accessToken, refreshToken: refreshToken });
     }
@@ -134,7 +143,6 @@ exports.googleSSORegister = async (req, res, next) => {
     );
 
     return res.send({ accessToken: accessToken, refreshToken: refreshToken });
-
   } catch (err) {
     if (err.isJoi == true) err.status = 422;
     next(err);
@@ -390,7 +398,14 @@ exports.send_otp_mail = async (req, res) => {
   try {
     const { to, subject, type } = req.body;
     const otp = Math.floor(100000 + Math.random() * 900000);
-    await send_Notification_mail(to, subject, `Your one-time password for <b>Frontend ${type}</b> is <b>${otp.toString()}</b> valid for the next 2 minutes. For safety reasons, <b>PLEASE DO NOT SHARE YOUR OTP</b> with anyone.`, to, '', { otp: otp });
+    await send_Notification_mail(
+      to,
+      subject,
+      `Your one-time password for <b>Frontend ${type}</b> is <b>${otp.toString()}</b> valid for the next 2 minutes. For safety reasons, <b>PLEASE DO NOT SHARE YOUR OTP</b> with anyone.`,
+      to,
+      "",
+      { otp: otp }
+    );
     return res.status(200).send("Email sent successfully");
   } catch (err) {
     console.log(err);
