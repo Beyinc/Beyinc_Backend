@@ -28,13 +28,16 @@ exports.getProfile = async (req, res, next) => {
     const userDoesExist = await User.findOne(
       { _id: id ? id : user_id },
       { password: 0, chatBlockedBy: 0 }
-    ).populate({
-      path: "followers",
-      select: ["userName", "image", "role", '_id'],
-    }).populate({
-      path: "following",
-      select: ["userName", "image", "role", '_id'],
-    }).populate("role_details");
+    )
+      .populate({
+        path: "followers",
+        select: ["userName", "image", "role", "_id"],
+      })
+      .populate({
+        path: "following",
+        select: ["userName", "image", "role", "_id"],
+      })
+      .populate("role_details");
 
     // console.log(removePass);
     if (userDoesExist) {
@@ -45,114 +48,134 @@ exports.getProfile = async (req, res, next) => {
   }
 };
 
-
-
 exports.recommendedUsers = async (req, res, next) => {
   try {
     const { userId } = req.body;
     const loggedInUserId = new mongoose.Types.ObjectId(userId);
 
     const data = await User.aggregate([
-      {$match:{followers:{$nin:[loggedInUserId]},_id:{$ne:loggedInUserId}}},
+      {
+        $match: {
+          followers: { $nin: [loggedInUserId] },
+          _id: { $ne: loggedInUserId },
+        },
+      },
       {
         $project: {
-            _id: 1,
-            followers: 1,
-            userName:1,
-            role:1,
-            image:1,
-            totalReviewSum: { $avg: "$review.review" } 
-        }
-    },
-      { $sort: { totalReviewSum: -1 } }, {$limit: 3}
-  ]);
+          _id: 1,
+          followers: 1,
+          userName: 1,
+          role: 1,
+          image: 1,
+          totalReviewSum: { $avg: "$review.review" },
+        },
+      },
+      { $sort: { totalReviewSum: -1 } },
+      { $limit: 3 },
+    ]);
     return res.status(200).json(data);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
 
 exports.removeFollower = async (req, res, next) => {
   try {
     const { userId } = req.body;
 
     if (!userId) {
-      return res.status(400).json({ error: 'User ID is required' });
+      return res.status(400).json({ error: "User ID is required" });
     }
     await User.updateMany(
       { followers: userId },
       { $pull: { followers: userId } }
     );
-    await User.updateOne({_id: userId},{$set:{following:[]}})
+    await User.updateOne({ _id: userId }, { $set: { following: [] } });
 
-    return res.status(200).json({ message: 'User ID removed from all followers' });
+    return res
+      .status(200)
+      .json({ message: "User ID removed from all followers" });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-
 exports.followerController = async (req, res, next) => {
-  const { followerReqBy, followerReqTo } = req.body
-  
-  const requestBy = await User.findOne({ _id: followerReqBy })
-  const requestTo = await User.findOne({ _id: followerReqTo })
+  const { followerReqBy, followerReqTo } = req.body;
+
+  const requestBy = await User.findOne({ _id: followerReqBy });
+  const requestTo = await User.findOne({ _id: followerReqTo });
 
   if (!requestTo.followers.includes(followerReqBy)) {
-    requestTo.followers.push(followerReqBy)
-    await requestTo.save()
-    requestBy.following.push(followerReqTo)
-    await requestBy.save()
-    const userDoesExist = await User.findOne(
-      { _id: requestTo._id},
-      { password: 0, chatBlockedBy: 0 }
-    ).populate({
-      path: "followers",
-      select: ["userName", "image", "role", '_id'],
-    }).populate({
-      path: "following",
-      select: ["userName", "image", "role", '_id'],
-    }).populate("role_details");
-    await send_Notification_mail(requestTo.email, 'Follower added!', `${requestBy.userName} is following you`, requestTo.userName, `/user/${followerReqBy}`)
-    await Notification.create({ senderInfo: requestBy._id, receiver: requestTo._id, message: `${requestBy.userName} is following you.`, type: 'followerRequest', read: false })
-
-    return res.status(200).json(userDoesExist)
-  } else {
-    requestTo.followers.splice(requestTo.followers.indexOf(followerReqBy), 1)
-    await requestTo.save()
-    requestBy.following.splice(requestBy.following.indexOf(followerReqTo), 1)
-    await requestBy.save()
+    requestTo.followers.push(followerReqBy);
+    await requestTo.save();
+    requestBy.following.push(followerReqTo);
+    await requestBy.save();
     const userDoesExist = await User.findOne(
       { _id: requestTo._id },
       { password: 0, chatBlockedBy: 0 }
-    ).populate({
-      path: "followers",
-      select: ["userName", "image", "role", '_id'],
-    }).populate({
-      path: "following",
-      select: ["userName", "image", "role", '_id'],
-    }).populate("role_details");
-    return res.status(200).json(userDoesExist)
-  }
+    )
+      .populate({
+        path: "followers",
+        select: ["userName", "image", "role", "_id"],
+      })
+      .populate({
+        path: "following",
+        select: ["userName", "image", "role", "_id"],
+      })
+      .populate("role_details");
+    await send_Notification_mail(
+      requestTo.email,
+      "Follower added!",
+      `${requestBy.userName} is following you`,
+      requestTo.userName,
+      `/user/${followerReqBy}`
+    );
+    await Notification.create({
+      senderInfo: requestBy._id,
+      receiver: requestTo._id,
+      message: `${requestBy.userName} is following you.`,
+      type: "followerRequest",
+      read: false,
+    });
 
-}
+    return res.status(200).json(userDoesExist);
+  } else {
+    requestTo.followers.splice(requestTo.followers.indexOf(followerReqBy), 1);
+    await requestTo.save();
+    requestBy.following.splice(requestBy.following.indexOf(followerReqTo), 1);
+    await requestBy.save();
+    const userDoesExist = await User.findOne(
+      { _id: requestTo._id },
+      { password: 0, chatBlockedBy: 0 }
+    )
+      .populate({
+        path: "followers",
+        select: ["userName", "image", "role", "_id"],
+      })
+      .populate({
+        path: "following",
+        select: ["userName", "image", "role", "_id"],
+      })
+      .populate("role_details");
+    return res.status(200).json(userDoesExist);
+  }
+};
 
 exports.getApprovalRequestProfile = async (req, res, next) => {
   try {
     const { userId } = req.body;
-    const userDoesExist = await User.findOne(
-      { _id: userId },
-      { password: 0 }
-    ).populate({
-      path: "followers",
-      select: ["userName", "image", "role", '_id'],
-    }).populate({
-      path: "following",
-      select: ["userName", "image", "role", '_id'],
-    });
+    const userDoesExist = await User.findOne({ _id: userId }, { password: 0 })
+      .populate({
+        path: "followers",
+        select: ["userName", "image", "role", "_id"],
+      })
+      .populate({
+        path: "following",
+        select: ["userName", "image", "role", "_id"],
+      });
 
     if (userDoesExist) {
       return res.status(200).json(userDoesExist);
@@ -170,6 +193,7 @@ exports.getIsProfileComplete = async (req, res, next) => {
     const user = await User.findById(user_id);
     return res.status(200).json({ isProfileComplete: user.isProfileComplete });
   } catch (error) {
+    return res.status(400).send({ message: error });
     console.log(error);
     return res.status(400).send({ message: err });
   }
@@ -708,12 +732,12 @@ exports.editProfile = async (req, res, next) => {
   }
 };
 
-
 exports.directeditprofile = async (req, res, next) => {
   try {
     const {
       userId,
-      twitter, linkedin,
+      twitter,
+      linkedin,
       email,
       salutation,
       mentorCategories,
@@ -929,17 +953,27 @@ exports.directeditprofile = async (req, res, next) => {
         }
       }
     }
-    let updatedExperience = []
-    if (role === 'Technology partner') {
+    let updatedExperience = [];
+    if (role === "Technology partner") {
       for (let i = 0; i < experienceDetails.length; i++) {
-        let newB = ''
-        let newL = ''
+        let newB = "";
+        let newL = "";
         if (experienceDetails[i]?.Banner?.public_id == undefined) {
           if (experienceDetails[i]._id !== undefined) {
-            const prevB = await UserUpdate.findOne({ email: email, 'experienceDetails._id': experienceDetails[i]._id })
-            if (prevB && prevB.experienceDetails.find(f => f._id == experienceDetails[i]._id)?.Banner?.public_id !== undefined) {
+            const prevB = await UserUpdate.findOne({
+              email: email,
+              "experienceDetails._id": experienceDetails[i]._id,
+            });
+            if (
+              prevB &&
+              prevB.experienceDetails.find(
+                (f) => f._id == experienceDetails[i]._id
+              )?.Banner?.public_id !== undefined
+            ) {
               await cloudinary.uploader.destroy(
-                prevB.experienceDetails.find(f => f._id == experienceDetails[i]._id)?.Banner.public_id,
+                prevB.experienceDetails.find(
+                  (f) => f._id == experienceDetails[i]._id
+                )?.Banner.public_id,
                 (error, result) => {
                   if (error) {
                     console.error("Error deleting image:", error);
@@ -951,20 +985,32 @@ exports.directeditprofile = async (req, res, next) => {
             }
           }
           if (experienceDetails[i]?.Banner !== "") {
-            newB = await cloudinary.uploader.upload(experienceDetails[i]?.Banner, {
-              folder: `${email}/editProfile/experience/Banner`,
-            });
-          
+            newB = await cloudinary.uploader.upload(
+              experienceDetails[i]?.Banner,
+              {
+                folder: `${email}/editProfile/experience/Banner`,
+              }
+            );
           }
         } else {
-          newB = experienceDetails[i]?.Banner
+          newB = experienceDetails[i]?.Banner;
         }
         if (experienceDetails[i]?.Logo?.public_id == undefined) {
           if (experienceDetails[i]._id !== undefined) {
-            const prevL = await UserUpdate.findOne({ email: email, 'experienceDetails._id': experienceDetails[i]._id })
-            if (prevL && prevL.experienceDetails.find(f => f._id == experienceDetails[i]._id)?.Logo?.public_id !== undefined) {
+            const prevL = await UserUpdate.findOne({
+              email: email,
+              "experienceDetails._id": experienceDetails[i]._id,
+            });
+            if (
+              prevL &&
+              prevL.experienceDetails.find(
+                (f) => f._id == experienceDetails[i]._id
+              )?.Logo?.public_id !== undefined
+            ) {
               await cloudinary.uploader.destroy(
-                prevL.experienceDetails.find(f => f._id == experienceDetails[i]._id)?.Logo.public_id,
+                prevL.experienceDetails.find(
+                  (f) => f._id == experienceDetails[i]._id
+                )?.Logo.public_id,
                 (error, result) => {
                   if (error) {
                     console.error("Error deleting image:", error);
@@ -976,29 +1022,35 @@ exports.directeditprofile = async (req, res, next) => {
             }
           }
           if (experienceDetails[i]?.Logo !== "") {
-            newL = await cloudinary.uploader.upload(experienceDetails[i]?.Logo, {
-              folder: `${email}/editProfile/experience/Logo`,
-            });
-
+            newL = await cloudinary.uploader.upload(
+              experienceDetails[i]?.Logo,
+              {
+                folder: `${email}/editProfile/experience/Logo`,
+              }
+            );
           }
         } else {
-          newL = experienceDetails[i]?.Logo
+          newL = experienceDetails[i]?.Logo;
         }
-        updatedExperience.push({ ...experienceDetails[i], Banner: newB, Logo: newL })
-
+        updatedExperience.push({
+          ...experienceDetails[i],
+          Banner: newB,
+          Logo: newL,
+        });
       }
     } else {
-      updatedExperience = [...experienceDetails]
+      updatedExperience = [...experienceDetails];
     }
 
     if (userDoesExist) {
-
       await User.updateOne(
         { email: email },
         {
           $set: {
             userInfo: userDoesExist._id,
-            userName, twitter, linkedin,
+            userName,
+            twitter,
+            linkedin,
             // image: userDoesExist?.image?.url,
             role,
             phone,
@@ -1039,15 +1091,7 @@ exports.directeditprofile = async (req, res, next) => {
           },
         }
       );
-     
-      // await User.updateOne(
-      //   { email: email },
-      //   {
-      //     $set: {
-      //       beneficiaryId: benificaryInfo.id
-      //     }
-      //   })
-      const updatedUser = await User.findOne({email:email})
+      const updatedUser = await User.findOne({ email: email });
       const accessToken = await signAccessToken(
         {
           email: updatedUser.email,
@@ -1070,8 +1114,7 @@ exports.directeditprofile = async (req, res, next) => {
       return res.send({ accessToken: accessToken, refreshToken: refreshToken });
     }
 
-    return res.status(400).send({ message: 'User Not Found' });
-
+    return res.status(400).send({ message: "User Not Found" });
   } catch (err) {
     console.log(err);
     return res.status(400).send({ message: err });
@@ -1122,7 +1165,8 @@ exports.updateVerification = async (req, res, next) => {
         email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin`,
-        userDoesExist.userName, '/editProfile'
+        userDoesExist.userName,
+        "/editProfile"
       );
       await Notification.create({
         senderInfo: adminDetails._id,
@@ -1140,7 +1184,8 @@ exports.updateVerification = async (req, res, next) => {
         email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin and added comment: "<b>${req.body.reason}</b>"`,
-        userDoesExist.userName, '/editProfile'
+        userDoesExist.userName,
+        "/editProfile"
       );
       await Notification.create({
         senderInfo: adminDetails._id,
@@ -1167,19 +1212,17 @@ exports.updateVerificationByAdmin = async (req, res, next) => {
     if (!userDoesExist) {
       return res.status(404).json({ message: "User not found" });
     }
-  
+
     const adminDetails = await User.findOne({ email: process.env.ADMIN_EMAIL });
     if (status == "approved") {
-      await User.updateOne(
-        { _id: userId },
-        { $set: { verification: status } }
-      );
+      await User.updateOne({ _id: userId }, { $set: { verification: status } });
 
       await send_Notification_mail(
         email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin`,
-        userDoesExist.userName, '/editProfile'
+        userDoesExist.userName,
+        "/editProfile"
       );
       await Notification.create({
         senderInfo: adminDetails._id,
@@ -1197,7 +1240,8 @@ exports.updateVerificationByAdmin = async (req, res, next) => {
         email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin and added comment: "<b>${req.body.reason}</b>"`,
-        userDoesExist.userName, '/editProfile'
+        userDoesExist.userName,
+        "/editProfile"
       );
       await Notification.create({
         senderInfo: adminDetails._id,
@@ -1245,18 +1289,20 @@ exports.updateVerificationByAdmin = async (req, res, next) => {
 
 exports.updateVerificationStatusDirectly = async (req, res, next) => {
   try {
-    const {userId, verificationStatus} = req.body;
-  const userDoesExist = await User.findOne({_id: userId})
-  if(userDoesExist){
-    await User.updateOne({_id: userId}, {verification: verificationStatus});
-    return res.status(200).json({message: 'User verification updated'})
-  }
-  return res.status(200).json({message: 'User not found'})
+    const { userId, verificationStatus } = req.body;
+    const userDoesExist = await User.findOne({ _id: userId });
+    if (userDoesExist) {
+      await User.updateOne(
+        { _id: userId },
+        { verification: verificationStatus }
+      );
+      return res.status(200).json({ message: "User verification updated" });
+    }
+    return res.status(200).json({ message: "User not found" });
   } catch (error) {
-    return res.status(200).json({message: error})
-
+    return res.status(200).json({ message: error });
   }
-}
+};
 
 exports.verifyUserPassword = async (req, res, next) => {
   try {
@@ -1368,7 +1414,8 @@ exports.deleteProfileImage = async (req, res, next) => {
       { _id: userId },
       {
         $set: {
-          image: "", verification: 'rejected'
+          image: "",
+          verification: "rejected",
         },
       }
     );
@@ -1404,22 +1451,26 @@ exports.getUsers = async (req, res, next) => {
       let result = await User.find(
         { role: type },
         { projection: { password: 0 } }
-      ).populate({
-        path: "followers",
-        select: ["userName", "image", "role", '_id'],
-      }).populate({
-        path: "following",
-        select: ["userName", "image", "role", '_id'],
-      });
+      )
+        .populate({
+          path: "followers",
+          select: ["userName", "image", "role", "_id"],
+        })
+        .populate({
+          path: "following",
+          select: ["userName", "image", "role", "_id"],
+        });
       return res.status(200).json(result);
     } else {
-      let result = await User.find({}, { password: 0 }).populate({
-        path: "followers",
-        select: ["userName", "image", "role", '_id'],
-      }).populate({
-        path: "following",
-        select: ["userName", "image", "role", '_id'],
-      });
+      let result = await User.find({}, { password: 0 })
+        .populate({
+          path: "followers",
+          select: ["userName", "image", "role", "_id"],
+        })
+        .populate({
+          path: "following",
+          select: ["userName", "image", "role", "_id"],
+        });
       return res.status(200).json(result);
     }
   } catch (err) {
@@ -1457,7 +1508,8 @@ exports.addUserReviewStars = async (req, res, next) => {
           user.email,
           `Added Stars to the pitch!`,
           `${reviewSentUser.userName} has added ${req.body.review.review} stars to your profile. Check notification for more info.`,
-          user.userName, '/editProfile'
+          user.userName,
+          "/editProfile"
         );
         await Notification.create({
           senderInfo: reviewSentUser._id,
@@ -1477,7 +1529,8 @@ exports.addUserReviewStars = async (req, res, next) => {
         user.email,
         `Added Stars to the pitch!`,
         `${user.userName} has added ${req.body.review.review} . Check notification for more info.`,
-        user.userName, '/editProfile'
+        user.userName,
+        "/editProfile"
       );
       await Notification.create({
         senderInfo: user._id,
