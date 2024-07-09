@@ -61,8 +61,13 @@ const userSchema = new mongoose.Schema(
     verification: {
       type: String,
     },
-    freeCoins: {
-      type: String,
+    freeMoney: {
+      type: Number,
+      default: 0,
+    },
+    realMoney: {
+      type: Number,
+      default: 0
     },
     state: { type: String },
     town: { type: String },
@@ -94,9 +99,6 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
-    realCoins: {
-      type: String,
-    },
     experienceDetails: [
       {
         domain: { type: String },

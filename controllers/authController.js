@@ -58,8 +58,8 @@ exports.register = async (req, res, next) => {
       password: passwordHashing,
       role,
       userName,
-      freeCoins: "100",
-      realCoins: "0",
+      freeMoney: 100,
+      realMoney: 0,
       verification: "initial",
     });
     const userDetails = await User.findOne({ email: email });
@@ -67,14 +67,14 @@ exports.register = async (req, res, next) => {
     const accessToken = await signAccessToken(
       {
         email: userDetails.email,
-        freeCoins: userDetails.freeCoins,
-        realCoins: userDetails.realCoins,
+        freeMoney: userDetails.freeMoney,
+        realMoney: userDetails.realMoney,
         documents: userDetails.documents,
         user_id: userDetails._id,
         role: userDetails.role,
         userName: userDetails.userName,
         image: userDetails.image?.url,
-        verification: userDetails.verification,
+        verification: userDetails.verification
       },
       `${userDetails._id}`
     );
@@ -109,9 +109,13 @@ exports.googleSSORegister = async (req, res, next) => {
         password: passwordHashing,
         phone: '',
         userName,
+        freeMoney: 100,
+        realMoney: 0,
       });
       const accessToken = await signAccessToken(
-        { email: email, user_id: newUser._id },
+        {
+          email: email, user_id: newUser._id, freeMoney: newUser.freeMoney,
+          realMoney: newUser.realMoney, },
         `${newUser._id}`
       );
       const refreshToken = await signRefreshToken(
@@ -165,8 +169,8 @@ exports.login = async (req, res, next) => {
       const accessToken = await signAccessToken(
         {
           email: userDoesExist.email,
-          freeCoins: userDoesExist.freeCoins,
-          realCoins: userDoesExist.realCoins,
+          freeMoney: userDoesExist.freeMoney,
+          realMoney: userDoesExist.realMoney,
           documents: userDoesExist.documents,
           user_id: userDoesExist._id,
           role: userDoesExist.role,
@@ -214,8 +218,8 @@ exports.mobile_login = async (req, res, next) => {
     const accessToken = await signAccessToken(
       {
         email: userDoesExist.email,
-        freeCoins: userDoesExist.freeCoins,
-        realCoins: userDoesExist.realCoins,
+        freeMoney: userDoesExist.freeMoney,
+        realMoney: userDoesExist.realMoney,
         documents: userDoesExist.documents,
         user_id: userDoesExist._id,
         role: userDoesExist.role,
@@ -251,8 +255,8 @@ exports.refreshToken = async (req, res, next) => {
     const accessToken = await signAccessToken(
       {
         email: userDoesExist.email,
-        freeCoins: userDoesExist.freeCoins,
-        realCoins: userDoesExist.realCoins,
+        freeMoney: userDoesExist.freeMoney,
+        realMoney: userDoesExist.realMoney,
         documents: userDoesExist.documents,
         user_id: userDoesExist._id,
         role: userDoesExist.role,
@@ -284,8 +288,8 @@ exports.verifyMainAccessToken = async (req, res, next) => {
     const currentaccessToken = await signAccessToken(
       {
         email: userDoesExist.email,
-        freeCoins: userDoesExist.freeCoins,
-        realCoins: userDoesExist.realCoins,
+        freeMoney: userDoesExist.freeMoney,
+        realMoney: userDoesExist.realMoney,
         documents: userDoesExist.documents,
         user_id: userDoesExist._id,
         role: userDoesExist.role,

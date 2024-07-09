@@ -8,6 +8,9 @@ router.route("/editPost").post(postControllers.editPost);
 router.route("/likePost").post(postControllers.likePost);
 router.route("/disLikePost").post(postControllers.DisLikePost);
 router.route("/getPost").post(postControllers.getPost);
+router.route("/getAllPosts").post(postControllers.getAllPosts);
+router.route("/getTopTrendingPosts").post(postControllers.getTopTrendingPosts);
+
 router.route("/getUsersPost").post(postControllers.getUsersPost);
 router.route("/requestIntoOpenDiscussion").post(postControllers.requestIntoOpenDiscussion);
 router.route("/getPostRequestDiscussion").post(postControllers.getPostRequestDiscussion);

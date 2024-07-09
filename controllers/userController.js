@@ -17,6 +17,9 @@ const cloudinary = require("../helpers/UploadImage");
 const Notification = require("../models/NotificationModel");
 const send_Notification_mail = require("../helpers/EmailSending");
 const jobTitles = require("../models/Roles");
+const { $_match } = require("@hapi/joi/lib/base");
+const mongoose = require("mongoose");
+const razorpay = require("../helpers/Razorpay");
 
 exports.getProfile = async (req, res, next) => {
   try {
@@ -39,6 +42,55 @@ exports.getProfile = async (req, res, next) => {
     }
   } catch (error) {
     console.log(error);
+  }
+};
+
+
+
+exports.recommendedUsers = async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+    const loggedInUserId = new mongoose.Types.ObjectId(userId);
+
+    const data = await User.aggregate([
+      {$match:{followers:{$nin:[loggedInUserId]},_id:{$ne:loggedInUserId}}},
+      {
+        $project: {
+            _id: 1,
+            followers: 1,
+            userName:1,
+            role:1,
+            image:1,
+            totalReviewSum: { $avg: "$review.review" } 
+        }
+    },
+      { $sort: { totalReviewSum: -1 } }, {$limit: 3}
+  ]);
+    return res.status(200).json(data);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
+exports.removeFollower = async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    await User.updateMany(
+      { followers: userId },
+      { $pull: { followers: userId } }
+    );
+    await User.updateOne({_id: userId},{$set:{following:[]}})
+
+    return res.status(200).json({ message: 'User ID removed from all followers' });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 
@@ -118,8 +170,8 @@ exports.getIsProfileComplete = async (req, res, next) => {
     const user = await User.findById(user_id);
     return res.status(200).json({ isProfileComplete: user.isProfileComplete });
   } catch (error) {
-    return res.status(400).send({ message: err });
     console.log(error);
+    return res.status(400).send({ message: err });
   }
 };
 
@@ -564,8 +616,8 @@ exports.editProfile = async (req, res, next) => {
       const accessToken = await signAccessToken(
         {
           email: userExist.email,
-          freeCoins: userDoesExist.freeCoins,
-          realCoins: userDoesExist.realCoins,
+          freeMoney: userDoesExist.freeMoney,
+          realMoney: userDoesExist.realMoney,
           documents: userExist.documents,
           user_id: userExist._id,
           role: userExist.role,
@@ -678,9 +730,13 @@ exports.directeditprofile = async (req, res, next) => {
       country,
       skills,
       languagesKnown,
+      accountNumber,
+      ifsc,
     } = req.body;
 
     // validating email and password
+
+   
 
     const userDoesExist = await User.findOne({ email: email });
 
@@ -983,12 +1039,20 @@ exports.directeditprofile = async (req, res, next) => {
           },
         }
       );
+     
+      // await User.updateOne(
+      //   { email: email },
+      //   {
+      //     $set: {
+      //       beneficiaryId: benificaryInfo.id
+      //     }
+      //   })
       const updatedUser = await User.findOne({email:email})
       const accessToken = await signAccessToken(
         {
           email: updatedUser.email,
-          freeCoins: updatedUser.freeCoins,
-          realCoins: updatedUser.realCoins,
+          freeMoney: updatedUser.freeMoney,
+          realMoney: updatedUser.realMoney,
           documents: updatedUser.documents,
           user_id: updatedUser._id,
           role: updatedUser.role,

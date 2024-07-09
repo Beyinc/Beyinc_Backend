@@ -1,64 +1,172 @@
-const { instance } = require('../helpers/razorpayInstance.js');
-const crypto = require('crypto');
-const Payment = require('../models/paymentModel');
+const { authSchema } = require("../helpers/validations");
+const nodemailer = require("nodemailer");
+const bcrypt = require("bcrypt");
+const {
+    signAccessToken,
+    signRefreshToken,
+    verifyRefreshToken,
+    signEmailOTpToken,
+    verifyEmailOtpToken,
+} = require("../helpers/jwt_helpers");
+const User = require("../models/UserModel");
+const dotenv = require("dotenv");
+dotenv.config({ path: "../config.env" });
+const twilio = require("twilio");
+const cloudinary = require("../helpers/UploadImage");
+const Notification = require("../models/NotificationModel");
+const send_Notification_mail = require("../helpers/EmailSending");
+const razorpay = require("../helpers/Razorpay");
+const Benificiary = require("../models/BenificiaryModel");
 
-console.log(instance.orders)
-
-const checkout = async (req, res) => {
-  const options = {
-    amount: Number(req.body.amount * 100), // convert to paise
-    // amount : 5000,
-    currency: 'INR',
-  };
-  const order = await instance.orders.create(options);
-
-  res.status(200).json({
-    success: true,
-    order,
-  });
+exports.orders = async (req, res, next) => {
+    const { amount, currency, email } = req.body;
+    try {
+        const options = {
+            amount: amount * 100,
+            currency: currency,
+            receipt: `receipt_order_${new Date().getTime()}`
+        };
+        const order = await razorpay.orders.create(options);
+        return res.status(200).json(order);
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ error: error.message });
+    }
 };
 
-const paymentVerification = async (req, res) => {
-  console.log(req.body);
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+exports.success = async (req, res, next) => {
+    const { paymentId, amount, userId } = req.body;
 
-  const body = razorpay_order_id + '|' + razorpay_payment_id;
 
-  const expectedSignature = crypto
-    .createHmac('sha256', process.env.RAZORPAY_APT_SECRET)
-    .update(body.toString())
-    .digest('hex');
+    try {
+        const payment = await razorpay.payments.fetch(paymentId);
+        if (payment.status === 'captured') {
 
-  console.log('sign received', razorpay_signature);
-  console.log('expected signature', expectedSignature);
+            await User.updateOne(
+                { _id: userId },
+                { $inc: { realMoney: parseFloat(amount) } }
+            ); return res.status(200).json({ success: true });
+        } else {
+            return res.status(400).json({ error: 'Payment not captured' });
+        }
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
 
-  const isAuthentic = expectedSignature === razorpay_signature;
 
-  if (isAuthentic) {
+exports.fetchUserBalance = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.params.userId);
+        if (req.params.type == 'freeMoney') {
+            return res.status(200).json({ balance: user.freeMoney });
+        }
+        return res.status(200).json({ balance: user.realMoney });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
 
-     // Check if Payment model is defined before creating a payment
-     console.log('Creating payment with model:', Payment);
-      
-    // Database comes here
-    await Payment.create({
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
+exports.addBenificiaryAccount = async (req, res, next) => {
+    try {
+        const { userId, userName, email, phone, accountNumber, ifsc, upi } = req.body;
+        const beneficiaryDetails = {
+            name: userName,
+            email: email,
+            contact: phone, upi
+
+        };
+        const userExist = await Benificiary.findOne({ customer: userId })
+        if (!userExist) {
+
+            if (beneficiaryDetails?.account_number !== '' && beneficiaryDetails?.ifsc_code !== '') {
+                const customerInfo = await razorpay.customers.create(beneficiaryDetails);
+
+                const bankDetails = {
+                    beneficiary_name: userName,
+                    account_number: accountNumber,
+                    ifsc_code: ifsc,
+                }
+                const benificiaryData = await razorpay.customers.addBankAccount(customerInfo.id, bankDetails)
+                await Benificiary.create({ accountNumber: accountNumber, customerId: customerInfo.id,  ifsc: ifsc, beneficiaryId: benificiaryData.id, user: userId, upi})
+                return res.status(200).json('Bank account added');
+            }
+            return res.status(400).json('Account Number and ifsc is required');
+
+        } else if (userExist.accountNumber == null || userExist.ifsc == null) {
+            await Benificiary.updateOne({ customer: userId }, { $set: { accountNumber: accountNumber, ifsc: ifsc } })
+            return res.status(200).json('Bank account added');
+        } else {
+            return res.status(400).json('Customer details already there');
+        }
+    }
+    catch (error) {
+        console.log(error)
+        return res.status(400).json(error.error.description);
+    }
+}
+
+exports.transferCoins = async (req, res, next) => {
+    const { senderId, receiverId, amount } = req.body;
+
+    try {
+        const sender = await User.findById(senderId);
+        const receiver = await User.findById(receiverId);
+        if (sender.realMoney == undefined) {
+            sender.realMoney = 0
+            await sender.save();
+        }
+        if (receiver.realMoney == undefined) {
+            receiver.realMoney = 0
+            await receiver.save();
+        }
+        if (sender.realMoney < amount) {
+            return res.status(400).json({ error: 'Insufficient realMoney' });
+        }
+        
+        sender.realMoney -= amount;
+        await sender.save();
+
+
+        receiver.realMoney += amount;
+        await receiver.save();
+
+
+        return res.json({ success: true });
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json(error);
+    }
+}
+
+exports.redeemMoney = async (req, res, next) => {
+    const receiverBenificiaryDetails = await Benificiary.findById(req.body.receiverId)
+    const receiver = await User.findById(receiverId);
+    const payoutResponse = await axios.post('/api/payouts/transfer', {
+        amount: receiver.realMoney,
+        beneficiary_id: receiverBenificiaryDetails.beneficiaryId,
     });
+    return res.json({ success: true });
+ }
 
-    console.log(razorpay_order_id, razorpay_payment_id, razorpay_signature);
 
-    res.redirect(
-      `http://localhost:3000/paymentsuccess?reference=${razorpay_payment_id}`
-    );
-  } else {
-    res.status(400).json({
-      success: false,
-    });
-  }
-};
+exports.payOutTransfer = async (req, res, next) => {
+    const { amount, beneficiary_id } = req.body;
 
-module.exports = {
-  checkout,
-  paymentVerification,
-};
+    const payoutDetails = {
+        account_number: process.env.RAZORPAY_ACCOUNT_NUMBER,
+        fund_account_id: beneficiary_id,
+        amount: amount * 100,
+        currency: 'INR',
+        mode: 'IMPS',
+        purpose: 'payout',
+        queue_if_low_balance: true
+    };
+
+    try {
+        const response = await razorpay.payouts.create(payoutDetails);
+        return res.json(response);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+}
