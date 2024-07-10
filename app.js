@@ -12,7 +12,7 @@ const pitchRouter = require("./routes/pitchRouter");
 const pitchCommentRouter = require("./routes/PitchCommentRouter");
 const postCommentRouter = require("./routes/postCommentRouter");
 const paymentRouter = require("./routes/paymentRouter");
-
+const referralRouter = require("./routes/referralRouter"); 
 
 
 const NotificationRouter = require("./routes/NotificationRouter");
@@ -69,6 +69,8 @@ app.use("/api/posts", verifyAccessToken, PostRouter);
 app.use("/api/role", rolerouter);
 
 app.use("/api/payment", verifyAccessToken, paymentRouter);
+
+app.use("/api/referral", verifyAccessToken, referralRouter);
 
 
 

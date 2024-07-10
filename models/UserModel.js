@@ -66,6 +66,18 @@ const userSchema = new mongoose.Schema(
     verification: {
       type: String,
     },
+    freeDemoCode: { 
+      code: { type: String, unique: true },
+      used: { type: Boolean, default: false }
+    },
+  
+    referralCode: { 
+        code: { type: String, unique: true },
+        used: { type: Boolean, default: false }
+    },
+    
+    referredTo: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  
     freeMoney: {
       type: Number,
       default: 0,

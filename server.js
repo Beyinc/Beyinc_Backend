@@ -15,7 +15,7 @@ app.get("/api", (req, res) => {
 });
 
 connectdb().then(() => {
-  console.log("ddd");
+  
   app.listen(process.env.PORT || 4000, () => {
     console.log(`Running at http://localhost:${process.env.PORT}/api`);
   });
