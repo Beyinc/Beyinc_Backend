@@ -3,7 +3,7 @@ const dotenv = require("dotenv");
 const { signEmailOTpToken } = require("./jwt_helpers");
 const Userverify = require("../models/OtpModel");
 dotenv.config({ path: "../config.env" });
-const send_Notification_mail = async (to, subject, body, userName, ...args) => {
+const send_Notification_mail = async (to, subject, body, userName, fLink, ...args) => {
   try {
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -23,7 +23,7 @@ const send_Notification_mail = async (to, subject, body, userName, ...args) => {
             <img src=${process.env.MAIL_LOGO} alt="Email Banner" style="display: block; margin: 0 auto 20px; max-width: 40%; height: auto;">
             <p>Hi, <b>${userName}</b></p>
             <p>${body}</p>
-              <a href = ${process.env.BEYINC_SITE} style="display: inline-block; padding: 10px 20px; background-color: #6a73fa; color: #fff; text-decoration: none; border-radius: 5px;">Go to BeyInc</a>       
+              <a href = ${process.env.BEYINC_SITE+fLink} style="display: inline-block; padding: 10px 20px; background-color: #6a73fa; color: #fff; text-decoration: none; border-radius: 5px;">Go to BeyInc</a>       
               <p style="margin-top: 20px;">Best Regards,<br><b>BeyInc</b></p>
               <div style="margin-top: 20px; background-color: #f0f0f0; padding: 10px; border-radius: 5px; text-align: center;">
                   <p style="margin: 0;">&copy; Copyright BeyInc</p>

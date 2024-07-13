@@ -4,6 +4,8 @@ const userCommentController = require('../controllers/userCommentsController')
 
 router.route("/addUserComment").post(userCommentController.addUserComment);
 router.route("/getUserComment").post(userCommentController.getUserComment);
+router.route("/deleteUserComment").post(userCommentController.deleteUserComment);
+
 
 
 router.route("/likeComment").patch(userCommentController.likeComment);
