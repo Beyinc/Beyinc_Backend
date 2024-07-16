@@ -30,7 +30,10 @@ const benificiarySchema = new mongoose.Schema(
             // required: true,
             default: null,
         },
-      
+        mode: {
+            type: String,
+            default: null,
+        }
     },
     {
         timestamps: true, // This adds 'createdAt' and 'updatedAt' fields

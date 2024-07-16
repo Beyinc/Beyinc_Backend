@@ -360,7 +360,7 @@ const validateFundAccount = async (fundAccount, registeredName, beneficiary) => 
 
     if (fundAccount.account_type === 'bank_account') {
       validationData = {
-        account_number: fundAccount.bank_account.account_number,
+        account_number: process.env.BEYINC_RAZORPAY_ACCOUNT,
         fund_account: {
           id: fundAccount.id
         },
@@ -373,6 +373,7 @@ const validateFundAccount = async (fundAccount, registeredName, beneficiary) => 
       };
     } else if (fundAccount.account_type === 'vpa') {
       validationData = {
+        account_number: process.env.BEYINC_RAZORPAY_ACCOUNT,
         fund_account: {
           id: fundAccount.id
         },
@@ -418,6 +419,7 @@ const validateFundAccount = async (fundAccount, registeredName, beneficiary) => 
     // Save the bank account details in the Benificiary model
     beneficiary.accountNumber = fundAccount.bank_account.account_number;
     beneficiary.ifsc = fundAccount.bank_account.ifsc;
+    beneficiary.mode = 'bank'
 
   } else if (fundAccount.account_type === 'vpa') {
     if (validationResult.results.account_status !== 'active') {
@@ -426,6 +428,8 @@ const validateFundAccount = async (fundAccount, registeredName, beneficiary) => 
 
     // Save the VPA address in the Benificiary model
     beneficiary.upi = fundAccount.vpa.address;
+    beneficiary.mode = 'upi'
+
   }
 
   await beneficiary.save();
@@ -452,6 +456,8 @@ exports.getAllContacts = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+
 exports.redeemMoney = async (req, res, next) => {
     const receiverBenificiaryDetails = await Benificiary.findById(req.body.receiverId)
     const receiver = await User.findById(receiverId);
@@ -463,27 +469,52 @@ exports.redeemMoney = async (req, res, next) => {
  }
 
 
-exports.payOutTransfer = async (req, res, next) => {
-    // const { amount, beneficiary_id } = req.body;
+ exports.payOutTransfer = async (req, res, next) => {
+  const { amount } = req.body;
+  const userId = req.payload.user_id;
+  console.log(amount);
+  try {
+    // Find the beneficiary for the given userId
+    const beneficiary = await Benificiary.findOne({ userId });
 
-    const payoutDetails = {
-        account_number: "7878780080316316",
-        fund_account_id: 'fa_OY09emqSUaPQwH',
-        amount:  5000,
+    if (!beneficiary) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    let payoutDetails;
+
+    if (beneficiary.mode === 'bank') {
+      payoutDetails = {
+        account_number: process.env.BEYINC_RAZORPAY_ACCOUNT, // Replace with actual field from Benificiary model
+        fund_account_id: beneficiary.fundaccountId, // Replace with actual field from Benificiary model
+        amount: amount,
         currency: 'INR',
-        mode: 'IMPS',
+        mode: 'IMPS', // Assuming IMPS for bank transfer
         purpose: 'payout',
         queue_if_low_balance: true
-    };
-
-    try {
-        const response = await razorpay.payouts.create(payoutDetails);
-        console.log(response)
-        return res.json(response);
-    } catch (error) {
-        return res.status(500).json({ error: error.message });
+      };
+    } else if (beneficiary.mode === 'upi') {
+      payoutDetails = {
+        account_number: process.env.BEYINC_RAZORPAY_ACCOUNT, // Replace with actual field from Benificiary model
+        fund_account_id: beneficiary.fundaccountId, // Replace with actual field from Benificiary model
+        amount: amount,
+        currency: 'INR',
+        mode: 'UPI', // Assuming IMPS for bank transfer
+        purpose: 'payout',
+        queue_if_low_balance: true
+      };
+    } else {
+      return res.status(400).json({ error: 'Invalid beneficiary mode' });
     }
-}
+    
+    const response = await razorpay.payouts.create(payoutDetails);
+    console.log(response);
+    return res.json(response);
+  } catch (error) {
+    console.error('Error in payout transfer:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 
 // exports.fetchUserBalance = async (req, res, next) => {
 //     try {
