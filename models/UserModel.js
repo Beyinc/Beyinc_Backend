@@ -90,30 +90,47 @@ const userSchema = new mongoose.Schema(
     town: { type: String },
     country: { type: String },
     salutation: { type: String },
-    payment: [
+    payments: [
       {
-        email: {
+        paymentId: {
           type: String,
+          required: true
         },
-        profile_pic: {
-          type: String,
-        },
-        userName: {
-          type: String,
-        },
-        role: {
-          type: String,
-        },
-        moneyPaid: {
+        amount: {
           type: Number,
+          required: true
         },
-        noOfTimes: {
+        currency: {
+          type: String,
+          required: true
+        },
+        order_id: {
+          type: String,
+          required: true
+        },
+        method: {
+          type: String,
+          required: true
+        },
+        amount_refunded: {
           type: Number,
+          default: 0
         },
-        createdAt: {
-          type: Date,
+        refund_status: {
+          type: String,
+          default: null
         },
-      },
+        captured: {
+          type: Boolean,
+          required: true
+        },
+        description: {
+          type: String,      
+        },
+        international: {
+          type: Boolean,
+        },
+      }
     ],
 
     experienceDetails: [
