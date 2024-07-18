@@ -14,7 +14,7 @@ router.route("/payouts/transfer").post(paymentController.payOutTransfer)
 router.route("/addBenificiaryAccount").post(paymentController.addBenificiaryAccount)
 router.route("/verification").post(paymentController.paymentVerification);
 router.route('/fundaccount').post(paymentController.createFundAccount);
-
+router.route('/deleteFundAccount').post(paymentController.deleteFundAccount);
 
 
 

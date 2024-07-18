@@ -33,7 +33,12 @@ const benificiarySchema = new mongoose.Schema(
         mode: {
             type: String,
             default: null,
-        }
+        },
+        payoutId: {  // New field for storing payout ID
+            type: String,
+            default: null,
+        },
+
     },
     {
         timestamps: true, // This adds 'createdAt' and 'updatedAt' fields
