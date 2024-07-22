@@ -218,9 +218,13 @@ exports.createPost = async (req, res, next) => {
       groupDiscussion,
       postTitle,
     } = req.body;
-    const result = await cloudinary.uploader.upload(image, {
-      folder: `${createdBy.email}/posts`,
-    });
+    let result = ''
+    if(image!==undefined && image!==null && image !==""){
+      result = await cloudinary.uploader.upload(image, {
+        folder: `${createdBy.email}/posts`,
+      });
+    }
+    
     const createdPost = await Posts.create({
       reported: false,
       description,
