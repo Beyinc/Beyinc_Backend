@@ -34,10 +34,10 @@ exports.register = async (req, res, next) => {
     };
     referredto = [];
 
-    console.log( {"freeDemoCode": freeDemoCode,
-      "referralCode": newReferralCode,
-      "referredTo": referredto
-    });
+    // console.log( {"freeDemoCode": freeDemoCode,
+    //   "referralCode": newReferralCode,
+    //   "referredTo": referredto
+    // });
 
     // validating email and password
     const validating_email_password = await authSchema.validateAsync(req.body);
@@ -130,10 +130,10 @@ exports.googleSSORegister = async (req, res, next) => {
     };
     referredto = [];
 
-    console.log( {"freeDemoCode": freeDemoCode,
-      "referralCode": newReferralCode,
-      "referredTo": referredto
-    });
+    // console.log( {"freeDemoCode": freeDemoCode,
+    //   "referralCode": newReferralCode,
+    //   "referredTo": referredto
+    // });
 
     // Checking user already exist or not
     const userDoesExist = await User.findOne({ email: email });
