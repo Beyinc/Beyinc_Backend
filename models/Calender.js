@@ -21,7 +21,7 @@ const calendarSchema = new mongoose.Schema({
   },
   roleType: {
     type: String,
-    required: true
+    
   },
   createdAt: {
     type: Date,

@@ -39,7 +39,7 @@ dotenv.config({ path: "../config.env" });
 
 router.route("/calendarAuth").get(calenderAuth.calAuth);
 
-router.route("/calendarController").get(calendarController.gCalendarCallback);
+router.route("/redirect").get(calendarController.Redirect);
 
 module.exports = router;
 
