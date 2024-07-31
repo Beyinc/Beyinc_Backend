@@ -70,7 +70,6 @@ router
 
 router.route("/getUsers").post(userController.getUsers);
 router.route("/isProfileComplete").get(userController.getIsProfileComplete);
-router.route("/isProfileCompletes").get(userController.getIsProfileComplete);
 router
   .route("/updateProfile")
   .post(userController.updateProfileWithoutVerification);
