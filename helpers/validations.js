@@ -1,5 +1,5 @@
 const joi = require('@hapi/joi')
-
+// dumm
 const authSchema = joi.object({
     userName: joi.string(),
     email: joi.string().email(),
