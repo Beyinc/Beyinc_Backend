@@ -1,5 +1,6 @@
 const express = require("express");
 
+const availabilityController = require("../controllers/availabilityController");
 const calendarController = require("../controllers/calendarController")
 const calenderAuth = require("../helpers/calenderAuth");
 const router = express.Router();
@@ -10,36 +11,29 @@ const dotenv = require("dotenv");
 dotenv.config({ path: "../config.env" });
 
 
+// router.route("/availability").post(availabilityController.saveAvailability);
+router.route("/getAvailabilityData").post(availabilityController.getAvailability);
 
-// const oauth2Client = new google.auth.OAuth2(
-//     process.env.YOUR_CLIENT_ID,
-//     process.env.YOUR_CLIENT_SECRET,
-//     process.env.YOUR_REDIRECT_URL
-// );
+router.route("/saveSettingsData").post(availabilityController.saveSettings);
+router.route("/saveSingleService").post(availabilityController.saveSingleService);
+router.route("/createWebinar").post(availabilityController.saveWebinar);
+router.route("/addWebinarUser").post(calendarController.addAttendee);
 
-// const scopes = [
-//     'https://www.googleapis.com/auth/calendar'
-// ];
 
-// // Define the calAuth function directly in the router
-// router.route("/calenderAuth").get((req, res) => {
-//     console.log('Received request at /calenderAuth');
-//     console.log('Client ID:', process.env.YOUR_CLIENT_ID);
+// router.route("/createDm").post(availabilityController.createPriorityDm);
 
-//     const url = oauth2Client.generateAuthUrl({
-//         access_type: 'offline',
-//         scope: scopes
-//     });
 
-//     console.log('Redirect URL:', url);
 
-//     // Redirect to the generated URL
-//     res.send({url});
-// });
+router.route("/saveBooking").post(availabilityController.saveBooking);
+router.route("/getBooking").post(availabilityController.getBooking);
+
 
 router.route("/calendarAuth").get(calenderAuth.calAuth);
 
 router.route("/redirect").get(calendarController.Redirect);
+router.route("/book").post(calendarController.book);
+
+
 
 module.exports = router;
 

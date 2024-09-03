@@ -21,12 +21,6 @@ exports.Redirect = async (req, res, next) => {
         console.log("this is authorized code", code);
 
         await authorize(userId, code);
-        // const oauth2Client = getOAuth2Client();
-        // const { tokens } = await oauth2Client.getToken(code);
-        // oauth2Client.setCredentials(tokens);
-
-        // // Save credentials to the database
-        // await saveCredentials(req.user.id, tokens);
 
         res.send("Authorization successful!");
     } catch (error) {
@@ -45,13 +39,24 @@ async function authorize(userId, code) {
   // First, try to retrieve the credentials from the database
 //   let oauth2Client;
   try {
-    const user = await User.findById(userId).select('googleCredentials');
-    
+    const user = await Calendar.findOne({ userId });
+
+    console.log('google credentials found' ,user.googleCredentials);
+
     if (user && user.googleCredentials) {
-      oauth2Client.setCredentials(user.googleCredentials);
+
+      oauth2Client.setCredentials({
+        access_token: user.googleCredentials.accessToken,
+        refresh_token: user.googleCredentials.refreshToken,
+        expiry_date: user.googleCredentials.expiryDate.getTime(), // Convert Date to timestamp
+    });
+
+    console.log('credentials set')
+
     } else {
       // No credentials found, proceed to get new tokens
       // Exchange the authorization code for tokens
+      console.log('no credentials found')
       const { tokens } = await oauth2Client.getToken(code);
       oauth2Client.setCredentials(tokens);
 
@@ -60,7 +65,7 @@ async function authorize(userId, code) {
       await saveCredentials(userId, tokens);
     }
     
-    await createVideoConference(oauth2Client, eventDetails)
+    // await createVideoConference(oauth2Client, eventDetails)
     // Proceed with your application logic, such as listing events
     await listEvents(oauth2Client);
     
@@ -148,14 +153,14 @@ async function listEvents(auth) {
 
 
 
-const eventDetails = {
-    summary: 'Team Meeting',
-    description: 'Discuss project updates and next steps.',
-    startTime: new Date(new Date().getTime() + 3600000), // 1 hour from now
-    endTime: new Date(new Date().getTime() + 7200000), // 2 hours from now
-    timeZone: 'Asia/Kolkata', // Time zone for India
-    attendees: ['example@example.com'], // List of attendees
-  };
+// const eventDetails = {
+//     summary: 'Team Meeting',
+//     description: 'Discuss project updates and next steps.',
+//     startTime: new Date(new Date().getTime() + 3600000), // 1 hour from now
+//     endTime: new Date(new Date().getTime() + 7200000), // 2 hours from now
+//     timeZone: 'Asia/Kolkata', // Time zone for India
+//     attendees: ['example@example.com'], // List of attendees
+//   };
   
 
 
@@ -180,11 +185,11 @@ async function createVideoConference(auth, eventDetails) {
         summary: eventDetails.summary,
         description: eventDetails.description,
         start: {
-            dateTime: eventDetails.startTime.toISOString(),
+            dateTime: eventDetails.startTime,
             timeZone: eventDetails.timeZone,
         },
         end: {
-            dateTime: eventDetails.endTime.toISOString(),
+            dateTime: eventDetails.endTime,
             timeZone: eventDetails.timeZone,
         },
         attendees: eventDetails.attendees.map(email => ({ email })),
@@ -215,3 +220,120 @@ async function createVideoConference(auth, eventDetails) {
         throw new Error('Error creating event');
     }
 }
+
+
+exports.book = async (req, res, next) => {
+    // const userId = req.user._id; // Assuming user ID is available in req.user._id
+    const { eventDetails, mentorId } = req.body;
+    console.log(eventDetails, mentorId);
+
+    try {
+        // Check if the user has stored credentials
+        const userCalendar = await Calendar.findOne({ userId: mentorId });
+
+        console.log('credentials found' ,userCalendar.googleCredentials)
+
+        if (userCalendar && userCalendar.googleCredentials) {
+            // Set credentials to the oauth2Client
+              // Set the credentials to the oauth2Client
+                  oauth2Client.setCredentials({
+                    access_token: userCalendar.googleCredentials.accessToken,
+                    refresh_token: userCalendar.googleCredentials.refreshToken,
+                    expiry_date: userCalendar.googleCredentials.expiryDate.getTime(), // Convert Date to timestamp
+                });
+
+                console.log('credentials set')
+            // Optionally check if the access token has expired
+            const expiryDate = new Date(userCalendar.googleCredentials.expiryDate);
+            if (expiryDate <= new Date()) {
+                // If the token has expired, refresh it (this depends on your token management strategy)
+                if (userCalendar.googleCredentials.refreshToken) {
+                    const { credentials } = await oauth2Client.refreshAccessToken();
+                    oauth2Client.setCredentials(credentials);
+                    await saveCredentials(mentorId, credentials); // Save the new tokens
+                } else {
+                    return res.status(401).send('Access token expired and no refresh token available. Reauthorization required.');
+                }
+            }
+        } else {
+            return res.status(401).send('No credentials found. Reauthorization required.');
+        }
+
+        // Proceed to create the video conference
+        const createdEvent = await createVideoConference(oauth2Client, eventDetails);
+        res.status(200).send(createdEvent);
+    } catch (error) {
+        console.error('Error in booking:', error);
+        res.status(500).send('Error in booking the event.');
+    }
+};
+
+
+
+
+exports.addAttendee = async (req, res, next) => {
+    const { eventId, mentorId } = req.body;
+    console.log(eventId, mentorId);
+    const {email} = req.payload;
+
+    console.log('email',email);
+  
+  
+    try {
+        // Check if the mentor has stored credentials
+        const userCalendar = await Calendar.findOne({ userId: mentorId });
+
+        console.log('credentials found', userCalendar.googleCredentials);
+
+        if (userCalendar && userCalendar.googleCredentials) {
+            // Set the credentials to the oauth2Client
+            oauth2Client.setCredentials({
+                access_token: userCalendar.googleCredentials.accessToken,
+                refresh_token: userCalendar.googleCredentials.refreshToken,
+                expiry_date: userCalendar.googleCredentials.expiryDate.getTime(), // Convert Date to timestamp
+            });
+
+            console.log('credentials set');
+
+            // Optionally check if the access token has expired
+            const expiryDate = new Date(userCalendar.googleCredentials.expiryDate);
+            if (expiryDate <= new Date()) {
+                // If the token has expired, refresh it
+                if (userCalendar.googleCredentials.refreshToken) {
+                    const { credentials } = await oauth2Client.refreshAccessToken();
+                    oauth2Client.setCredentials(credentials);
+                    await saveCredentials(mentorId, credentials); // Save the new tokens
+                } else {
+                    return res.status(401).send('Access token expired and no refresh token available. Reauthorization required.');
+                }
+            }
+        } else {
+            return res.status(401).send('No credentials found. Reauthorization required.');
+        }
+
+        // Fetch the existing event
+        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+        const event = await calendar.events.get({
+            calendarId: 'primary',
+            eventId: eventId,
+        });
+
+        // Add the new attendee
+        const updatedAttendees = [...event.data.attendees || [], { email }];
+        event.data.attendees = updatedAttendees;
+
+        // Update the event with the new attendee list
+        const updatedEvent = await calendar.events.patch({
+            calendarId: 'primary',
+            eventId: eventId,
+            requestBody: {
+                attendees: updatedAttendees,
+            },
+        });
+        console.log('added user', updatedEvent)
+        res.status(200).send(updatedEvent.data);
+    } catch (error) {
+        console.error('Error in adding attendee:', error);
+        res.status(500).send('Error in adding attendee to the event.');
+    }
+};

@@ -25,14 +25,16 @@ const mongoose = require('mongoose');
 // RAZORPAY DOCS
 exports.orders = async (req, res, next) => {
     const { amount, currency, email } = req.body;
-    console.log(amount)
+    console.log( 'body',req.body)
     try {
         const options = {
-            amount: Number(req.body.amount * 100),
+            amount: Number(amount)*100,
             currency: "INR",
             // receipt: `receipt_order_${new Date().getTime()}`
         };
         
+        console.log('options',options);
+        console.log(razorpay.orders)
         const order = await razorpay.orders.create(options);
         
         console.log(order)
@@ -43,6 +45,7 @@ exports.orders = async (req, res, next) => {
             order,
           });
     } catch (error) {
+      console.error('Error creating order:', error);
         console.log(error)
         return res.status(500).json({ error: error.message });
     }
