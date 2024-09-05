@@ -31,7 +31,7 @@ const availabilitySchema = new mongoose.Schema({
   startDate: { type: Date },
   endDate: { type: Date },
   mentorTimezone: { type: String },
-  noticePeriod: { type: Number },
+  noticePeriod: { type: Number, default: 0  },
   bufferTime: { type: Number },
   availableDayTimeUtc: {
     type: Map,
