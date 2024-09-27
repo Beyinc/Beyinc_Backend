@@ -17,10 +17,27 @@ dotenv.config({ path: "../config.env" });
 const twilio = require("twilio");
 const { exist } = require("@hapi/joi");
 const send_Notification_mail = require("../helpers/EmailSending");
+const { generateUniqueCode } = require('../helpers/UniqueCode');
+
 
 exports.register = async (req, res, next) => {
   try {
     const { email, password, role, userName } = req.body;
+    console.log(req.body)
+    const freeDemoCode = {
+      code: generateUniqueCode(),
+      used: false
+    };
+    const newReferralCode = {
+        code: generateUniqueCode(),
+        used: false
+    };
+    referredto = [];
+
+    // console.log( {"freeDemoCode": freeDemoCode,
+    //   "referralCode": newReferralCode,
+    //   "referredTo": referredto
+    // });
 
     // validating email and password
     const validating_email_password = await authSchema.validateAsync(req.body);
@@ -59,23 +76,29 @@ exports.register = async (req, res, next) => {
       password: passwordHashing,
       role,
       userName,
-      freeCoins: "100",
-      realCoins: "0",
+      freeMoney: 100,
+      realMoney: 0,
       verification: "initial",
+      freeDemoCode: freeDemoCode,
+      referralCode: newReferralCode,
+      referredTo: referredto,
     });
     const userDetails = await User.findOne({ email: email });
 
     const accessToken = await signAccessToken(
       {
         email: userDetails.email,
-        freeCoins: userDetails.freeCoins,
-        realCoins: userDetails.realCoins,
+        freeMoney: userDetails.freeMoney,
+        realMoney: userDetails.realMoney,
         documents: userDetails.documents,
         user_id: userDetails._id,
         role: userDetails.role,
         userName: userDetails.userName,
         image: userDetails.image?.url,
         verification: userDetails.verification,
+        freeDemoCode: userDetails.freeDemoCode,
+        referralCode: userDetails.newReferralCode,
+        referredTo: userDetails.referredto,
       },
       `${userDetails._id}`
     );
@@ -83,6 +106,8 @@ exports.register = async (req, res, next) => {
       { email: userDetails.email, _id: userDetails._id },
       `${userDetails._id}`
     );
+
+    console.log("created account", userDetails)
 
     return res.send({ accessToken: accessToken, refreshToken: refreshToken });
   } catch (err) {
@@ -94,6 +119,21 @@ exports.register = async (req, res, next) => {
 exports.googleSSORegister = async (req, res, next) => {
   try {
     const { email, userName, role } = req.body;
+    console.log(req.body)
+    const freeDemoCode = {
+      code: generateUniqueCode(),
+      used: false
+    };
+    const newReferralCode = {
+        code: generateUniqueCode(),
+        used: false
+    };
+    referredto = [];
+
+    // console.log( {"freeDemoCode": freeDemoCode,
+    //   "referralCode": newReferralCode,
+    //   "referredTo": referredto
+    // });
 
     // Checking user already exist or not
     const userDoesExist = await User.findOne({ email: email });
@@ -106,9 +146,20 @@ exports.googleSSORegister = async (req, res, next) => {
         role,
         password: passwordHashing,
         userName,
+        freeMoney: 100,
+        realMoney: 0,
+        freeDemoCode: freeDemoCode,
+        referralCode: newReferralCode,
+        referredTo: referredto,
+        
       });
       const accessToken = await signAccessToken(
-        { email: email, user_id: newUser._id },
+        {
+          email: email, user_id: newUser._id, freeMoney: newUser.freeMoney,
+          realMoney: newUser.realMoney, 
+          freeDemoCode: newUser.freeDemoCode,
+          referralCode: newUser.newReferralCode,
+          referredTo: newUser.referredto, },
         `${newUser._id}`
       );
       const refreshToken = await signRefreshToken(
@@ -173,8 +224,8 @@ exports.login = async (req, res, next) => {
       const accessToken = await signAccessToken(
         {
           email: userDoesExist.email,
-          freeCoins: userDoesExist.freeCoins,
-          realCoins: userDoesExist.realCoins,
+          freeMoney: userDoesExist.freeMoney,
+          realMoney: userDoesExist.realMoney,
           documents: userDoesExist.documents,
           user_id: userDoesExist._id,
           role: userDoesExist.role,
@@ -222,8 +273,8 @@ exports.mobile_login = async (req, res, next) => {
     const accessToken = await signAccessToken(
       {
         email: userDoesExist.email,
-        freeCoins: userDoesExist.freeCoins,
-        realCoins: userDoesExist.realCoins,
+        freeMoney: userDoesExist.freeMoney,
+        realMoney: userDoesExist.realMoney,
         documents: userDoesExist.documents,
         user_id: userDoesExist._id,
         role: userDoesExist.role,
@@ -259,8 +310,8 @@ exports.refreshToken = async (req, res, next) => {
     const accessToken = await signAccessToken(
       {
         email: userDoesExist.email,
-        freeCoins: userDoesExist.freeCoins,
-        realCoins: userDoesExist.realCoins,
+        freeMoney: userDoesExist.freeMoney,
+        realMoney: userDoesExist.realMoney,
         documents: userDoesExist.documents,
         user_id: userDoesExist._id,
         role: userDoesExist.role,
@@ -292,8 +343,8 @@ exports.verifyMainAccessToken = async (req, res, next) => {
     const currentaccessToken = await signAccessToken(
       {
         email: userDoesExist.email,
-        freeCoins: userDoesExist.freeCoins,
-        realCoins: userDoesExist.realCoins,
+        freeMoney: userDoesExist.freeMoney,
+        realMoney: userDoesExist.realMoney,
         documents: userDoesExist.documents,
         user_id: userDoesExist._id,
         role: userDoesExist.role,

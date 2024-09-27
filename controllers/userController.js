@@ -19,6 +19,7 @@ const send_Notification_mail = require("../helpers/EmailSending");
 const jobTitles = require("../models/Roles");
 const { $_match } = require("@hapi/joi/lib/base");
 const mongoose = require("mongoose");
+const razorpay = require("../helpers/Razorpay");
 
 exports.getProfile = async (req, res, next) => {
   try {
@@ -194,6 +195,7 @@ exports.getIsProfileComplete = async (req, res, next) => {
   } catch (error) {
     return res.status(400).send({ message: error });
     console.log(error);
+    return res.status(400).send({ message: err });
   }
 };
 
@@ -638,8 +640,8 @@ exports.editProfile = async (req, res, next) => {
       const accessToken = await signAccessToken(
         {
           email: userExist.email,
-          freeCoins: userDoesExist.freeCoins,
-          realCoins: userDoesExist.realCoins,
+          freeMoney: userDoesExist.freeMoney,
+          realMoney: userDoesExist.realMoney,
           documents: userExist.documents,
           user_id: userExist._id,
           role: userExist.role,
@@ -752,9 +754,13 @@ exports.directeditprofile = async (req, res, next) => {
       country,
       skills,
       languagesKnown,
+      accountNumber,
+      ifsc,
     } = req.body;
 
     // validating email and password
+
+   
 
     const userDoesExist = await User.findOne({ email: email });
 
@@ -1089,8 +1095,8 @@ exports.directeditprofile = async (req, res, next) => {
       const accessToken = await signAccessToken(
         {
           email: updatedUser.email,
-          freeCoins: updatedUser.freeCoins,
-          realCoins: updatedUser.realCoins,
+          freeMoney: updatedUser.freeMoney,
+          realMoney: updatedUser.realMoney,
           documents: updatedUser.documents,
           user_id: updatedUser._id,
           role: updatedUser.role,

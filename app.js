@@ -11,7 +11,10 @@ const chatRouter = require("./routes/chatRouter");
 const pitchRouter = require("./routes/pitchRouter");
 const pitchCommentRouter = require("./routes/PitchCommentRouter");
 const postCommentRouter = require("./routes/postCommentRouter");
-
+const paymentRouter = require("./routes/paymentRouter");
+const referralRouter = require("./routes/referralRouter"); 
+const calenderRouter = require("./routes/CalenderRouter");
+const calendarController = require("../Beyinc_Backend/controllers/calendarController")
 
 const NotificationRouter = require("./routes/NotificationRouter");
 const PostRouter = require("./routes/postRouter");
@@ -54,6 +57,7 @@ app.use("/api/pitch", verifyAccessToken, pitchCommentRouter);
 app.use("/api/post", verifyAccessToken, postCommentRouter);
 
 
+
 app.use("/api/notification", verifyAccessToken, NotificationRouter);
 
 app.use("/api/pitch", verifyAccessToken, pitchRouter);
@@ -65,4 +69,15 @@ app.use("/api/posts", verifyAccessToken, PostRouter);
 
 app.use("/api/role", rolerouter);
 
+app.use("/api/payment", verifyAccessToken, paymentRouter);
+
+
+app.use("/api/referral", verifyAccessToken, referralRouter);
+
+app.use("/api/calendar", verifyAccessToken, calenderRouter);
+
+app.get("/api/calendarRedirect",calendarController.Redirect );
+
+
+  
 module.exports = app;

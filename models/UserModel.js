@@ -66,42 +66,73 @@ const userSchema = new mongoose.Schema(
     verification: {
       type: String,
     },
-    freeCoins: {
-      type: String,
+    freeDemoCode: { 
+      code: { type: String, unique: true },
+      used: { type: Boolean, default: false }
+    },
+  
+    referralCode: { 
+        code: { type: String, unique: true },
+        used: { type: Boolean, default: false }
+    },
+    
+    referredTo: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  
+    freeMoney: {
+      type: Number,
+      default: 0,
+    },
+    realMoney: {
+      type: Number,
+      default: 0
     },
     state: { type: String },
     town: { type: String },
     country: { type: String },
     salutation: { type: String },
-    payment: [
-      {
-        email: {
-          type: String,
-        },
-        profile_pic: {
-          type: String,
-        },
-        userName: {
-          type: String,
-        },
-        role: {
-          type: String,
-        },
-        moneyPaid: {
-          type: Number,
-        },
-        noOfTimes: {
-          type: Number,
-        },
-        createdAt: {
-          type: Date,
-        },
-      },
-    ],
+    // payments: [
+    //   {
+    //     paymentId: {
+    //       type: String,
+    //       required: true
+    //     },
+    //     amount: {
+    //       type: Number,
+    //       required: true
+    //     },
+    //     currency: {
+    //       type: String,
+    //       required: true
+    //     },
+    //     order_id: {
+    //       type: String,
+    //       required: true
+    //     },
+    //     method: {
+    //       type: String,
+    //       required: true
+    //     },
+    //     amount_refunded: {
+    //       type: Number,
+    //       default: 0
+    //     },
+    //     refund_status: {
+    //       type: String,
+    //       default: null
+    //     },
+    //     captured: {
+    //       type: Boolean,
+    //       required: true
+    //     },
+    //     description: {
+    //       type: String,      
+    //     },
+    //     international: {
+    //       type: Boolean,
+    //     },
+    //   }
+    // ],
 
-    realCoins: {
-      type: String,
-    },
     experienceDetails: [
       {
         domain: { type: String },
