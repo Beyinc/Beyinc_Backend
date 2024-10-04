@@ -20,7 +20,6 @@ const beyincProfileController = require("./controllers/beyincProfessionalControl
 const NotificationRouter = require("./routes/NotificationRouter");
 const PostRouter = require("./routes/postRouter");
 
-
 const rolerouter = require("./routes/rolesRouter");
 
 const swaggerUi = require("swagger-ui-express");

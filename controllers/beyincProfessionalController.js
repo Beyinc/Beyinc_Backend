@@ -4,10 +4,15 @@ const User = require("../models/UserModel");
 
 // Update the beyincProfile field
 exports.saveBeyincProfile = async (req, res) => {
-  const { beyincProfile } = req.body; // Extract user_id and beyincProfile from request
+  
+  // const { beyincProfile,expertise,industries,stages,investmentRange } = req.body; // Extract user_id and beyincProfile from request
+  const {data} = req.body
   const { user_id } = req.payload; 
 
-  console.log('saving', beyincProfile, user_id);
+  console.log(beyincProfile,expertise,industries,stages,investmentRange);
+  
+
+  console.log('saving', data, user_id);
   if (!beyincProfile) {
     return res.status(400).json({ message: 'Profile role is required' });
   }
@@ -16,7 +21,8 @@ exports.saveBeyincProfile = async (req, res) => {
     // Find the user by ID and update the beyincProfile field
     const user = await User.findByIdAndUpdate(
       user_id,
-      { beyincProfile },
+      // {  beyincProfile,expertise,industries,stages,investmentRange },
+      {data},
       { new: true } // Return the updated document
     );
 
