@@ -28,14 +28,17 @@ const { generateUniqueCode } = require('../helpers/UniqueCode');
 exports.getCouponsForUser = async function(req, res) {
     try {
         const userId = req.payload.user_id;
+        console.log(userId);
         const coupons = await Coupon.find({ userId: userId });
-  
+        console.log(coupons)
         res.status(200).json(coupons);
     } catch (error) {
         console.error('Error fetching coupons:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
   };
+
+
   async function generateCoupon(userId, discount) {
     const code = generateUniqueCode();
     const coupon = new Coupon({
@@ -140,3 +143,36 @@ exports.getCouponsForUser = async function(req, res) {
   };
   
   
+
+
+
+// Update coupon status to 'isUsed: true'
+exports.updateCouponStatus = async (req, res) => {
+  const { coupon } = req.body; // Coupon code passed from the request body
+  // console.log('Coupon status',req.body)
+  const code = coupon.code
+  console.log('code',code)
+  try {
+    // Find the coupon by code
+    const coupon = await Coupon.findOne({ code });
+
+    if (!coupon) {
+      return res.status(404).json({ success: false, message: 'Coupon not found' });
+    }
+
+    // Check if coupon is already used
+    if (coupon.isUsed) {
+      return res.status(400).json({ success: false, message: 'Coupon has already been used' });
+    }
+
+    // Update the coupon status to 'isUsed: true'
+    coupon.isUsed = true;
+    await coupon.save();
+
+    return res.status(200).json({ success: true, message: 'Coupon updated successfully', coupon });
+  } catch (error) {
+    console.error('Error updating coupon status:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+

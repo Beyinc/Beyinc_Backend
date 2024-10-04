@@ -4,8 +4,8 @@ const { google } = require('googleapis');
 const { oauth2Client } = require('../helpers/calenderAuth');
 const Calendar = require('../models/Calender'); // Adjust the path according to your project structure
 const calendarApi = google.calendar('v3'); // Using Google Calendar API v3
-
-
+const availabilityController = require ('./availabilityController.js');
+const Booking = require('../models/Booking.js'); // Adjust the path according to your project structure
 
 
 exports.Redirect = async (req, res, next) => {
@@ -36,46 +36,58 @@ exports.Redirect = async (req, res, next) => {
 
 
 async function authorize(userId, code) {
-  // First, try to retrieve the credentials from the database
-//   let oauth2Client;
-  try {
-    const user = await Calendar.findOne({ userId });
-
-    console.log('google credentials found' ,user.googleCredentials);
-
-    if (user && user.googleCredentials) {
-
-      oauth2Client.setCredentials({
-        access_token: user.googleCredentials.accessToken,
-        refresh_token: user.googleCredentials.refreshToken,
-        expiry_date: user.googleCredentials.expiryDate.getTime(), // Convert Date to timestamp
-    });
-
-    console.log('credentials set')
-
-    } else {
-      // No credentials found, proceed to get new tokens
-      // Exchange the authorization code for tokens
-      console.log('no credentials found')
-      const { tokens } = await oauth2Client.getToken(code);
-      oauth2Client.setCredentials(tokens);
-
-      console.log(tokens);
-      // Save the new credentials to the database
-      await saveCredentials(userId, tokens);
+    // First, try to retrieve the credentials from the database
+   
+    try {
+      // Check if the database has any calendar records for the user
+      const calendarCount = await Calendar.countDocuments({});
+      
+      if (calendarCount === 0) {
+        console.log('No calendar records found in the database. Creating new credentials.');
+  
+        // If there are no records, directly exchange the authorization code for tokens
+        const { tokens } = await oauth2Client.getToken(code);
+        oauth2Client.setCredentials(tokens);
+  
+        console.log('New tokens:', tokens);
+        
+        // Save the new credentials to the database
+        await saveCredentials(userId, tokens);
+      } else {
+        // If calendar records exist, search for the user
+        const user = await Calendar.findOne({ userId });
+        console.log('Google credentials found:', user?.googleCredentials);
+  
+        if (user && user.googleCredentials) {
+          oauth2Client.setCredentials({
+            access_token: user.googleCredentials.accessToken,
+            refresh_token: user.googleCredentials.refreshToken,
+            expiry_date: user.googleCredentials.expiryDate.getTime(), // Convert Date to timestamp
+          });
+          console.log('Credentials set');
+        } else {
+          // No credentials found, proceed to get new tokens
+          console.log('No credentials found for the user');
+          const { tokens } = await oauth2Client.getToken(code);
+          oauth2Client.setCredentials(tokens);
+  
+          console.log('New tokens:', tokens);
+  
+          // Save the new credentials to the database
+          await saveCredentials(userId, tokens);
+        }
+      }
+  
+      // Proceed with your application logic, such as listing events
+      await listEvents(oauth2Client);
+      
+      return 'Authorization successful!';
+    } catch (error) {
+      console.error('Error during authorization:', error);
+      throw new Error('Error during authorization');
     }
-    
-    // await createVideoConference(oauth2Client, eventDetails)
-    // Proceed with your application logic, such as listing events
-    await listEvents(oauth2Client);
-    
-    return 'Authorization successful!';
-  } catch (error) {
-    console.error('Error during authorization:', error);
-    throw new Error('Error during authorization');
   }
-}
-
+  
 
 
 // Function to save credentials to the database
@@ -181,16 +193,17 @@ async function listEvents(auth) {
 async function createVideoConference(auth, eventDetails) {
     const calendarApi = google.calendar('v3'); // Google Calendar API client
 
+    console.log(eventDetails);
     const event = {
-        summary: eventDetails.summary,
+        summary: eventDetails.title,
         description: eventDetails.description,
         start: {
-            dateTime: eventDetails.startTime,
+            dateTime: eventDetails.startDateTimeUTC,
             timeZone: eventDetails.timeZone,
         },
         end: {
-            dateTime: eventDetails.endTime,
-            timeZone: eventDetails.timeZone,
+            dateTime: eventDetails.endDateTimeUTC,
+            timeZone: 'UTC',
         },
         attendees: eventDetails.attendees.map(email => ({ email })),
         conferenceData: {
@@ -213,7 +226,8 @@ async function createVideoConference(auth, eventDetails) {
             conferenceDataVersion: 1,
             auth: auth // Pass the auth object here
         });
-        console.log('Event created:', response.data);
+
+        // console.log('Event created:', response.data);
         return response.data;
     } catch (error) {
         console.error('Error creating event:', error);
@@ -222,9 +236,13 @@ async function createVideoConference(auth, eventDetails) {
 }
 
 
+
+
+
 exports.book = async (req, res, next) => {
     // const userId = req.user._id; // Assuming user ID is available in req.user._id
-    const { eventDetails, mentorId } = req.body;
+    console.log('Book created')
+    const { eventDetails, mentorId, bookingData  } = req.body;
     console.log(eventDetails, mentorId);
 
     try {
@@ -261,12 +279,29 @@ exports.book = async (req, res, next) => {
 
         // Proceed to create the video conference
         const createdEvent = await createVideoConference(oauth2Client, eventDetails);
-        res.status(200).send(createdEvent);
+
+        const createdBooking = await availabilityController.saveBooking(bookingData, createdEvent);
+
+        if (createdBooking)   { 
+        return res.status(200).json({
+            success: true,
+            message: 'created and saved',
+          });
+        }
+        // Check if the booking was saved successfully
+        if (!createdBooking) {
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to create booking',
+          });
+        }
+        
     } catch (error) {
         console.error('Error in booking:', error);
         res.status(500).send('Error in booking the event.');
     }
 };
+
 
 
 
@@ -337,3 +372,220 @@ exports.addAttendee = async (req, res, next) => {
         res.status(500).send('Error in adding attendee to the event.');
     }
 };
+
+
+
+exports.modifyEventDates = async (req, res, next) => {
+    const { eventDetails, mentorId, bookingData , rescheduleBooking  } = req.body;
+    const { eventId } = rescheduleBooking;
+
+    console.log('eventId:', eventId, 'mentorId:', mentorId);
+
+    console.log('reschedule data', rescheduleBooking)
+  
+
+    try {
+        // Check if the mentor has stored credentials
+        const userCalendar = await Calendar.findOne({ userId: mentorId });
+
+        console.log('credentials found:', userCalendar.googleCredentials);
+
+        if (userCalendar && userCalendar.googleCredentials) {
+            // Set the credentials to the oauth2Client
+            oauth2Client.setCredentials({
+                access_token: userCalendar.googleCredentials.accessToken,
+                refresh_token: userCalendar.googleCredentials.refreshToken,
+                expiry_date: userCalendar.googleCredentials.expiryDate.getTime(),
+            });
+
+            console.log('credentials set');
+
+            // Optionally check if the access token has expired
+            const expiryDate = new Date(userCalendar.googleCredentials.expiryDate);
+            if (expiryDate <= new Date()) {
+                if (userCalendar.googleCredentials.refreshToken) {
+                    const { credentials } = await oauth2Client.refreshAccessToken();
+                    oauth2Client.setCredentials(credentials);
+                    await saveCredentials(mentorId, credentials); // Save new tokens
+                } else {
+                    return res.status(401).send('Access token expired and no refresh token available. Reauthorization required.');
+                }
+            }
+        } else {
+            return res.status(401).send('No credentials found. Reauthorization required.');
+        }
+
+        // Fetch the existing event
+        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+        const event = await calendar.events.get({
+            calendarId: 'primary',
+            eventId: eventId,
+        });
+
+        // Modify event dates
+        const updatedEvent = await calendar.events.patch({
+            calendarId: 'primary',
+            eventId: eventId,
+            requestBody: {
+                start: {
+                    dateTime: eventDetails.startDateTimeUTC, // New start date
+                    timeZone: 'UTC', // Keep existing time zone
+                },
+                end: {
+                    dateTime: eventDetails.endDateTimeUTC, // New end date
+                    timeZone:'UTC', // Keep existing time zone
+                },
+            },
+        });
+
+
+        const updateResult = await updateBookingDates(
+            eventId,
+            eventDetails.startDateTimeUTC,
+            eventDetails.endDateTimeUTC
+        );
+
+        if (!updateResult.success) {
+            // Handle failure in updating the booking
+            return res.status(500).send(updateResult.message);
+        }
+
+        // Send a success response with both the updated calendar event and the updated booking
+        res.status(200).send({
+            message: 'Event and booking dates successfully updated!',
+            updatedEvent: updatedEvent.data,
+            updatedBooking: updateResult.updatedBooking,
+        });
+    } 
+        
+     catch (error) {
+        console.error('Error modifying event dates:', error);
+        res.status(500).send('Error in modifying event dates.');
+    }
+};
+
+
+
+
+async function updateBookingDates(eventId, newStartDateTime, newEndDateTime) {
+    try {
+        // Find the booking by eventId and update the dates, also set reschedule to true
+        const updatedBooking = await Booking.findOneAndUpdate(
+            { eventId }, // Find booking by eventId
+            {
+                startDateTime: newStartDateTime,
+                endDateTime: newEndDateTime,
+                reschedule: true, // Add the reschedule field
+            },
+            { new: true } // Return the updated booking
+        );
+
+        if (!updatedBooking) {
+            return { success: false, message: 'Booking not found' };
+        }
+
+        console.log('Booking dates updated in database:', updatedBooking);
+
+        // Return a success message with the updated booking details
+        return { success: true, message: 'Event and booking dates successfully updated!', updatedBooking };
+    } catch (error) {
+        console.error('Error updating booking dates:', error);
+        // Return an error message
+        return { success: false, message: 'There was a problem updating the booking.' };
+    }
+};
+
+
+
+
+exports.deleteEvent = async (req, res, next) => {
+    const { selectedBooking } = req.body;
+    const { eventId,mentorId } = selectedBooking;
+    const {_id} = mentorId;
+
+    console.log('eventId:', eventId, 'mentorId:', mentorId, 'id:', _id);
+
+    try {
+        // Check if the mentor has stored credentials
+        const userCalendar = await Calendar.findOne({ userId: _id });
+
+        console.log('credentials found:', userCalendar.googleCredentials);
+
+        if (userCalendar && userCalendar.googleCredentials) {
+            // Set the credentials to the oauth2Client
+            oauth2Client.setCredentials({
+                access_token: userCalendar.googleCredentials.accessToken,
+                refresh_token: userCalendar.googleCredentials.refreshToken,
+                expiry_date: userCalendar.googleCredentials.expiryDate.getTime(),
+            });
+
+            console.log('credentials set');
+
+            // Optionally check if the access token has expired
+            const expiryDate = new Date(userCalendar.googleCredentials.expiryDate);
+            if (expiryDate <= new Date()) {
+                if (userCalendar.googleCredentials.refreshToken) {
+                    const { credentials } = await oauth2Client.refreshAccessToken();
+                    oauth2Client.setCredentials(credentials);
+                    await saveCredentials(mentorId, credentials); // Save new tokens
+                } else {
+                    return res.status(401).send('Access token expired and no refresh token available. Reauthorization required.');
+                }
+            }
+        } else {
+            return res.status(401).send('No credentials found. Reauthorization required.');
+        }
+
+        // Delete the event from the Google Calendar
+        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+        await calendar.events.delete({
+            calendarId: 'primary',
+            eventId: eventId,
+        });
+
+        console.log('Event deleted successfully');
+
+        // Optionally, you can also delete the event from your database or update its status
+         const deleteResult = await cancelBooking(eventId);
+
+        if (!deleteResult.success) {
+            // Handle failure in deleting the booking
+            return res.status(500).send(deleteResult.message);
+        }
+
+        // Send a success response
+        res.status(200).send({
+            message: 'Event and booking successfully deleted!',
+            deletedBooking: deleteResult.deletedBooking,
+        });
+    } catch (error) {
+        console.error('Error deleting event:', error);
+        res.status(500).send('Error in deleting event.');
+    }
+};
+
+
+
+async function cancelBooking(eventId) {
+    try {
+        // Find the booking by eventId and update the status to "cancelled"
+        const updatedBooking = await Booking.findOneAndUpdate(
+            { eventId }, // Find the booking by eventId
+            { status: 'cancelled' }, // Update status to "cancelled"
+            { new: true } // Return the updated booking
+        );
+
+        if (!updatedBooking) {
+            return { success: false, message: 'Booking not found' };
+        }
+
+        console.log('Booking status updated to cancelled:', updatedBooking);
+
+        // Return a success message with the updated booking details
+        return { success: true, message: 'Booking successfully cancelled!', updatedBooking };
+    } catch (error) {
+        console.error('Error cancelling booking:', error);
+        // Return an error message
+        return { success: false, message: 'There was a problem cancelling the booking.' };
+    }
+}

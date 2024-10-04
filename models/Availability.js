@@ -33,6 +33,10 @@ const availabilitySchema = new mongoose.Schema({
   mentorTimezone: { type: String },
   noticePeriod: { type: Number, default: 0  },
   bufferTime: { type: Number },
+  reschedulePolicy: {
+    type: Array,    // Using Array type to store [true, 2]
+    default: [false, 0]  // Default values: reschedule not allowed, 0 days notice
+  },
   availableDayTimeUtc: {
     type: Map,
     of: [String],

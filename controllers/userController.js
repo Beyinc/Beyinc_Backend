@@ -21,7 +21,42 @@ const { $_match } = require("@hapi/joi/lib/base");
 const mongoose = require("mongoose");
 const razorpay = require("../helpers/Razorpay");
 
+exports.userDetails = async (req, res, next) => {
+  // console.log(req)
+  try {
+    // const { id } = req.body;  // Extract the id from the request body
+    const { user_id } = req.payload;  // Extract the user_id from the payload (e.g., JWT token)
+
+    // Find the user by ID (either from body or from the authenticated user)
+    const userDoesExist = await User.findOne(
+      { _id: id ? id : user_id },  // If id is provided in the body, use that, else use authenticated user's id
+      { password: 0, chatBlockedBy: 0 }  // Exclude the password and chatBlockedBy fields
+    )
+      .populate({
+        path: "followers",  // Populate followers field
+        select: ["userName", "image", "role", "_id"],  // Select specific fields for followers
+      })
+      .populate({
+        path: "following",  // Populate following field
+        select: ["userName", "image", "role", "_id"],  // Select specific fields for following
+      })
+      .populate("role_details");  // Populate role_details
+
+    // If the user exists, return their profile data
+    if (userDoesExist) {
+      return res.status(200).json(userDoesExist);  // Respond with status 200 and the user's profile data
+    } else {
+      return res.status(404).json({ message: "User not found" });  // If no user found, respond with 404
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Server error", error });  // Handle any errors
+  }
+};
+
+
 exports.getProfile = async (req, res, next) => {
+  console.log('getProfile')
   try {
     const { id } = req.body;
     const { user_id } = req.payload;

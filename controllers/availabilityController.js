@@ -39,6 +39,7 @@ const convertToReadableDate = (isoDateStr) => {
   return date.toString(); // Converts to 'Sat Aug 10 2024 16:36:57 GMT+0530 (India Standard Time)'
 };
 
+
 exports.saveSettings = async (req, res) => {
   console.log('body', req.body);
   const userId = req.payload.user_id; // Assuming user_id comes from token or session
@@ -52,7 +53,8 @@ exports.saveSettings = async (req, res) => {
       startDate,
       endDate,
       noticePeriod,
-      bufferTime
+      bufferTime,
+      reschedulePolicy // Add reschedulePolicy here
     } = req.body;
 
     // Find existing record for the user
@@ -81,6 +83,9 @@ exports.saveSettings = async (req, res) => {
       if (bufferTime) {
         availability.bufferTime = bufferTime;
       }
+      if (reschedulePolicy) {
+        availability.reschedulePolicy = reschedulePolicy; // Update reschedulePolicy
+      }
     } else {
       // Create new record with the fields provided in the request
       availability = new Availability({
@@ -91,7 +96,8 @@ exports.saveSettings = async (req, res) => {
         endDate: endDate,
         mentorTimezone: selectedTimezone,
         noticePeriod: noticePeriod,
-        bufferTime:bufferTime
+        bufferTime: bufferTime,
+        reschedulePolicy: reschedulePolicy // Add reschedulePolicy for new record
       });
     }
 
@@ -151,7 +157,7 @@ exports.saveSchedule = async (req, res) => {
 exports.getAvailability = async (req, res) => {
     console.log('API is working');
     let userId = req.payload.user_id; // Assuming user_id comes from token or session
-    
+    console.log(userId);
     console.log('mentorId', req.body)
 
     const {mentorId} = req.body
@@ -192,12 +198,12 @@ exports.getAvailability = async (req, res) => {
   exports.saveSingleService = async (req, res) => {
     console.log(req.body);
     try {
-      const { title, description, timeDuration, amount, hostingLink } = req.body;
+      const { title, description, duration, amount, hostingLink } = req.body;
       const userId = req.payload.user_id;
   
       // Create a new session object based on the updated schema
       const newSession = {
-        duration: timeDuration,
+        duration,
         title,
         amount,
         description,
@@ -295,31 +301,45 @@ exports.saveWebinar = async (req, res) => {
 
 
 
+  exports.saveBooking = async (bookingData, createdEvent) => {
+    const meetLink= createdEvent.hangoutLink
+    const eventId = createdEvent.id
 
-  exports.saveBooking = async (req, res) => {
-    console.log(req.body);
+    console.log('Saving event', eventId, meetLink)
     try {
       const {
         mentorId,
         user_id,
         mentorTimezone,
         amount,
+        finalAmount,
+        discountPercent,
         currency,
         startDateTimeUTC,
         endDateTimeUTC,
-        selectedTimezone, // This is the user's timezone
+        selectedTimezone, // User's timezone
         duration,
         title,
-        description
-      } = req.body.bookingData;
+        description,
+      } = bookingData; // Destructure bookingData directly
   
-
-
-         // Convert mentorId and user_id to Mongoose ObjectId
+      // Validate required fields
+      if (!mentorId || !user_id || !startDateTimeUTC || !endDateTimeUTC || !duration || !meetLink) {
+        return res.status(400).json({ message: 'Missing required booking details.' });
+      }
+  
+      // Convert mentorId and user_id to Mongoose ObjectId
       const ObjectId = mongoose.Types.ObjectId;
+      if (!ObjectId.isValid(mentorId) || !ObjectId.isValid(user_id)) {
+        return res.status(400).json({ message: 'Invalid mentor or user ID.' });
+      }
+  
       const mentorObjectId = new ObjectId(mentorId);
       const userObjectId = new ObjectId(user_id);
-
+  
+      const finalAmountValue = finalAmount || 0;
+      const discountPercentValue = discountPercent || 0;
+  
       // Create a new booking record
       const newBooking = new Booking({
         mentorId: mentorObjectId,
@@ -329,40 +349,242 @@ exports.saveWebinar = async (req, res) => {
         startDateTime: startDateTimeUTC,
         endDateTime: endDateTimeUTC,
         duration,
-        amount, // Calculate amount based on duration and some rate, if applicable
+        amount,
+        finalAmount: finalAmountValue,
+        discountPercent: discountPercentValue,
         currency,
         title,
         description,
+        eventId,
+        meetLink, 
         status: 'upcoming' // Default status
       });
   
       // Save the booking to the database
-      await newBooking.save();
+      const savedBooking = await newBooking.save();
   
-      // Respond with success
-      res.status(201).json({ message: 'Booking saved successfully', booking: newBooking });
+      return savedBooking;
     } catch (error) {
-      // Handle errors
-      console.error(error);
-      res.status(500).json({ message: 'An error occurred while saving the booking', error: error.message });
+      throw new Error(`Error saving booking: ${error.message}`);
     }
   };
 
 
 
+  exports.getBookingsMentor = async (req, res) => {
+    try {
+      // const mentorId = req.payload.user_id;
+      const {mentorId} = req.body
+      console.log(`mentorId from payload: ${mentorId}`); // Log mentorId
+  
+      if (!mentorId) {
+        return res.status(400).json({ success: false, message: 'mentorId is required' });
+      }
+  
+      console.log('Fetching bookings for mentorId:', mentorId); // Log the query starting
+  
+      const bookings = await Booking.find({ mentorId })
+        .populate('mentorId', 'email name phone') // Populate mentorId with specific fields
+        .populate('userId', 'email name phone') // Populate userId with specific fields
+        .exec();
+  
+      console.log('Bookings found:', bookings); // Log the bookings retrieved
+  
+      if (!bookings.length) {
+        return res.status(404).json({ success: false, message: 'No bookings found for this mentor' });
+      }
+  
+      res.status(200).json({ success: true, mentorBookings: bookings });
+    } catch (error) {
+      console.error('Error getting bookings by mentorId:', error);
+      res.status(500).json({ success: false, message: 'Server error' });
+    }
+  };
+  
 
-exports.getBooking = async (req, res) => {
+  exports.getBookingsUser = async (req, res) => {
+    try {
+      const userId = req.payload.user_id;
+  
+      console.log(`userId from payload: ${userId}`); // Log userId
+  
+      if (!userId) {
+        return res.status(400).json({ success: false, message: 'userId is required' });
+      }
+  
+      console.log('Fetching bookings for userId:', userId); // Log the start of the query
+  
+      const bookings = await Booking.find({ userId })
+        .populate('mentorId', 'email userName phone') // Populate mentorId with specific fields
+        .populate('userId', 'email userName phone') // Populate userId with specific fields
+        .exec();
+  
+      console.log('Bookings found:', bookings); // Log the bookings found
+  
+      if (!bookings.length) {
+        return res.status(404).json({ success: false, message: 'No bookings found for this user' });
+      }
+  
+      res.status(200).json({ success: true,  userBookings: bookings });
+    } catch (error) {
+      console.error('Error getting bookings by userId:', error);
+      res.status(500).json({ success: false, message: 'Server error' });
+    }
+  };
+
+
+
+// Update controller function
+exports.updateMentorReschedule = async (req, res) => {
+  const { id, booleanValue, rescheduleReason } = req.body;
+
   try {
-    // Retrieve all booking records from the database
-    const bookings = await Booking.find();
+    // Log request body
+    console.log('Request body:', req.body);
 
-    console.log(bookings);
-    // Respond with the array of booking records
-    res.status(200).json({ bookings });
+    // Validate input
+    if (typeof booleanValue !== 'boolean') {
+      console.log('Invalid boolean value type:', { booleanValue });
+      return res.status(400).json({ error: 'booleanValue must be a boolean' });
+    }
+
+    if (typeof rescheduleReason !== 'string') {
+      console.log('Invalid reschedule reason type:', { rescheduleReason });
+      return res.status(400).json({ error: 'rescheduleReason must be a string' });
+    }
+
+    // Log document ID
+    console.log('Updating document with ID:', id);
+
+    // Find and update the document
+    const result = await Booking.findByIdAndUpdate(
+      id,
+      { 
+        mentorReschedule: [booleanValue, rescheduleReason] // Ensure both values are included
+      },
+      { new: true, runValidators: true }
+    );
+
+    // Check if document was found and updated
+    if (!result) {
+      console.log('Document not found for ID:', id);
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    // Log typeof mentorReschedule after the update
+    console.log('Type of mentorReschedule:', typeof result.mentorReschedule);
+
+    // Respond with the updated document
+    console.log('Document updated successfully:', result);
+    res.status(200).json(result);
   } catch (error) {
-    // Handle errors
-    console.error('Error retrieving bookings:', error);
-    res.status(500).json({ message: 'An error occurred while retrieving the bookings', error: error.message });
+    console.error('Server error:', error.message);
+
+    if (error instanceof mongoose.Error.CastError) {
+      // Handle specific CastError
+      return res.status(400).json({ error: `Cast error: ${error.message}` });
+    }
+
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
+
+
+
+// Add feedback to a specific booking by _id
+exports.addFeedback = async (req, res) => {
+  try {
+    console.log(req.body)
+    const { feedback,bookingId  } = req.body; // Get the feedback from the request body
+
+    // Validate feedback array to ensure it contains two elements
+    if (!Array.isArray(feedback) || feedback.length !== 2) {
+      return res.status(400).json({ message: 'Feedback must be an array with two strings: [rating, feedback text].' });
+    }
+
+    const rating = feedback[0];
+    const feedbackText = feedback[1];
+
+    if (isNaN(rating) || typeof feedbackText !== 'string') {
+      return res.status(400).json({ message: 'Invalid feedback format: rating should be a string representing a number, and feedback should be a string.' });
+    }
+
+    // Find the booking by _id and update feedback
+    const updatedBooking = await Booking.findByIdAndUpdate(
+      bookingId,
+      { $push: { feedback } }, // Add feedback to the existing array
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedBooking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    res.status(200).json({
+      message: 'Feedback added successfully',
+      booking: updatedBooking
+    });
+  } catch (error) {
+    console.error('Error adding feedback:', error);
+    res.status(500).json({ message: 'Server error while adding feedback', error: error.message });
+  }
+};
+
+
+// Controller to delete a session by sessionId and userId
+exports.deleteSessionById = async (req, res) => {
+  try {
+    const userId = req.payload.user_id;
+    const { sessionId } = req.body;
+
+    // Log the incoming request body and user ID for debugging
+    console.log('Request Body:', req.body);
+    console.log('User ID from Payload:', userId);
+
+    // Find the availability document for the given userId
+    const availability = await Availability.findOne({ userId });
+
+    // Log to check if availability document is found
+    if (!availability) {
+      console.log('Availability document not found for user:', userId);
+      return res.status(404).json({ message: 'Availability not found' });
+    }
+
+    // Log the availability document before deletion
+    console.log('Found Availability:', availability);
+
+    // Find the session index by sessionId within the sessions array
+    const sessionIndex = availability.sessions.findIndex(
+      (session) => session._id.toString() === sessionId
+    );
+
+    // Log the session index and sessionId for debugging
+    console.log('Session ID:', sessionId);
+    console.log('Session Index:', sessionIndex);
+
+    // If session not found, log and return 404
+    if (sessionIndex === -1) {
+      console.log('Session not found for sessionId:', sessionId);
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    // Log the session being deleted
+    console.log('Deleting Session:', availability.sessions[sessionIndex]);
+
+    // Remove the session from the array
+    availability.sessions.splice(sessionIndex, 1);
+
+    // Save the updated availability document
+    await availability.save();
+
+    // Log success message before sending response
+    console.log('Session deletion successful, sending 200 status');
+
+    return res.status(200).json({ message: 'Session deleted successfully' });
+  } catch (error) {
+    // Log the error with full details
+    console.error('Error occurred during session deletion:', error);
+    return res.status(500).json({ message: 'Server error', error });
+  }
+};

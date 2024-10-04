@@ -90,48 +90,7 @@ const userSchema = new mongoose.Schema(
     town: { type: String },
     country: { type: String },
     salutation: { type: String },
-    // payments: [
-    //   {
-    //     paymentId: {
-    //       type: String,
-    //       required: true
-    //     },
-    //     amount: {
-    //       type: Number,
-    //       required: true
-    //     },
-    //     currency: {
-    //       type: String,
-    //       required: true
-    //     },
-    //     order_id: {
-    //       type: String,
-    //       required: true
-    //     },
-    //     method: {
-    //       type: String,
-    //       required: true
-    //     },
-    //     amount_refunded: {
-    //       type: Number,
-    //       default: 0
-    //     },
-    //     refund_status: {
-    //       type: String,
-    //       default: null
-    //     },
-    //     captured: {
-    //       type: Boolean,
-    //       required: true
-    //     },
-    //     description: {
-    //       type: String,      
-    //     },
-    //     international: {
-    //       type: Boolean,
-    //     },
-    //   }
-    // ],
+
 
     experienceDetails: [
       {
@@ -198,6 +157,13 @@ const userSchema = new mongoose.Schema(
       refPath: "role_type",
       required: false,
     },
+// Mentors/ Investores registered in beyinc
+    beyincProfile: { type: String, required: false },
+    industries: { type: String, required: false },
+    expertise: { type: String, required: false},
+    stages: { type: String, required: false },
+    investmentRange: { type: Number, required: false},
+
     role_type: {
       type: String,
       required: false,
