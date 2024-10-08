@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-
+// category date private/public 
 const postSchema = new mongoose.Schema(
     {
         description: {

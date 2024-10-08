@@ -26,6 +26,8 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerSpecs = require("./swagger");
 
 const { verifyAccessToken } = require("./helpers/jwt_helpers");
+const userProfileRoutes = require('./routes/userProfileRoutes');
+const filterRoutes = require('./routes/filterRoutes');
 
 const cors = require("cors");
 const morgan = require("morgan");
@@ -80,6 +82,8 @@ app.get("/api/calendarRedirect",calendarController.Redirect );
 
 app.post("/api/saveBeyincProfessional", verifyAccessToken, beyincProfileController.saveBeyincProfile );
 
+app.use('/api',verifyAccessToken, userProfileRoutes);
 
-  
+app.use('/api',verifyAccessToken,filterRoutes);
+
 module.exports = app;
