@@ -82,6 +82,8 @@ app.get("/api/calendarRedirect",calendarController.Redirect );
 
 app.post("/api/saveBeyincProfessional", verifyAccessToken, beyincProfileController.saveBeyincProfile );
 
+
+
 app.use('/api',verifyAccessToken, userProfileRoutes);
 
 app.use('/api',verifyAccessToken,filterRoutes);
