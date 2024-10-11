@@ -1,5 +1,6 @@
 const express = require("express");
-const postControllers = require("../controllers/postControllers");
+// const postControllers = require("../controllers/postControllers");
+const postControllers = require('../controllers/postControllers');
 const router = express.Router();
 
 router.route("/createPost").post(postControllers.createPost);
@@ -22,6 +23,9 @@ router.route("/addReport").post(postControllers.reportPost);
 router.route("/getReportedPosts").get(postControllers.getReportedPosts);
 
 router.route("/updateReport").post(postControllers.updatereportPost);
+
+router.route('/filterPosts').post(postControllers.filterposts);
+
 
 
 module.exports = router;

@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-
+// category date private/public 
 const postSchema = new mongoose.Schema(
     {
         description: {
@@ -8,6 +8,12 @@ const postSchema = new mongoose.Schema(
         link: {
             type: String,
         },
+        visibility: {
+            type: String,
+            enum: ["public", "private"], // Only allows these two values
+            default: "public", // Default to public if not specified
+        },
+        
         image: {
             public_id: {
                 type: String,
