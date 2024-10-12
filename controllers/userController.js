@@ -75,6 +75,8 @@ exports.getProfile = async (req, res, next) => {
       .populate("role_details");
 
     // console.log(removePass);
+    console.log(userDoesExist);
+    
     if (userDoesExist) {
       return res.status(200).json(userDoesExist);
     }

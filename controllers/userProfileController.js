@@ -54,3 +54,90 @@ console.log("Received experience data:", experience);
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// Function to handle input form data
+exports.InputFormData = async (req, res) => {
+  const {
+    salutation,
+    fullName,
+    mentorCategories,
+    mobileNumber,
+    twitter,
+    linkedin,
+    country,
+    state,
+    town,
+    languages,
+  } = req.body; // Destructure the formState from req.body
+
+  const { user_id } = req.payload; // Assuming you're getting user_id from the request payload
+
+  // Validate fields if necessary
+  if (typeof salutation !== "string") {
+    return res.status(400).json({ message: "Invalid salutation." });
+  }
+
+  if (typeof fullName !== "string" || fullName.length > 100) {
+    return res.status(400).json({ message: "Invalid full name." });
+  }
+
+  if (mentorCategories && typeof mentorCategories !== "string") {
+    return res.status(400).json({ message: "Invalid mentor categories." });
+  }
+
+  if (mobileNumber && typeof mobileNumber !== "string") {
+    return res.status(400).json({ message: "Invalid mobile number." });
+  }
+
+  if (twitter && typeof twitter !== "string") {
+    return res.status(400).json({ message: "Invalid Twitter handle." });
+  }
+
+  if (linkedin && typeof linkedin !== "string") {
+    return res.status(400).json({ message: "Invalid LinkedIn profile." });
+  }
+
+  if (country && typeof country !== "string") {
+    return res.status(400).json({ message: "Invalid country." });
+  }
+
+  if (state && typeof state !== "string") {
+    return res.status(400).json({ message: "Invalid state." });
+  }
+
+  if (town && typeof town !== "string") {
+    return res.status(400).json({ message: "Invalid town." });
+  }
+
+  if (languages && !Array.isArray(languages)) {
+    return res.status(400).json({ message: "Invalid languages." });
+  }
+
+  try {
+    // Update the user in the database, assuming you want to update these fields
+    const updateFields = {
+      salutation,
+      fullName,
+      mentorCategories,
+      mobileNumber,
+      twitter,
+      linkedin,
+      country,
+      state,
+      town,
+      languagesKnown:languages,
+    };
+
+    const user = await User.findByIdAndUpdate(user_id, updateFields, { new: true });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ message: "Data saved successfully", user });
+  } catch (error) {
+    console.error("Error saving data:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
