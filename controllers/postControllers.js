@@ -219,16 +219,13 @@ exports.createPost = async (req, res, next) => {
       visibility,
     } = req.body;
 
-
-    // Only upload the image if it's provided
-    let uploadedImage = null;
-    if (image) {
-      uploadedImage = await cloudinary.uploader.upload(image, {
+    let result = ''
+    if(image!==undefined && image!==null && image !==""){
+      result = await cloudinary.uploader.upload(image, {
         folder: `${createdBy.email}/posts`,
       });
     }
-
-    // Create the post in the database
+    
     const createdPost = await Posts.create({
       reported: false,
       description,
