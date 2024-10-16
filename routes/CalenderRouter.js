@@ -25,13 +25,18 @@ router.route("/addWebinarUser").post(calendarController.addAttendee);
 
 
 router.route("/saveBooking").post(availabilityController.saveBooking);
-router.route("/getBooking").post(availabilityController.getBooking);
-
+router.route("/mentorBookings").post(availabilityController.getBookingsMentor);
+router.route("/userBookings").post(availabilityController.getBookingsUser);
 
 router.route("/calendarAuth").get(calenderAuth.calAuth);
 
 router.route("/redirect").get(calendarController.Redirect);
 router.route("/book").post(calendarController.book);
+router.route("/reschedule").post(calendarController.modifyEventDates);
+router.route("/mentorReschedule").post(availabilityController.updateMentorReschedule);
+router.route("/cancelBooking").post(calendarController.deleteEvent);
+router.route("/addFeedback").post(availabilityController.addFeedback);
+router.route("/deleteSingleService").post(availabilityController.deleteSessionById);
 
 
 

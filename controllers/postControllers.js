@@ -216,7 +216,9 @@ exports.createPost = async (req, res, next) => {
       fullDetails,
       groupDiscussion,
       postTitle,
+      visibility,
     } = req.body;
+
     let result = ''
     if(image!==undefined && image!==null && image !==""){
       result = await cloudinary.uploader.upload(image, {
@@ -228,15 +230,16 @@ exports.createPost = async (req, res, next) => {
       reported: false,
       description,
       postTitle,
-      image: result,
       type,
-      tags: tags?.map((m) => m._id),
+      visibility,
       createdBy: createdBy._id,
-      pitchId,
-      openDiscussion: openDiscussion,
-      link,
-      fullDetails,
-      groupDiscussion,
+      ...(tags?.length && { tags: tags.map((m) => m._id) }), // Conditional tags
+      ...(pitchId && { pitchId }), // Conditional pitchId
+      ...(openDiscussion !== undefined && { openDiscussion }), // Conditional openDiscussion
+      ...(link && { link }), // Conditional link
+      ...(fullDetails && { fullDetails }), // Conditional fullDetails
+      ...(groupDiscussion && { groupDiscussion }), // Conditional groupDiscussion
+      ...(uploadedImage && { image: uploadedImage }), // Conditional image
     });
     if (tags.length > 0) {
       for (let i = 0; i < tags.length; i++) {
@@ -787,5 +790,62 @@ exports.deletePost = async (req, res, next) => {
     return res.status(200).json("Post deleted");
   } catch (error) {
     console.log(error);
+  }
+
+
+
+};
+
+// filterposts
+exports.filterposts = async (req, res, next) => {
+  console.log(req.body.categories);
+  try {
+    const { categories } = req.body; // Extract categories from the request body
+console.log(categories);
+
+    // Validate categories input
+    if (!Array.isArray(categories) || categories.length === 0) {
+      return res.status(400).json({ message: 'Categories must be a non-empty array.' });
+    }
+
+    // Fetch posts that match the selected categories
+    const filteredPosts = await Posts.find({
+      // Assuming 'tags' is an array in your Post model that holds categories
+      type: { $in: categories },
+    })
+    .populate({
+      path: "createdBy",
+      select: ["userName", "image", "role", "_id"],
+    })
+    .populate({
+      path: "tags",
+      select: ["userName", "image", "role", "_id"],
+    })
+    .populate({
+      path: "pitchId",
+      select: ["title", "_id"],
+    })
+    .populate({
+      path: "likes",
+      select: ["userName", "image", "role", "_id"],
+    })
+    .populate({
+      path: "disLikes",
+      select: ["userName", "image", "role", "_id"],
+    })
+    .populate({
+      path: "openDiscussionTeam",
+      select: ["userName", "image", "role", "_id"],
+    })
+    .populate({
+      path: "openDiscussionRequests",
+      select: ["userName", "image", "role", "_id"],
+    });
+
+    // Return the filtered posts
+    return res.status(200).json(filteredPosts);
+  } catch (error) {
+    console.error('Error filtering posts:', error);
+    return res.status(500).json({ message: 'Server error.' });
   }
 };

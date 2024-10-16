@@ -232,6 +232,9 @@ exports.login = async (req, res, next) => {
           userName: userDoesExist.userName,
           image: userDoesExist.image?.url,
           verification: userDoesExist.verification,
+          freeDemoCode: userDoesExist.freeDemoCode,
+          referralCode: userDoesExist.referralCode,
+          referredTo:userDoesExist.referredTo
         },
         `${userDoesExist._id}`
       );
@@ -281,6 +284,9 @@ exports.mobile_login = async (req, res, next) => {
         userName: userDoesExist.userName,
         image: userDoesExist.image?.url,
         verification: userDoesExist.verification,
+        freeDemoCode: userDoesExist.freeDemoCode,
+        referralCode: userDoesExist.referralCode,
+        referredTo:userDoesExist.referredTo
       },
       `${userDoesExist._id}`
     );
@@ -298,6 +304,8 @@ exports.mobile_login = async (req, res, next) => {
     next(err);
   }
 };
+
+
 
 exports.refreshToken = async (req, res, next) => {
   try {
@@ -318,6 +326,9 @@ exports.refreshToken = async (req, res, next) => {
         userName: userDoesExist.userName,
         image: userDoesExist.image?.url,
         verification: userDoesExist.verification,
+        freeDemoCode: userDoesExist.freeDemoCode,
+        referralCode: userDoesExist.referralCode,
+        referredTo:userDoesExist.referredTo
       },
       `${user_id}`
     );
@@ -351,6 +362,9 @@ exports.verifyMainAccessToken = async (req, res, next) => {
         userName: userDoesExist.userName,
         image: userDoesExist.image?.url,
         verification: userDoesExist.verification,
+        freeDemoCode: userDoesExist.freeDemoCode,
+        referralCode: userDoesExist.referralCode,
+        referredTo:userDoesExist.referredTo
       },
       `${userDoesExist._id}`
     );

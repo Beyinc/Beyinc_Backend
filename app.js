@@ -14,11 +14,11 @@ const postCommentRouter = require("./routes/postCommentRouter");
 const paymentRouter = require("./routes/paymentRouter");
 const referralRouter = require("./routes/referralRouter"); 
 const calenderRouter = require("./routes/CalenderRouter");
-const calendarController = require("../Beyinc_Backend/controllers/calendarController")
+const calendarController = require("./controllers/calendarController")
+const beyincProfileController = require("./controllers/beyincProfessionalController")
 
 const NotificationRouter = require("./routes/NotificationRouter");
 const PostRouter = require("./routes/postRouter");
-
 
 const rolerouter = require("./routes/rolesRouter");
 
@@ -26,6 +26,8 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerSpecs = require("./swagger");
 
 const { verifyAccessToken } = require("./helpers/jwt_helpers");
+const userProfileRoutes = require('./routes/userProfileRoutes');
+const filterRoutes = require('./routes/filterRoutes');
 
 const cors = require("cors");
 const morgan = require("morgan");
@@ -78,6 +80,12 @@ app.use("/api/calendar", verifyAccessToken, calenderRouter);
 
 app.get("/api/calendarRedirect",calendarController.Redirect );
 
+app.post("/api/saveBeyincProfessional", verifyAccessToken, beyincProfileController.saveBeyincProfile );
 
-  
+
+
+app.use('/api',verifyAccessToken, userProfileRoutes);
+
+app.use('/api',verifyAccessToken,filterRoutes);
+
 module.exports = app;
