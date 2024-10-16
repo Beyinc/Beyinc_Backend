@@ -50,6 +50,12 @@ jobs:
             echo TWILIO_AUTHTOKEN=${{ secrets.TWILIO_AUTHTOKEN }} >> config.env
             echo TWILIO_PHONE=${{ secrets.TWILIO_PHONE }} >> config.env
 
+            echo RAZORPAY_APT_SECRET=${{ secrets.RAZORPAY_APT_SECRET }} >> config.env
+            echo RAZORPAY_API_KEY=${{ secrets.RAZORPAY_API_KEY }} >> config.env
+            echo YOUR_CLIENT_ID=${{ secrets.YOUR_CLIENT_ID }} >> config.env
+            echo YOUR_CLIENT_SECRET=${{ secrets.YOUR_CLIENT_SECRET }} >> config.env
+            echo YOUR_REDIRECT_URL=${{ secrets.YOUR_REDIRECT_URL }} >> config.env
+
             pm2 delete beyinc-backend-api || : && pm2 start server.js --name 'beyinc-backend-api'
             pm2 save
               '
