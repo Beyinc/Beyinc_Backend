@@ -61,7 +61,7 @@ router.route("/recommendedUsers").post(userController.recommendedUsers);
 
 router.route("/removeFollower").post(userController.removeFollower);
 
-
+// router.route("/getUserDetails").post(userController.userDetails);
 
 
 router

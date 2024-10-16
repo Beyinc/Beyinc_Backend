@@ -66,42 +66,31 @@ const userSchema = new mongoose.Schema(
     verification: {
       type: String,
     },
-    freeCoins: {
-      type: String,
+    freeDemoCode: {
+      code: { type: String, unique: true },
+      used: { type: Boolean, default: false },
+    },
+
+    referralCode: {
+      code: { type: String, unique: true },
+      used: { type: Boolean, default: false },
+    },
+
+    referredTo: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+
+    freeMoney: {
+      type: Number,
+      default: 0,
+    },
+    realMoney: {
+      type: Number,
+      default: 0,
     },
     state: { type: String },
     town: { type: String },
     country: { type: String },
     salutation: { type: String },
-    payment: [
-      {
-        email: {
-          type: String,
-        },
-        profile_pic: {
-          type: String,
-        },
-        userName: {
-          type: String,
-        },
-        role: {
-          type: String,
-        },
-        moneyPaid: {
-          type: Number,
-        },
-        noOfTimes: {
-          type: Number,
-        },
-        createdAt: {
-          type: Date,
-        },
-      },
-    ],
 
-    realCoins: {
-      type: String,
-    },
     experienceDetails: [
       {
         domain: { type: String },
@@ -167,6 +156,14 @@ const userSchema = new mongoose.Schema(
       refPath: "role_type",
       required: false,
     },
+    // Mentors/ Investores registered in beyinc
+    // comment
+    beyincProfile: { type: String, required: false, default: "" },
+    industries: { type: [String], required: false },
+    expertise: { type: [String], required: false },
+    stages: { type: [String], required: false },
+    investmentRange: { type: Number, required: false },
+
     role_type: {
       type: String,
       required: false,
