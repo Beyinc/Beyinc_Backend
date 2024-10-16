@@ -141,3 +141,32 @@ exports.InputFormData = async (req, res) => {
   }
 };
 
+
+
+exports.inputEntryData = async (req, res) => {
+  const { username, headline, skills, interests, selectedCategory } = req.body; // Added selectedCategory
+  const { user_id } = req.payload;
+
+  console.log("Saving data for user:", user_id);
+
+  try {
+    const updateFields = {};
+
+    if (username) updateFields.userName = username; // Changed from username to userName in the model
+    if (headline) updateFields.headline = headline; // Ensure headline is mapped correctly
+    if (skills) updateFields.skills = skills; // Ensure skills is mapped correctly
+    if (interests) updateFields.interests = interests; // Ensure interests is mapped correctly
+    if (selectedCategory) updateFields.categoryUserRole = selectedCategory; // Map selectedCategory to role_type
+
+    const user = await User.findByIdAndUpdate(user_id, updateFields, { new: true });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ message: "Data updated successfully", user });
+  } catch (error) {
+    console.error("Error updating data:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
