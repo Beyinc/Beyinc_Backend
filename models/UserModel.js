@@ -20,6 +20,9 @@ const userSchema = new mongoose.Schema(
     ],
     userName: {
       type: String,
+    },
+    headline: {
+      type: String,
       required: true,
       unique: true,
     },
@@ -168,6 +171,43 @@ const userSchema = new mongoose.Schema(
     stages: { type: [String], required: false },
     investmentRange: { type: Number, required: false },
 
+    interests: {
+      type: [String],
+      required: false,
+      enum: [
+        "Entrepreneur",
+        "Startup",
+        "Mentor",
+        "Incubator",
+        "Accelerator",
+        "InstituteInvestor",
+        "InstituteInvestor",
+        "TradeBody",
+        "GovernmentBody",
+        "Corporate",
+        "TechPartner",
+      ],
+    },
+
+    categoryUserRole: {
+      type: String,
+      required: false,
+      enum: [
+        "Entrepreneur",
+        "Startup",
+        "Mentor",
+        "Incubator",
+        "Accelerator",
+        "InstituteInvestor",
+        "InstituteInvestor",
+        "TradeBody",
+        "GovernmentBody",
+        "Corporate",
+        "TechPartner",
+      ],
+    },
+
+
     role_type: {
       type: String,
       required: false,
@@ -185,6 +225,9 @@ const userSchema = new mongoose.Schema(
         "TechPartner",
       ],
     },
+
+
+    
     documents: {
       resume: {
         public_id: {

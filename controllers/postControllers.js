@@ -65,10 +65,10 @@ exports.getAllPosts = async (req, res, next) => {
   try {
     const { page, pageSize } = req.body;
     const skip = page;
-    const limit = pageSize-page;
+    const limit = pageSize - page;
 
     const data = await Posts.find({})
-    .sort({ createdAt: -1 }) 
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .populate({
@@ -105,13 +105,12 @@ exports.getAllPosts = async (req, res, next) => {
   }
 };
 
-
 exports.getTopTrendingPosts = async (req, res, next) => {
   try {
     const data = await Posts.aggregate([
       {
         $addFields: {
-          likesCount: { $size: { $ifNull: ["$likes", []] } }, 
+          likesCount: { $size: { $ifNull: ["$likes", []] } },
           dislikesCount: { $size: { $ifNull: ["$disLikes", []] } },
         },
       },
@@ -136,7 +135,7 @@ exports.getTopTrendingPosts = async (req, res, next) => {
     return res.status(200).json(data);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Server Error', error });
+    return res.status(500).json({ message: "Server Error", error });
   }
 };
 
@@ -219,9 +218,10 @@ exports.createPost = async (req, res, next) => {
       visibility,
     } = req.body;
 
-    let result = ''
-    if(image!==undefined && image!==null && image !==""){
-      result = await cloudinary.uploader.upload(image, {
+    // Only upload the image if it's provided
+    let uploadedImage = null;
+    if (image) {
+      uploadedImage = await cloudinary.uploader.upload(image, {
         folder: `${createdBy.email}/posts`,
       });
     }
@@ -791,61 +791,70 @@ exports.deletePost = async (req, res, next) => {
   } catch (error) {
     console.log(error);
   }
-
-
-
 };
 
 // filterposts
 exports.filterposts = async (req, res, next) => {
-  console.log(req.body.categories);
   try {
-    const { categories } = req.body; // Extract categories from the request body
-console.log(categories);
+    const { people, sortOption, tags } = req.body; // Extract people, sortOption, and tags from the request body
 
-    // Validate categories input
-    if (!Array.isArray(categories) || categories.length === 0) {
-      return res.status(400).json({ message: 'Categories must be a non-empty array.' });
+    // Create the filter object
+    const filter = {};
+
+    // Search for posts by people (username) if 'people' is provided
+    if (people) {
+      const users = await User.find({ userName: { $regex: people, $options: 'i' } }).select('_id');
+      const userIds = users.map((user) => user._id);
+      filter.createdBy = { $in: userIds };
     }
 
-    // Fetch posts that match the selected categories
-    const filteredPosts = await Posts.find({
-      // Assuming 'tags' is an array in your Post model that holds categories
-      type: { $in: categories },
-    })
-    .populate({
-      path: "createdBy",
-      select: ["userName", "image", "role", "_id"],
-    })
-    .populate({
-      path: "tags",
-      select: ["userName", "image", "role", "_id"],
-    })
-    .populate({
-      path: "pitchId",
-      select: ["title", "_id"],
-    })
-    .populate({
-      path: "likes",
-      select: ["userName", "image", "role", "_id"],
-    })
-    .populate({
-      path: "disLikes",
-      select: ["userName", "image", "role", "_id"],
-    })
-    .populate({
-      path: "openDiscussionTeam",
-      select: ["userName", "image", "role", "_id"],
-    })
-    .populate({
-      path: "openDiscussionRequests",
-      select: ["userName", "image", "role", "_id"],
-    });
+    // Search for posts by tags (in 'type') if 'tags' is provided
+    if (tags && tags.length > 0) {
+      filter.type = { $in: tags }; // Match 'type' with any value from the 'tags' array
+    }
+
+    // Add filter for posts created within the last 1 day if sortOption is 'recent'
+    if (sortOption === 'recent') {
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+      filter.createdAt = { $gte: oneDayAgo };
+    }
+
+    // Fetch posts that match the filter
+    const filteredPosts = await Posts.find(filter)
+      .populate({
+        path: "createdBy",
+        select: ["userName", "image", "role", "_id"],
+      })
+      .populate({
+        path: "tags",
+        select: ["userName", "image", "role", "_id"],
+      })
+      .populate({
+        path: "pitchId",
+        select: ["title", "_id"],
+      })
+      .populate({
+        path: "likes",
+        select: ["userName", "image", "role", "_id"],
+      })
+      .populate({
+        path: "disLikes",
+        select: ["userName", "image", "role", "_id"],
+      })
+      .populate({
+        path: "openDiscussionTeam",
+        select: ["userName", "image", "role", "_id"],
+      })
+      .populate({
+        path: "openDiscussionRequests",
+        select: ["userName", "image", "role", "_id"],
+      });
 
     // Return the filtered posts
     return res.status(200).json(filteredPosts);
   } catch (error) {
-    console.error('Error filtering posts:', error);
-    return res.status(500).json({ message: 'Server error.' });
+    console.error("Error filtering posts:", error);
+    return res.status(500).json({ message: "Server error." });
   }
 };
