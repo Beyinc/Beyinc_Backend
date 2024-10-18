@@ -3,9 +3,9 @@ const User = require("../models/UserModel");
 
 // Filter Data Function
 exports.filterData = async (req, res) => {
-  const {  userName, stages, industries,expertise } = req.body; // Destructure the filters from the request body
+  const { userName, stages, industries, expertise, categories } = req.body; // Destructure categories from the request body
 
-  console.log("Filtering data with:", { userName, stages, industries,expertise });
+  console.log("Filtering data with:", { userName, stages, industries, expertise, categories });
 
   try {
     // Build the query object dynamically based on provided filters
@@ -25,6 +25,10 @@ exports.filterData = async (req, res) => {
     if (industries && industries.length > 0) {
       query.industries = { $in: industries }; // Match any of the industries
     }
+    if (categories && categories.length > 0) { // Check if categories are provided
+      query.beyincProfile = { $regex: new RegExp(categories.join('|'), 'i') }; // Match any of the categories, case-insensitive
+    }
+    
 
     // Fetch users based on the constructed query
     const users = await User.find(query);

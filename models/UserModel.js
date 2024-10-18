@@ -93,15 +93,15 @@ const userSchema = new mongoose.Schema(
 
     experienceDetails: [
       {
-        domain: { type: String },
-        institute: { type: String },
-        start: { type: String },
-        end: { type: String },
-        year: { type: String },
-        company: { type: String },
-        areaOfBusiness: { type: String },
-        profession: { type: String },
-        designation: { type: String },
+        domain: { type: String, required: false },
+        institute: { type: String, required: false },
+        start: { type: String , required: false},
+        end: { type: String, required: false },
+        year: { type: String, required: false },
+        company: { type: String , required: false},
+        areaOfBusiness: { type: String, required: false },
+        profession: { type: String, required: false },
+        designation: { type: String, required: false },
         Achievements: { type: String, required: false },
         Published: { type: String, required: false },
         StartupExperience: { type: String, required: false },
@@ -114,17 +114,21 @@ const userSchema = new mongoose.Schema(
         Banner: {
           public_id: {
             type: String,
+            required: false
           },
           secure_url: {
             type: String,
+            required: false
           },
         },
         Logo: {
           public_id: {
             type: String,
+            required: false
           },
           secure_url: {
             type: String,
+            required: false
           },
         },
         Services: { type: String, required: false },
@@ -136,7 +140,7 @@ const userSchema = new mongoose.Schema(
       {
         Edstart: { type: String },
         Edend: { type: String },
-        year: { type: String },
+        // year: { type: String },
         grade: { type: String },
         college: { type: String },
       },
