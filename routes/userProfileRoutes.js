@@ -4,7 +4,10 @@ const router = express.Router();
 const userProfileController = require('../controllers/userProfileController');
 
 // Route to save bio
-router.post('/savebio', userProfileController.saveBio);
+router.post('/savedata', userProfileController.saveData);
+router.post('/inputFormData', userProfileController.InputFormData);
+router.post('/inputEntryData', userProfileController.inputEntryData);
+
 
 // Add more routes as needed
 module.exports = router;
