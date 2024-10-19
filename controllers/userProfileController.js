@@ -144,6 +144,7 @@ exports.InputFormData = async (req, res) => {
 
 
 exports.inputEntryData = async (req, res) => {
+  console.log(req.body)
   const { username, headline, skills, interests, selectedCategory } = req.body; // Added selectedCategory
   const { user_id } = req.payload;
 
@@ -152,12 +153,15 @@ exports.inputEntryData = async (req, res) => {
   try {
     const updateFields = {};
 
-    if (username) updateFields.userName = username; // Changed from username to userName in the model
-    if (headline) updateFields.headline = headline; // Ensure headline is mapped correctly
-    if (skills) updateFields.skills = skills; // Ensure skills is mapped correctly
-    if (interests) updateFields.interests = interests; // Ensure interests is mapped correctly
-    if (selectedCategory) updateFields.categoryUserRole = selectedCategory; // Map selectedCategory to role_type
+    if (username) {updateFields.userName = username}; // Changed from username to userName in the model
+    if (headline) {updateFields.headline = headline}; // Ensure headline is mapped correctly
+    if (skills) {updateFields.skills = skills}; // Ensure skills is mapped correctly
+    if (interests) {updateFields.interests = interests}; // Ensure interests is mapped correctly
+    if (selectedCategory) {updateFields.categoryUserRole = selectedCategory}; // Map selectedCategory to role_type
 
+     // Set isProfileComplete to true if any updates are made
+    updateFields.isProfileComplete = true;
+    
     const user = await User.findByIdAndUpdate(user_id, updateFields, { new: true });
 
     if (!user) {
