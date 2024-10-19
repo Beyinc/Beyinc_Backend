@@ -390,9 +390,9 @@ exports.saveWebinar = async (req, res) => {
   
       console.log('Bookings found:', bookings); // Log the bookings retrieved
   
-      if (!bookings.length) {
-        return res.status(404).json({ success: false, message: 'No bookings found for this mentor' });
-      }
+      // if (!bookings.length) {
+      //   return res.status(400).json({ success: false, message: 'No bookings found for this mentor' });
+      // }
   
       res.status(200).json({ success: true, mentorBookings: bookings });
     } catch (error) {
