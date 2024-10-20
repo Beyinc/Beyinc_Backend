@@ -28,9 +28,10 @@ exports.calAuth = (req, res) => {
   console.log(process.env.YOUR_REDIRECT_URL);
 
   const url = oauth2Client.generateAuthUrl({
-    access_type: 'offline', // 'online' (default) or 'offline' (gets refresh_token)
-    scope: scopes, // Define your scopes here
-    state: userId 
+    access_type: 'offline', // Ensures refresh token is returned
+    scope: scopes,          // Scopes for Google Calendar
+    prompt: 'consent',      // Forces user consent to always get refresh token
+    state: userId           // Pass user ID as state to track user in callback
   });
 
   console.log(url);
