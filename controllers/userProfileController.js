@@ -1,4 +1,5 @@
 const User = require("../models/UserModel");
+const cloudinary = require("../helpers/UploadImage");
 
 // Save User Data Function
 exports.saveData = async (req, res) => {
@@ -170,3 +171,155 @@ exports.inputEntryData = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+// exports.SaveDocuments = async (req, res, next) => {
+//   try {
+//     const { resume, achievements, degree, expertise, working, userId } = req.body;
+//     console.log("Request Body:", req.body);
+//     const user = await User.findById(userId);
+    
+//     if (!user) {
+//       return res.status(400).send("User not found");
+//     }
+
+//     // Create an object to store uploaded file details
+//     const uploadedFiles = {
+//       documents: {
+//         resume: {},
+//         achievements: {},
+//         degree: {},
+//         expertise: {},
+//         working: {},
+//       },
+//     };
+
+//     // Upload resume if provided
+//     if (resume) {
+//       const resumeResult = await cloudinary.uploader.upload(resume, {
+//         folder: `${email}`,
+//       });
+//       uploadedFiles.documents.resume = {
+//         public_id: resumeResult.public_id,
+//         secure_url: resumeResult.secure_url,
+//       };
+//     }
+
+//     // Upload achievements if provided
+//     if (achievements) {
+//       const achievementsResult = await cloudinary.uploader.upload(achievements, {
+//         folder: `${email}`,
+//       });
+//       uploadedFiles.documents.achievements = {
+//         public_id: achievementsResult.public_id,
+//         secure_url: achievementsResult.secure_url,
+//       };
+//     }
+
+//     // Upload degree if provided
+//     if (degree) {
+//       const degreeResult = await cloudinary.uploader.upload(degree, {
+//         folder: `${email}`,
+//       });
+//       uploadedFiles.documents.degree = {
+//         public_id: degreeResult.public_id,
+//         secure_url: degreeResult.secure_url,
+//       };
+//     }
+
+//     // Upload expertise if provided
+//     if (expertise) {
+//       const expertiseResult = await cloudinary.uploader.upload(expertise, {
+//         folder: `${email}`,
+//       });
+//       uploadedFiles.documents.expertise = {
+//         public_id: expertiseResult.public_id,
+//         secure_url: expertiseResult.secure_url,
+//       };
+//     }
+
+//     // Upload working if provided
+//     if (working) {
+//       const workingResult = await cloudinary.uploader.upload(working, {
+//         folder: `${email}`,
+//       });
+//       uploadedFiles.documents.working = {
+//         public_id: workingResult.public_id,
+//         secure_url: workingResult.secure_url,
+//       };
+//     }
+
+//     // Update the user's profile with the uploaded file details
+//     await User.updateOne(
+//       { _id: userId },
+//       {
+//         $set: {
+//           documents: uploadedFiles.documents, // Set the documents object in the user's profile
+//         },
+//       }
+//     );
+
+//     return res.send({ message: "Documents uploaded successfully" });
+//   } catch (err) {
+//     console.error("Error details:", err.message); // Log error message
+//     console.error("Error stack:", err.stack); // Log error stack trace
+//     return res.status(400).json("Error while savings documents");
+//   }
+// };
+
+
+exports.SaveDocuments = async (req, res, next) => {
+  try {
+    const { resume, achievements, degree, expertise, working, userId } = req.body;
+    console.log("Request Body:", req.body);
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(400).send("User not found");
+
+    let uploadedDocuments = {};
+
+    // Handle document uploads with condition checks
+    const uploadDocument = async (document, key) => {
+      if (document) {
+        // Delete existing document if it exists
+        if (user.documents[key]?.public_id) {
+          await cloudinary.uploader.destroy(user.documents[key].public_id);
+        }
+        // Upload new document and store the result
+        const uploadedDoc = await cloudinary.uploader.upload(document, {
+          folder: `${user.email}/documents`,
+        });
+        uploadedDocuments[key] = {
+          public_id: uploadedDoc.public_id,
+          secure_url: uploadedDoc.secure_url,
+        };
+      }
+    };
+
+    // Execute uploads
+    await uploadDocument(resume, "resume");
+    await uploadDocument(expertise, "expertise");
+    await uploadDocument(achievements, "achievements");
+    await uploadDocument(degree, "degree");
+    await uploadDocument(working, "working");
+
+    // Update user with uploaded document details
+    await User.updateOne(
+      { _id: userId },
+      {
+        $set: { documents: { ...user.documents, ...uploadedDocuments } },
+      }
+    );
+
+    return res.send({ message: "Documents uploaded successfully" });
+  } catch (err) {
+    console.error("Error details:", err.message);
+    console.error("Error stack:", err.stack);
+    return res.status(400).json({ error: "Error while saving documents", details: err.message });
+  }
+};
+
+
+
+
+
