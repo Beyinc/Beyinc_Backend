@@ -96,6 +96,7 @@ router.route("/updateVerification").post(userController.updateVerification);
 router.route("/updateProfileImage").post(userController.updateProfileImage);
 router.route("/deleteProfileImage").post(userController.deleteProfileImage);
 
+
 router.route("/addPayment").post(userController.addPayment);
 
 module.exports = router;
