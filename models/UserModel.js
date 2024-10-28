@@ -164,7 +164,7 @@ const userSchema = new mongoose.Schema(
     },
     // Mentors/ Investores registered in beyinc
     // comment
-    beyincProfile: { type: String, required: false, default: "" },
+    beyincProfile: { type: [String], required: false},
     industries: { type: [String], required: false },
     expertise: { type: [String], required: false },
     stages: { type: [String], required: false },

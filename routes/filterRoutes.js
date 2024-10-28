@@ -6,5 +6,8 @@ const filterController = require('../controllers/filterController');
 // Route to save bio
 router.post('/filterdata', filterController.filterData);
 
+router.post('/filterSearchProfiles', filterController.filterSearch);
+
+
 // Add more routes as needed
 module.exports = router;

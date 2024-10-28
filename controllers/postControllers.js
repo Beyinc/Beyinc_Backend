@@ -796,7 +796,7 @@ exports.deletePost = async (req, res, next) => {
 // filterposts
 exports.filterposts = async (req, res, next) => {
   try {
-    const { people, sortOption, tags } = req.body; // Extract people, sortOption, and tags from the request body
+    const { people, sortOption, tags , public: isPublic, private: isPrivate } = req.body; // Extract people, sortOption, and tags from the request body
 
     // Create the filter object
     const filter = {};
@@ -818,6 +818,13 @@ exports.filterposts = async (req, res, next) => {
       const oneDayAgo = new Date();
       oneDayAgo.setDate(oneDayAgo.getDate() - 1);
       filter.createdAt = { $gte: oneDayAgo };
+    }
+
+    if (isPublic) {
+      filter.visibility = "public"; 
+    }
+    if (isPrivate) {
+      filter.visibility = "private";
     }
 
     // Fetch posts that match the filter
