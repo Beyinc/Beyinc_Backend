@@ -17,6 +17,8 @@ const calenderRouter = require("./routes/CalenderRouter");
 const calendarController = require("./controllers/calendarController")
 const beyincProfileController = require("./controllers/beyincProfessionalController")
 
+const searchController = require("./controllers/searchController")
+
 const NotificationRouter = require("./routes/NotificationRouter");
 const PostRouter = require("./routes/postRouter");
 
@@ -87,5 +89,7 @@ app.post("/api/saveBeyincProfessional", verifyAccessToken, beyincProfileControll
 app.use('/api',verifyAccessToken, userProfileRoutes);
 
 app.use('/api',verifyAccessToken,filterRoutes);
+
+app.get("/api/searchProfiles", verifyAccessToken, searchController.searchProfiles);
 
 module.exports = app;

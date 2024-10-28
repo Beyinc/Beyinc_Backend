@@ -7,6 +7,7 @@ const userProfileController = require('../controllers/userProfileController');
 router.post('/savedata', userProfileController.saveData);
 router.post('/inputFormData', userProfileController.InputFormData);
 router.post('/inputEntryData', userProfileController.inputEntryData);
+router.post('/saveDocuments', userProfileController.SaveDocuments);
 
 
 // Add more routes as needed
