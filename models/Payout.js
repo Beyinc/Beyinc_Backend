@@ -5,24 +5,24 @@ const PayoutSchema = new Schema({
   mentorId: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false
   },
   bank: {
     name: {
       type: String,
-      required: true
+      required: false
     },
     accNo: {
       type: String,
-      required: true
+      required: false
     },
     ifsc: {
       type: String,
-      required: true
+      required: false
     },
     currency: {
       type: String,
-      required: true
+      required: false
     }
   },
   upi: {
@@ -33,18 +33,18 @@ const PayoutSchema = new Schema({
     {
       totalAmount: {
         type: Number,
-        required: true
+        required: false
       },
       withdrawlAmount: {
         type: Number,
-        required: true
+        required: false
       },
       sessionData: {
         bookingIds: [
           {
             type: Schema.Types.ObjectId,
             ref: 'BookingData',
-            required: true
+            required: false
           }
         ],
         payoutStatus: {
@@ -54,7 +54,7 @@ const PayoutSchema = new Schema({
         },
         payoutId: {
           type: String,
-          required: true
+          required: false
         },
         payoutProof: {
           type: String,

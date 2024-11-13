@@ -21,6 +21,7 @@ const {razorpay }= require("../helpers/Razorpay");
 const Benificiary = require("../models/BenificiaryModel");
 const PayIn = require("../models/PayIn");
 const mongoose = require('mongoose');
+const Payout = require("../models/Payout");
 
 // RAZORPAY DOCS
 exports.orders = async (req, res, next) => {
@@ -615,6 +616,39 @@ exports.checkPayoutStatus = async (req, res, next) => {
   } catch (error) {
     console.error('Error checking payout status:', error);
     res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
+
+exports.saveWithdrawls = async (req, res, next) => {
+  const { selectedIds, totalAmount, commission, remainingAmount } = req.body;
+
+  try {
+    // Define the data structure based on the withdrawlData schema
+    const withdrawlData = {
+      withdrawlData: [
+        {
+          totalAmount,                   // Total amount for this withdrawal
+          withdrawlAmount: remainingAmount, // Amount after commission
+          sessionData: {
+            bookingIds: selectedIds,     // IDs of the selected bookings
+          },
+        },
+      ],
+    };
+
+    // Save the data to the database
+    const newWithdrawl = new Payout(withdrawlData);
+    const savedWithdrawl = await newWithdrawl.save();
+
+    res.status(201).json({
+      message: 'Withdrawl data saved successfully',
+      data: savedWithdrawl,
+    });
+  } catch (error) {
+    console.error("Error saving withdrawl data:", error);
+    res.status(500).json({ message: 'Failed to save withdrawl data', error });
   }
 };
 
