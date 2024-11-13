@@ -153,6 +153,7 @@ exports.saveSchedule = async (req, res) => {
   }
 };
 
+
 // Get availability data for a specific user
 exports.getAvailability = async (req, res) => {
   console.log("API is working");
@@ -167,21 +168,17 @@ exports.getAvailability = async (req, res) => {
   }
 
   try {
-    // Find the availability record for the user
-    const availability = await Booking.findOne({ userId });
+    // Find the availability record for the user and populate the mentorId field
+    const availability = await Booking.findOne({ userId }).populate({
+      path: "mentorId",
+      select: "name email",
+    });
 
     if (!availability) {
       return res.status(404).json({ message: "Availability data not found" });
     }
 
-    const populatedAvailability = await availability
-      .populate({
-        path: "mentorId",
-        select: "name email",
-      })
-      .execPopulate();
-
-    console.log("availability", populatedAvailability);
+    console.log("availability", availability);
 
     res.status(200).json({
       message: "Availability data retrieved successfully",
@@ -190,7 +187,7 @@ exports.getAvailability = async (req, res) => {
         period: availability.availableDuration, // Period is now the available duration
         unavailableDates: availability.unavailableDates,
       },
-      availability: populatedAvailability,
+      availability,
     });
   } catch (error) {
     console.error("Error retrieving availability data:", error);
@@ -199,6 +196,7 @@ exports.getAvailability = async (req, res) => {
       .json({ message: "Error retrieving availability data", error });
   }
 };
+
 
 exports.saveSingleService = async (req, res) => {
   console.log(req.body);
