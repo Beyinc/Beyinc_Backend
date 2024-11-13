@@ -153,47 +153,41 @@ exports.saveSchedule = async (req, res) => {
   }
 };
 
-
 // Get availability data for a specific user
 exports.getAvailability = async (req, res) => {
-  console.log("API is working");
+  console.log('API is working');
   let userId = req.payload.user_id; // Assuming user_id comes from token or session
   console.log(userId);
-  console.log("mentorId", req.body);
+  console.log('mentorId', req.body)
 
-  const { mentorId } = req.body;
+  const {mentorId} = req.body
 
-  if (mentorId !== "editProfile") {
-    userId = mentorId;
-  }
+  if (mentorId !== 'editProfile') { userId=mentorId}
 
   try {
-    // Find the availability record for the user and populate the mentorId field
-    const availability = await Booking.findOne({ userId }).populate({
-      path: "mentorId",
-      select: "name email",
-    });
+    // Find the availability record for the user
+    const availability = await Availability.findOne({ userId });
 
     if (!availability) {
-      return res.status(404).json({ message: "Availability data not found" });
+      return res.status(404).json({ message: 'Availability data not found' });
     }
 
-    console.log("availability", availability);
-
+    
+    console.log('availability', availability);
+    
+    // Send the availability data, including period (which is the available duration)
     res.status(200).json({
-      message: "Availability data retrieved successfully",
+      message: 'Availability data retrieved successfully',
       availabilityData: {
-        availableDayTimeUtc: availability.availableDayTimeUtc,
+        availableDayTimeUtc:availability.availableDayTimeUtc,
         period: availability.availableDuration, // Period is now the available duration
-        unavailableDates: availability.unavailableDates,
+        unavailableDates: availability.unavailableDates
       },
-      availability,
+      availability
     });
   } catch (error) {
-    console.error("Error retrieving availability data:", error);
-    res
-      .status(500)
-      .json({ message: "Error retrieving availability data", error });
+    console.error('Error retrieving availability data:', error);
+    res.status(500).json({ message: 'Error retrieving availability data', error });
   }
 };
 
