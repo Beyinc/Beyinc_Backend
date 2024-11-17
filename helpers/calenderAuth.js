@@ -27,6 +27,7 @@ exports.calAuth = (req, res) => {
   console.log(userId);
   console.log(process.env.YOUR_REDIRECT_URL);
 
+  // Generate the authorization URL
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline', // Ensures refresh token is returned
     scope: scopes,          // Scopes for Google Calendar

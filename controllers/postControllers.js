@@ -225,7 +225,7 @@ exports.createPost = async (req, res, next) => {
         folder: `${createdBy.email}/posts`,
       });
     }
-    
+
     const createdPost = await Posts.create({
       reported: false,
       description,
@@ -795,7 +795,9 @@ exports.deletePost = async (req, res, next) => {
 
 // filterposts
 exports.filterposts = async (req, res, next) => {
+  
   try {
+    // const { people, sortOption, tags, selectedPostType } = req.body; // Extract people, sortOption, and tags from the request body
     const { people, sortOption, tags , public: isPublic, private: isPrivate } = req.body; // Extract people, sortOption, and tags from the request body
 
     // Create the filter object
@@ -804,6 +806,10 @@ exports.filterposts = async (req, res, next) => {
     // Search for posts by people (username) if 'people' is provided
     if (people) {
       const users = await User.find({ userName: { $regex: people, $options: 'i' } }).select('_id');
+
+      // const users = await User.find({
+      //   userName: { $regex: people, $options: "i" },
+      // }).select("_id");
       const userIds = users.map((user) => user._id);
       filter.createdBy = { $in: userIds };
     }
@@ -814,7 +820,7 @@ exports.filterposts = async (req, res, next) => {
     }
 
     // Add filter for posts created within the last 1 day if sortOption is 'recent'
-    if (sortOption === 'recent') {
+    if (sortOption === "recent") {
       const oneDayAgo = new Date();
       oneDayAgo.setDate(oneDayAgo.getDate() - 1);
       filter.createdAt = { $gte: oneDayAgo };
@@ -825,6 +831,7 @@ exports.filterposts = async (req, res, next) => {
     }
     if (isPrivate) {
       filter.visibility = "private";
+
     }
 
     // Fetch posts that match the filter

@@ -139,9 +139,12 @@ exports.removeFollower = async (req, res, next) => {
   }
 };
 
+
 exports.followerController = async (req, res, next) => {
   const { followerReqBy, followerReqTo } = req.body;
-
+  console.log('followerReqBy', followerReqBy)
+  console.log('follow to', followerReqTo)
+  
   const requestBy = await User.findOne({ _id: followerReqBy });
   const requestTo = await User.findOne({ _id: followerReqTo });
 
