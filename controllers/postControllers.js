@@ -797,16 +797,19 @@ exports.deletePost = async (req, res, next) => {
 exports.filterposts = async (req, res, next) => {
   
   try {
-    const { people, sortOption, tags, selectedPostType } = req.body; // Extract people, sortOption, and tags from the request body
+    // const { people, sortOption, tags, selectedPostType } = req.body; // Extract people, sortOption, and tags from the request body
+    const { people, sortOption, tags , public: isPublic, private: isPrivate } = req.body; // Extract people, sortOption, and tags from the request body
 
     // Create the filter object
     const filter = {};
 
     // Search for posts by people (username) if 'people' is provided
     if (people) {
-      const users = await User.find({
-        userName: { $regex: people, $options: "i" },
-      }).select("_id");
+      const users = await User.find({ userName: { $regex: people, $options: 'i' } }).select('_id');
+
+      // const users = await User.find({
+      //   userName: { $regex: people, $options: "i" },
+      // }).select("_id");
       const userIds = users.map((user) => user._id);
       filter.createdBy = { $in: userIds };
     }
@@ -823,8 +826,12 @@ exports.filterposts = async (req, res, next) => {
       filter.createdAt = { $gte: oneDayAgo };
     }
 
-    if (selectedPostType) {
-      filter.visibility = selectedPostType;
+    if (isPublic) {
+      filter.visibility = "public"; 
+    }
+    if (isPrivate) {
+      filter.visibility = "private";
+
     }
 
     // Fetch posts that match the filter
