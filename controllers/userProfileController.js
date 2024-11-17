@@ -158,7 +158,7 @@ exports.inputEntryData = async (req, res) => {
     if (headline) {updateFields.headline = headline}; // Ensure headline is mapped correctly
     if (skills) {updateFields.skills = skills}; // Ensure skills is mapped correctly
     if (interests) {updateFields.interests = interests}; // Ensure interests is mapped correctly
-    if (selectedCategory) {updateFields.categoryUserRole = selectedCategory}; // Map selectedCategory to role_type
+    if (selectedCategory) {updateFields.role = selectedCategory}; // Map selectedCategory to role_type
 
      // Set isProfileComplete to true if any updates are made
     updateFields.isProfileComplete = true;
