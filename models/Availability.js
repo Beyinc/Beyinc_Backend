@@ -42,9 +42,9 @@ const availabilitySchema = new mongoose.Schema({
     of: [String],
   },
   unavailableDates: [Date],
-  sessions:[sessionSchema],
-  webinars: [webinarSchema], // Array of webinar objects
-  priorityDMs: [priorityDmSchema], // 
+  sessions: { type: [sessionSchema], default: [] }, // Default empty array
+  webinars: { type: [webinarSchema], default: [] }, // Default empty array
+  priorityDMs: { type: [priorityDmSchema], default: [] }, // Default empty array
 });
 
 const Availability = mongoose.model('Availability', availabilitySchema);

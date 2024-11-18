@@ -33,7 +33,7 @@ const postSchema = new mongoose.Schema(
                 'Co-founder Needed', 
                 'Tech Partner Needed', 
                 'Mentor Needed', 
-                'General post', 
+                'General Post', 
                 'Question and Answer', 
                 'Announcement', 
                 'News', 
