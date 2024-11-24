@@ -5,7 +5,7 @@ const cloudinary = require("../helpers/UploadImage");
 exports.saveData = async (req, res) => {
   const { bio, experience, education, skills } = req.body;
   const { user_id } = req.payload;
-// console.log("data recieved"+ bio, experience, education, skills);
+console.log("data recieved"+ bio, experience, education, skills);
 console.log("Received experience data:", experience);
 
   console.log("Saving data for user:", user_id);

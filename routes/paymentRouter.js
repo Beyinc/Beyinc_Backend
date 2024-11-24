@@ -16,6 +16,7 @@ router.route("/verification").post(paymentController.paymentVerification);
 router.route('/fundaccount').post(paymentController.createFundAccount);
 router.route('/deleteFundAccount').post(paymentController.deleteFundAccount);
 router.route('/saveWithdrawl').post(paymentController.saveWithdrawls);
+router.route('/getTransactions').post(paymentController.getTransactions);
 
 
 
