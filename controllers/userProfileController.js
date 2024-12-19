@@ -227,6 +227,532 @@ exports.SaveDocuments = async (req, res, next) => {
     return res.status(400).json({ error: "Error while saving documents", details: err.message });
   }
 };
+//
+
+// Controller to save the education details of the user in an array
+
+exports.SaveEducationDetails = async (req, res, next) => {
+  try {
+    const { education, userId } = req.body;
+
+    if(!userId) return res.status(400).send("userId must be provided");
+
+    // Ensure education details are provided
+    if (!education || !Array.isArray(education) || education.length === 0) {
+      return res.status(400).send("Education details must be provided.");
+    }
+
+    // Find the user by userId
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).send("User not found");
+    }
+
+    // Ensure educationDetails is initialized as an array if not present
+    if (!Array.isArray(user.educationDetails)) {
+      user.educationDetails = [];
+    }
+
+    // Validate and add education entries
+    for (let entry of education) {
+      const { Edstart, Edend, grade, college } = entry;
+
+      // Validate Edstart
+      if (!Edstart || typeof Edstart !== "string") {
+        return res.status(400).send("Invalid Edstart date format.");
+      }
+
+      // Validate Edend
+      if (!Edend || typeof Edend !== "string") {
+        return res.status(400).send("Invalid Edend date format.");
+      }
+
+      const startDate = new Date(Edstart);
+      const endDate = new Date(Edend);
+      if (endDate < startDate) {
+        return res.status(400).send("'Edend' date must be after 'Edstart'.");
+      }
+
+      // Validate college name
+      if (!college || typeof college !== "string" || college.trim() === "") {
+        return res.status(400).send("College name cannot be empty.");
+      }
+
+      // Push the valid education entry to the user's educationDetails array
+      user.educationDetails.push(entry);
+    }
+
+    // Save the updated user document
+    await user.save();
+
+    // Return success message and updated education details
+    return res.status(200).json({
+      educationDetails: user.educationDetails, // Send updated education details
+      message: "Education details saved successfully."
+    });
+
+  } catch (err) {
+    console.error("Error in SaveEducation: ", err);
+    return res.status(500).send("Internal Server Error");
+  }
+};
+
+
+// Controller to delete the education Details of the user from an array
+
+exports.DeleteEducationDetails = async (req, res, next) => {
+  try {
+    const { _id, userId } = req.body;
+
+    if (!_id || !userId) {
+      return res.status(400).send({ message: "Both userId and education _id must be provided." });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).send({ message: "User not found" });
+    }
+
+    const educationIndex = user.educationDetails.findIndex(entry => entry._id.toString() === _id);
+
+    if (educationIndex === -1) {
+      return res.status(400).send({ message: "Education entry not found" });
+    }
+
+    user.educationDetails.splice(educationIndex, 1);
+
+    await user.save();
+
+    return res.status(200).send({
+      success: true,
+      message: "Education details deleted successfully.",
+      educationDetails: user.educationDetails,
+    });
+
+  } catch (err) {
+    console.error("Error in DeleteEducationDetails: ", err);
+    return res.status(500).send("Internal Server Error");
+  }
+};
+
+
+// Controller to save experience details
+
+exports.SaveExperienceDetails = async (req, res, next) => {
+  try {
+    const { experience, userId } = req.body;
+
+    if (!experience || !Array.isArray(experience) || experience.length === 0) {
+      return res.status(400).send({ message: "Experience details must be provided." });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).send({ message: "User not found" });
+    }
+
+    if (!Array.isArray(user.experienceDetails)) {
+      user.experienceDetails = [];
+    }
+
+    for (let entry of experience) {
+      const { startYear, endYear, company, designation, Description, CompanyLocation, Banner, Logo } = entry;
+
+      if (startYear && typeof startYear !== "string") {
+        return res.status(400).send({ message: "Invalid startYear format" });
+      }
+      if (endYear && typeof endYear !== "string") {
+        return res.status(400).send({ message: "Invalid endYear format" });
+      }
+
+      if (!company || typeof company !== "string" || company.trim() === "") {
+        return res.status(400).send({ message: "Company name cannot be empty" });
+      }
+
+      if (designation && typeof designation !== "string") {
+        return res.status(400).send({ message: "Invalid designation format" });
+      }
+
+      if (Description && typeof Description !== "string") {
+        return res.status(400).send({ message: "Invalid Description format" });
+      }
+
+      if (CompanyLocation && typeof CompanyLocation !== "string") {
+        return res.status(400).send({ message: "Invalid CompanyLocation format" });
+      }
+
+      if (Banner && Banner.secure_url && typeof Banner.secure_url !== "string") {
+        return res.status(400).send({ message: "Invalid Banner secure_url format" });
+      }
+
+      if (Logo && Logo.secure_url && typeof Logo.secure_url !== "string") {
+        return res.status(400).send({ message: "Invalid Logo secure_url format" });
+      }
+
+      user.experienceDetails.push(entry);
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Experience details saved successfully.",
+      experienceDetails: user.experienceDetails, 
+    });
+
+  } catch (err) {
+    console.error("Error in SaveExperienceDetails: ", err);
+    return res.status(500).send({
+      success: false,
+      message: "Internal Server Error"
+    });
+  }
+};
+
+// Controller to delete Experience Details
+
+exports.DeleteExperienceDetails = async (req, res, next) => {
+  try {
+    const { _id, userId } = req.body;
+
+    if (!_id || !userId) {
+      return res.status(400).send({ message: "Both userId and experience _id must be provided." });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).send({ message: "User not found" });
+    }
+
+    const experienceIndex = user.experienceDetails.findIndex(entry => entry._id.toString() === _id);
+
+    if (experienceIndex === -1) {
+      return res.status(400).send({ message: "Experience entry not found" });
+    }
+
+    user.experienceDetails.splice(experienceIndex, 1);
+
+    await user.save();
+
+    return res.status(200).send({
+      success: true,
+      message: "Experience details deleted successfully.",
+      experienceDetails: user.experienceDetails, 
+    });
+
+  } catch (err) {
+    console.error("Error in DeleteExperienceDetails: ", err);
+    return res.status(500).send({
+      success: false,
+      message: "Internal Server Error"
+    });
+  }
+};
+
+// Controller to get Experience Details
+
+exports.GetExperienceDetails = async (req, res, next) => {
+  try {
+    const { userId } = req.body; 
+
+    if (!userId) {
+      return res.status(400).send({ message: "User ID is required." });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).send({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      experienceDetails: user.experienceDetails || [], 
+    });
+
+  } catch (err) {
+    console.error("Error in GetExperienceDetails: ", err);
+    return res.status(500).send({
+      success: false,
+      message: "Internal Server Error"
+    });
+  }
+};
+
+// Controller to get Education Details
+exports.GetEducationDetails = async (req, res, next) => {
+  try {
+    const { userId } = req.body; 
+
+    if (!userId) {
+      return res.status(400).send({ message: "User ID is required." });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).send({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      educationDetails: user.educationDetails || [], 
+    });
+
+  } catch (err) {
+    console.error("Error in GetEducationDetails: ", err);
+    return res.status(500).send({
+      success: false,
+      message: "Internal Server Error"
+    });
+  }
+};
+
+// Controller to UpdateEducation Details
+
+exports.UpdateEducationDetails = async (req, res, next) => {
+  try {
+    const { userId, education } = req.body;
+
+    if (!userId) {
+      return res.status(400).send({ message: "User ID is required." });
+    }
+    if (!education || !education._id) {
+      return res.status(400).send({ message: "Education details with _id are required." });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).send({ message: "User not found" });
+    }
+
+    const educationIndex = user.educationDetails.findIndex(entry => entry._id.toString() === education._id);
+
+    if (educationIndex === -1) {
+      return res.status(400).send({ message: "Education entry not found" });
+    }
+
+    user.educationDetails[educationIndex] = {
+      ...user.educationDetails[educationIndex],
+      ...education 
+    };
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Education details updated successfully.",
+      educationDetails: user.educationDetails,
+    });
+
+  } catch (err) {
+    console.error("Error in UpdateEducationDetails: ", err);
+    return res.status(500).send({
+      success: false,
+      message: "Internal Server Error"
+    });
+  }
+};
+
+// Controller to update Experience Details
+exports.UpdateExperienceDetails = async (req, res, next) => {
+  try {
+    const { userId, experience } = req.body;
+
+    if (!userId) {
+      return res.status(400).send({ message: "User ID is required." });
+    }
+    if (!experience || !experience._id) {
+      return res.status(400).send({ message: "Experience details with _id are required." });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).send({ message: "User not found" });
+    }
+
+    const experienceIndex = user.experienceDetails.findIndex(entry => entry._id.toString() === experience._id);
+
+    if (experienceIndex === -1) {
+      return res.status(400).send({ message: "Experience entry not found" });
+    }
+
+    user.experienceDetails[experienceIndex] = {
+      ...user.experienceDetails[experienceIndex], 
+      ...experience 
+    };
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Experience details updated successfully.",
+      experienceDetails: user.experienceDetails,
+    });
+
+  } catch (err) {
+    console.error("Error in UpdateExperienceDetails: ", err);
+    return res.status(500).send({
+      success: false,
+      message: "Internal Server Error"
+    });
+  }
+};
+
+// Controller to create about
+
+exports.CreateAbout = async (req, res, next) => {
+  try {
+    const { userId, about } = req.body;
+
+    if (!userId) {
+      return res.status(400).send({ message: "User ID is required." });
+    }
+    if (typeof about !== 'string' || about.trim() === "") {
+      return res.status(400).send({ message: "About field is required and must be a non-empty string." });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).send({ message: "User not found" });
+    }
+
+    user.about = about;
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "About field updated successfully.",
+      about: user.about
+    });
+
+  } catch (err) {
+    console.error("Error in CreateAbout: ", err);
+    return res.status(500).send({
+      success: false,
+      message: "Internal Server Error"
+    });
+  }
+};
+
+// Controller to read about
+
+exports.ReadAbout = async(req, res, next) => {
+  try{
+    const { userId } = req.body;
+    console.log("ReadAbout executed")
+
+    if(!userId){
+      return res.status(400).send({ message: "UserId is required"});
+    }
+    
+    const user = await User.findById(userId);
+    if(!user){
+      return res.status(400).send({ message: "User not found" });
+    }
+    return res.status(200).json({
+      about: user.about,
+      message: "About fetched successfully",
+      success: true
+    })
+    
+  }catch(error){
+    console.log("Error getting the about: ", error)
+    res.status(500).send({
+      success: false,
+      message: "Internal Server Error"
+    });
+  }
+}
+
+
+// Controller to Add skills
+
+exports.AddSkills = async(req, res, next) => {
+  try{
+    const { skills, userId } = req.body;
+
+    if(!userId) {
+      return res.status(400).send({ message: "UserId required"})
+    }
+    if(!skills || skills.length === 0){
+      return res.status(400).send({ message: "Skills Array is empty"})
+    }
+    const user = await User.findById(userId);
+    if(!user){
+      return res.status(404).send({ message: "User not found"})
+    }
+    user.skills = [...new Set([...user.skills, ...skills])]; // This ensures that there are no duplicates
+    await user.save();
+
+    return res.status(200).json({
+      message: "Skills added successfully",
+      skills: user.skills
+    })
+
+  }catch(error){
+    console.log("Error Adding Skills: ", error);
+    res.status(500).json({
+      message: "Internal Server Error"
+    })
+  }
+}
+
+// Controller to Delete skills
+
+exports.DeleteSkill = async(req, res, next) => {
+  try{
+    const { userId, skillsToDelete } = req.body;
+    if(!userId) {
+      return res.status(400).send({ message: "UserId required"})
+    }
+    if(!skillsToDelete || skillsToDelete.length === 0){
+      return res.status(400).send({ message: "Skills Array is empty"})
+    }
+    const user = await User.findById(userId);
+    if(!user){
+      return res.status(404).send({ message: "User not found"})
+    }
+
+    user.skills = user.skills.filter(skill => !skillsToDelete.includes(skill))
+    
+    await user.save();
+
+    return res.status(200).send({ message: "Skills deleted successfully", skills: user.skills });
+
+
+
+  }catch(error){
+    console.log("There was an error while deleting skills", error);
+    res.status(500).send({ message: "Internal Server Error" })
+  }
+
+}
+
+
+// Controller to get Skills
+
+exports.ReadSkills = async(req, res, next) => {
+  try{
+
+    const { userId } =req.body;
+    
+    const user = await User.findById(userId);
+    if(!user){
+      return res.status(404).send({ message: "User not found"})
+    }
+    
+    
+    
+    return res.status(200).json({
+      message: "Skills fetched successfully",
+      skils: user.skills
+    })
+  }catch(error){
+    console.log("There was an error while fetchind skills: ", error);
+    res.status(500).send({ message: "Internal Server Error"})
+  }
+    
+}
 
 
 

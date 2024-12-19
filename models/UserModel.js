@@ -21,6 +21,10 @@ const userSchema = new mongoose.Schema(
     userName: {
       type: String,
     },
+    about: {
+      type: String
+    }
+    ,
     headline: {
       type: String,
      
@@ -100,7 +104,7 @@ const userSchema = new mongoose.Schema(
         endYear: { type: String, required: false },
         company: { type: String , required: false},
         designation: { type: String, required: false },
-        Profession: { type: String, required: false },
+        // Profession: { type: String, required: false },
         Description: { type: String, required: false },
         CompanyLocation: { type: String, required: false },
         Banner: {
