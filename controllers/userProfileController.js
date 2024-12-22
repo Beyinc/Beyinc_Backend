@@ -511,6 +511,7 @@ exports.GetEducationDetails = async (req, res, next) => {
 exports.UpdateEducationDetails = async (req, res, next) => {
   try {
     const { userId, education } = req.body;
+    // console.log("Thi is the education: ", education);
 
     if (!userId) {
       return res.status(400).send({ message: "User ID is required." });
@@ -745,7 +746,7 @@ exports.ReadSkills = async(req, res, next) => {
     
     return res.status(200).json({
       message: "Skills fetched successfully",
-      skils: user.skills
+      skills: user.skills
     })
   }catch(error){
     console.log("There was an error while fetchind skills: ", error);
