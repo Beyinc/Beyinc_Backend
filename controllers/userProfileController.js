@@ -233,9 +233,10 @@ exports.SaveDocuments = async (req, res, next) => {
 
 exports.SaveEducationDetails = async (req, res, next) => {
   try {
-    const { education, userId } = req.body;
+    const { education } = req.body;
+    const { user_id } = req.payload;
 
-    if(!userId) return res.status(400).send("userId must be provided");
+    if(!user_id) return res.status(400).send("userId must be provided");
 
     // Ensure education details are provided
     if (!education || !Array.isArray(education) || education.length === 0) {
@@ -243,7 +244,7 @@ exports.SaveEducationDetails = async (req, res, next) => {
     }
 
     // Find the user by userId
-    const user = await User.findById(userId);
+    const user = await User.findById(user_id);
     if (!user) {
       return res.status(400).send("User not found");
     }
@@ -302,13 +303,14 @@ exports.SaveEducationDetails = async (req, res, next) => {
 
 exports.DeleteEducationDetails = async (req, res, next) => {
   try {
-    const { _id, userId } = req.body;
+    const { _id, } = req.body;
+    const { user_id } = req.payload;
 
-    if (!_id || !userId) {
+    if (!_id || !user_id) {
       return res.status(400).send({ message: "Both userId and education _id must be provided." });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(user_id);
     if (!user) {
       return res.status(400).send({ message: "User not found" });
     }
@@ -340,13 +342,15 @@ exports.DeleteEducationDetails = async (req, res, next) => {
 
 exports.SaveExperienceDetails = async (req, res, next) => {
   try {
-    const { experience, userId } = req.body;
+    const { experience } = req.body;
+    const { user_id } = req.payload;
+    console.log("This is the user_id from the middleware: ", user_id);
 
     if (!experience || !Array.isArray(experience) || experience.length === 0) {
       return res.status(400).send({ message: "Experience details must be provided." });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(user_id);
     if (!user) {
       return res.status(400).send({ message: "User not found" });
     }
@@ -413,13 +417,14 @@ exports.SaveExperienceDetails = async (req, res, next) => {
 
 exports.DeleteExperienceDetails = async (req, res, next) => {
   try {
-    const { _id, userId } = req.body;
+    const { _id } = req.body;
+    const { user_id } = req.payload;
 
-    if (!_id || !userId) {
-      return res.status(400).send({ message: "Both userId and experience _id must be provided." });
+    if (!_id ) {
+      return res.status(400).send({ message: "experience _id must be provided." });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(user_id);
     if (!user) {
       return res.status(400).send({ message: "User not found" });
     }
@@ -453,13 +458,13 @@ exports.DeleteExperienceDetails = async (req, res, next) => {
 
 exports.GetExperienceDetails = async (req, res, next) => {
   try {
-    const { userId } = req.body; 
+    const { user_id } = req.payload; 
 
-    if (!userId) {
+    if (!user_id) {
       return res.status(400).send({ message: "User ID is required." });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(user_id);
     if (!user) {
       return res.status(400).send({ message: "User not found" });
     }
@@ -481,13 +486,13 @@ exports.GetExperienceDetails = async (req, res, next) => {
 // Controller to get Education Details
 exports.GetEducationDetails = async (req, res, next) => {
   try {
-    const { userId } = req.body; 
+    const { user_id } = req.payload; 
 
-    if (!userId) {
+    if (!user_id) {
       return res.status(400).send({ message: "User ID is required." });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(user_id);
     if (!user) {
       return res.status(400).send({ message: "User not found" });
     }
@@ -510,31 +515,35 @@ exports.GetEducationDetails = async (req, res, next) => {
 
 exports.UpdateEducationDetails = async (req, res, next) => {
   try {
-    const { userId, education } = req.body;
-    // console.log("Thi is the education: ", education);
+    const education = req.body.payload;
+    console.log("This is the education: ", education);
+    const { user_id } = req.payload;
 
-    if (!userId) {
+    if (!user_id) {
       return res.status(400).send({ message: "User ID is required." });
     }
     if (!education || !education._id) {
       return res.status(400).send({ message: "Education details with _id are required." });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(user_id);
     if (!user) {
       return res.status(400).send({ message: "User not found" });
     }
 
     const educationIndex = user.educationDetails.findIndex(entry => entry._id.toString() === education._id);
-
     if (educationIndex === -1) {
       return res.status(400).send({ message: "Education entry not found" });
     }
 
-    user.educationDetails[educationIndex] = {
-      ...user.educationDetails[educationIndex],
-      ...education 
-    };
+    console.log("Updated Education Object: ", user.educationDetails[educationIndex]);
+
+
+    // Explicitly update fields to ensure they are saved
+    user.educationDetails[educationIndex].Edstart = education.Edstart;
+    user.educationDetails[educationIndex].Edend = education.Edend;
+    user.educationDetails[educationIndex].grade = education.grade;
+    user.educationDetails[educationIndex].college = education.college;
 
     await user.save();
 
@@ -553,19 +562,21 @@ exports.UpdateEducationDetails = async (req, res, next) => {
   }
 };
 
+
 // Controller to update Experience Details
 exports.UpdateExperienceDetails = async (req, res, next) => {
   try {
-    const { userId, experience } = req.body;
+    const { experience } = req.body;
+    const { user_id } = req.payload;
 
-    if (!userId) {
+    if (!user_id) {
       return res.status(400).send({ message: "User ID is required." });
     }
     if (!experience || !experience._id) {
       return res.status(400).send({ message: "Experience details with _id are required." });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(user_id);
     if (!user) {
       return res.status(400).send({ message: "User not found" });
     }
@@ -602,16 +613,18 @@ exports.UpdateExperienceDetails = async (req, res, next) => {
 
 exports.CreateAbout = async (req, res, next) => {
   try {
-    const { userId, about } = req.body;
+    const { about } = req.body;
+    console.log("This is the payload: ", req.payload);
+    const { user_id } = req.payload;
 
-    if (!userId) {
+    if (!user_id) {
       return res.status(400).send({ message: "User ID is required." });
     }
     if (typeof about !== 'string' || about.trim() === "") {
       return res.status(400).send({ message: "About field is required and must be a non-empty string." });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(user_id);
     if (!user) {
       return res.status(400).send({ message: "User not found" });
     }
@@ -639,14 +652,15 @@ exports.CreateAbout = async (req, res, next) => {
 
 exports.ReadAbout = async(req, res, next) => {
   try{
-    const { userId } = req.body;
-    console.log("ReadAbout executed")
+    const { user_id } = req.payload;
+    // console.log("This is the payload: ", req.payload);
+    // console.log("ReadAbout executed")
 
-    if(!userId){
+    if(!user_id){
       return res.status(400).send({ message: "UserId is required"});
     }
     
-    const user = await User.findById(userId);
+    const user = await User.findById(user_id);
     if(!user){
       return res.status(400).send({ message: "User not found" });
     }
@@ -670,15 +684,16 @@ exports.ReadAbout = async(req, res, next) => {
 
 exports.AddSkills = async(req, res, next) => {
   try{
-    const { skills, userId } = req.body;
+    const { skills } = req.body;
+    const { user_id } = req.payload;
 
-    if(!userId) {
+    if(!user_id) {
       return res.status(400).send({ message: "UserId required"})
     }
     if(!skills || skills.length === 0){
       return res.status(400).send({ message: "Skills Array is empty"})
     }
-    const user = await User.findById(userId);
+    const user = await User.findById(user_id);
     if(!user){
       return res.status(404).send({ message: "User not found"})
     }
@@ -702,14 +717,15 @@ exports.AddSkills = async(req, res, next) => {
 
 exports.DeleteSkill = async(req, res, next) => {
   try{
-    const { userId, skillsToDelete } = req.body;
-    if(!userId) {
+    const { skillsToDelete } = req.body;
+    const { user_id } = req.payload;
+    if(!user_id) {
       return res.status(400).send({ message: "UserId required"})
     }
     if(!skillsToDelete || skillsToDelete.length === 0){
       return res.status(400).send({ message: "Skills Array is empty"})
     }
-    const user = await User.findById(userId);
+    const user = await User.findById(user_id);
     if(!user){
       return res.status(404).send({ message: "User not found"})
     }
@@ -735,9 +751,9 @@ exports.DeleteSkill = async(req, res, next) => {
 exports.ReadSkills = async(req, res, next) => {
   try{
 
-    const { userId } =req.body;
+    const { user_id } =req.payload;
     
-    const user = await User.findById(userId);
+    const user = await User.findById(user_id);
     if(!user){
       return res.status(404).send({ message: "User not found"})
     }
