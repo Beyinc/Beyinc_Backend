@@ -7,7 +7,7 @@ const { verifyAccessToken } = require('../helpers/jwt_helpers');
 // Route to save bio
 router.post('/savedata', userProfileController.saveData);
 router.post('/inputFormData', userProfileController.InputFormData);
-router.post('/inputEntryData', userProfileController.inputEntryData);
+router.post('/inputEntryData',verifyAccessToken, userProfileController.inputEntryData);
 router.post('/saveDocuments', userProfileController.SaveDocuments);
 // router.post('/saveEducationDetails', userProfileController.SaveEducationDetails);
 
