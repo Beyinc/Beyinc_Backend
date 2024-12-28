@@ -11,7 +11,7 @@ router.post('/inputEntryData',verifyAccessToken, userProfileController.inputEntr
 router.post('/saveDocuments', userProfileController.SaveDocuments);
 // router.post('/saveEducationDetails', userProfileController.SaveEducationDetails);
 
-// Routes without verifyAccessToken
+// Routes with verifyAccessToken
 router.post('/getabout', verifyAccessToken, userProfileController.ReadAbout);
 router.post("/createAbout", verifyAccessToken, userProfileController.CreateAbout);
 router.post("/getSkills",verifyAccessToken, userProfileController.ReadSkills);
@@ -25,6 +25,7 @@ router.post("/saveExperienceDetails",verifyAccessToken, userProfileController.Sa
 router.post("/getEducationDetails", verifyAccessToken, userProfileController.GetEducationDetails);
 router.post("/updateEducationDetails",verifyAccessToken, userProfileController.UpdateEducationDetails);
 router.post("/updateExperienceDetails",verifyAccessToken, userProfileController.UpdateExperienceDetails);
+
 
 
 
