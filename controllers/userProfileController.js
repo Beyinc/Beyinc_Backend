@@ -5,8 +5,8 @@ const cloudinary = require("../helpers/UploadImage");
 exports.saveData = async (req, res) => {
   const { bio, experience, education, skills } = req.body;
   const { user_id } = req.payload;
-console.log("data recieved"+ bio, experience, education, skills);
-console.log("Received experience data:", experience);
+  console.log("data recieved"+ bio, experience, education, skills);
+  console.log("Received experience data:", experience);
 
   console.log("Saving data for user:", user_id);
 
@@ -142,8 +142,6 @@ exports.InputFormData = async (req, res) => {
   }
 };
 
-
-
 exports.inputEntryData = async (req, res) => {
   console.log(req.body)
   const { username, headline, skills, interests, selectedCategory } = req.body; // Added selectedCategory
@@ -175,7 +173,6 @@ exports.inputEntryData = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 exports.SaveDocuments = async (req, res, next) => {
   try {
@@ -227,7 +224,6 @@ exports.SaveDocuments = async (req, res, next) => {
     return res.status(400).json({ error: "Error while saving documents", details: err.message });
   }
 };
-//
 
 // Controller to save the education details of the user in an array
 
@@ -298,7 +294,6 @@ exports.SaveEducationDetails = async (req, res, next) => {
   }
 };
 
-
 // Controller to delete the education Details of the user from an array
 
 exports.DeleteEducationDetails = async (req, res, next) => {
@@ -336,7 +331,6 @@ exports.DeleteEducationDetails = async (req, res, next) => {
     return res.status(500).send("Internal Server Error");
   }
 };
-
 
 // Controller to save experience details
 
@@ -562,7 +556,6 @@ exports.UpdateEducationDetails = async (req, res, next) => {
   }
 };
 
-
 // Controller to update Experience Details
 exports.UpdateExperienceDetails = async (req, res, next) => {
   try {
@@ -679,7 +672,6 @@ exports.ReadAbout = async(req, res, next) => {
   }
 }
 
-
 // Controller to Add skills
 
 exports.AddSkills = async(req, res, next) => {
@@ -736,16 +728,12 @@ exports.DeleteSkill = async(req, res, next) => {
 
     return res.status(200).send({ message: "Skills deleted successfully", skills: user.skills });
 
-
-
   }catch(error){
     console.log("There was an error while deleting skills", error);
     res.status(500).send({ message: "Internal Server Error" })
   }
 
 }
-
-
 // Controller to get Skills
 
 exports.ReadSkills = async(req, res, next) => {
@@ -758,8 +746,6 @@ exports.ReadSkills = async(req, res, next) => {
       return res.status(404).send({ message: "User not found"})
     }
     
-    
-    
     return res.status(200).json({
       message: "Skills fetched successfully",
       skills: user.skills
@@ -770,8 +756,3 @@ exports.ReadSkills = async(req, res, next) => {
   }
     
 }
-
-
-
-
-
