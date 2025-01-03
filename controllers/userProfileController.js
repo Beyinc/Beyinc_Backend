@@ -59,9 +59,7 @@ exports.saveData = async (req, res) => {
 // Function to handle input form data
 exports.InputFormData = async (req, res) => {
   const {
-    salutation,
     fullName,
-    mentorCategories,
     mobileNumber,
     twitter,
     linkedin,
@@ -69,21 +67,12 @@ exports.InputFormData = async (req, res) => {
     state,
     town,
     languages,
+    user_id
   } = req.body; // Destructure the formState from req.body
-
-  const { user_id } = req.payload; // Assuming you're getting user_id from the request payload
-
-  // Validate fields if necessary
-  if (typeof salutation !== "string") {
-    return res.status(400).json({ message: "Invalid salutation." });
-  }
+ // Assuming you're getting user_id from the request payload
 
   if (typeof fullName !== "string" || fullName.length > 100) {
     return res.status(400).json({ message: "Invalid full name." });
-  }
-
-  if (mentorCategories && typeof mentorCategories !== "string") {
-    return res.status(400).json({ message: "Invalid mentor categories." });
   }
 
   if (mobileNumber && typeof mobileNumber !== "string") {
@@ -117,9 +106,7 @@ exports.InputFormData = async (req, res) => {
   try {
     // Update the user in the database, assuming you want to update these fields
     const updateFields = {
-      salutation,
       fullName,
-      mentorCategories,
       mobileNumber,
       twitter,
       linkedin,
@@ -603,6 +590,53 @@ exports.UpdateExperienceDetails = async (req, res, next) => {
 };
 
 // Controller to create about
+
+exports.uploadResume = async (req, res, next) => {
+  try {
+    const { resume, user_id } = req.body;
+    console.log("Request Body:", req.body);
+
+  //   const user = await User.findById(user_id);
+  //   if (!user) return res.status(400).send("User not found");
+
+  //   let uploadedDocuments = {};
+
+  //   // Handle document uploads with condition checks
+  //   const uploadDocument = async (document, key) => {
+  //     if (document) {
+  //       // Delete existing document if it exists
+  //       if (user.documents[key]?.public_id) {
+  //         await cloudinary.uploader.destroy(user.documents[key].public_id);
+  //       }
+  //       // Upload new document and store the result
+  //       const uploadedDoc = await cloudinary.uploader.upload(document, {
+  //         folder: `${user.email}/documents`,
+  //       });
+  //       uploadedDocuments[key] = {
+  //         public_id: uploadedDoc.public_id,
+  //         secure_url: uploadedDoc.secure_url,
+  //       };
+  //     }
+  //   };
+
+  //   // Execute uploads
+  //   await uploadDocument(resume, "resume");
+
+  //   // Update user with uploaded document details
+  //   await User.updateOne(
+  //     { _id: user_id },
+  //     {
+  //       $set: { documents: { ...user.documents, ...uploadedDocuments } },
+  //     }
+  //   );
+
+  //   return res.send({ message: "Documents uploaded successfully" });
+  } catch (err) {
+    console.error("Error details:", err.message);
+    console.error("Error stack:", err.stack);
+    return res.status(400).json({ error: "Error while saving documents", details: err.message });
+  }
+};
 
 exports.CreateAbout = async (req, res, next) => {
   try {

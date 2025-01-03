@@ -14,6 +14,7 @@ router.post('/saveDocuments', userProfileController.SaveDocuments);
 // Routes without verifyAccessToken
 router.post('/getabout', verifyAccessToken, userProfileController.ReadAbout);
 router.post("/createAbout", verifyAccessToken, userProfileController.CreateAbout);
+router.route("/uploadFile").post(userProfileController.uploadResume);
 router.post("/getSkills",verifyAccessToken, userProfileController.ReadSkills);
 router.post("/deleteskill",verifyAccessToken, userProfileController.DeleteSkill);
 router.post("/addSkills",verifyAccessToken, userProfileController.AddSkills);
