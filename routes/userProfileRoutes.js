@@ -9,6 +9,7 @@ router.post('/savedata', userProfileController.saveData);
 router.post('/inputFormData', userProfileController.InputFormData);
 router.post('/inputEntryData',verifyAccessToken, userProfileController.inputEntryData);
 router.post('/saveDocuments', userProfileController.SaveDocuments);
+router.post('/saveDocument', userProfileController.SaveDocument);
 // router.post('/saveEducationDetails', userProfileController.SaveEducationDetails);
 
 // Routes without verifyAccessToken

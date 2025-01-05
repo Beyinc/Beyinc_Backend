@@ -3,8 +3,7 @@ const cloudinary = require("../helpers/UploadImage");
 
 // Save User Data Function
 exports.saveData = async (req, res) => {
-  const { bio, experience, education, skills } = req.body;
-  const { user_id } = req.payload;
+  const { bio, experience, education, skills, user_id } = req.body;
   console.log("data recieved"+ bio, experience, education, skills);
   console.log("Received experience data:", experience);
 
@@ -195,6 +194,52 @@ exports.SaveDocuments = async (req, res, next) => {
     await uploadDocument(achievements, "achievements");
     await uploadDocument(degree, "degree");
     await uploadDocument(working, "working");
+
+    // Update user with uploaded document details
+    await User.updateOne(
+      { _id: userId },
+      {
+        $set: { documents: { ...user.documents, ...uploadedDocuments } },
+      }
+    );
+
+    return res.send({ message: "Documents uploaded successfully" });
+  } catch (err) {
+    console.error("Error details:", err.message);
+    console.error("Error stack:", err.stack);
+    return res.status(400).json({ error: "Error while saving documents", details: err.message });
+  }
+};
+
+exports.SaveDocument = async (req, res, next) => {
+  try {
+    const { resume, userId } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(400).send("User not found");
+
+    let uploadedDocuments = {};
+
+    // Handle document uploads with condition checks
+    const uploadDocument = async (document, key) => {
+      if (document) {
+        // Delete existing document if it exists
+        if (user.documents[key]?.public_id) {
+          await cloudinary.uploader.destroy(user.documents[key].public_id);
+        }
+        // Upload new document and store the result
+        const uploadedDoc = await cloudinary.uploader.upload(document, {
+          folder: `${user.email}/document`,
+        });
+        uploadedDocuments[key] = {
+          public_id: uploadedDoc.public_id,
+          secure_url: uploadedDoc.secure_url,
+        };
+      }
+    };
+
+    // Execute uploads
+    await uploadDocument(resume, "resume");
 
     // Update user with uploaded document details
     await User.updateOne(
