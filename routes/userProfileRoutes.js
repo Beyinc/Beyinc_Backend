@@ -9,11 +9,13 @@ router.post('/savedata', userProfileController.saveData);
 router.post('/inputFormData', userProfileController.InputFormData);
 router.post('/inputEntryData',verifyAccessToken, userProfileController.inputEntryData);
 router.post('/saveDocuments', userProfileController.SaveDocuments);
+router.post('/saveDocument', userProfileController.SaveDocument);
 // router.post('/saveEducationDetails', userProfileController.SaveEducationDetails);
 
 // Routes with verifyAccessToken
 router.post('/getabout', verifyAccessToken, userProfileController.ReadAbout);
 router.post("/createAbout", verifyAccessToken, userProfileController.CreateAbout);
+router.route("/uploadFile").post(userProfileController.uploadResume);
 router.post("/getSkills",verifyAccessToken, userProfileController.ReadSkills);
 router.post("/deleteskill",verifyAccessToken, userProfileController.DeleteSkill);
 router.post("/addSkills",verifyAccessToken, userProfileController.AddSkills);
