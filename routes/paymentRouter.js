@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 dotenv.config({ path: "../config.env" });
 
 const paymentController = require("../controllers/paymentController");
+const { verifyAPiAccessToken, verifyAccessToken } = require("../helpers/jwt_helpers");
 
 const router = express.Router();
 
@@ -17,6 +18,9 @@ router.route('/fundaccount').post(paymentController.createFundAccount);
 router.route('/deleteFundAccount').post(paymentController.deleteFundAccount);
 router.route('/saveWithdrawl').post(paymentController.saveWithdrawls);
 router.route('/getTransactions').post(paymentController.getTransactions);
+
+
+router.post('/savePayoutDetails', paymentController.savePayoutDetails );
 
 
 
