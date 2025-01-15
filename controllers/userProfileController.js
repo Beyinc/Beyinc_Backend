@@ -57,8 +57,10 @@ exports.saveData = async (req, res) => {
 
 // Function to handle input form data
 exports.InputFormData = async (req, res) => {
+  console.log("formdata",req.body);
   const {
     fullName,
+    headline,
     mobileNumber,
     twitter,
     linkedin,
@@ -73,7 +75,7 @@ exports.InputFormData = async (req, res) => {
   if (typeof fullName !== "string" || fullName.length > 100) {
     return res.status(400).json({ message: "Invalid full name." });
   }
-
+ 
   if (mobileNumber && typeof mobileNumber !== "string") {
     return res.status(400).json({ message: "Invalid mobile number." });
   }
@@ -106,6 +108,7 @@ exports.InputFormData = async (req, res) => {
     // Update the user in the database, assuming you want to update these fields
     const updateFields = {
       fullName,
+      headline,
       mobileNumber,
       twitter,
       linkedin,
@@ -485,12 +488,19 @@ exports.DeleteExperienceDetails = async (req, res, next) => {
 exports.GetExperienceDetails = async (req, res, next) => {
   try {
     const { user_id } = req.payload; 
-
-    if (!user_id) {
+    const { id } = req.body;
+    if (!id && !user_id) {
       return res.status(400).send({ message: "User ID is required." });
     }
 
-    const user = await User.findById(user_id);
+    let user;
+    if (id) {
+      // If id is provided, search by id
+      user = await User.findById(id);
+    } else {
+      // Otherwise, search by user_id
+      user = await User.findById(user_id);
+    }
     if (!user) {
       return res.status(400).send({ message: "User not found" });
     }
@@ -510,32 +520,48 @@ exports.GetExperienceDetails = async (req, res, next) => {
 };
 
 // Controller to get Education Details
+// Controller to get Education Details
 exports.GetEducationDetails = async (req, res, next) => {
   try {
-    const { user_id } = req.payload; 
+    const { id } = req.body; // Extract id from the request body
+    const { user_id } = req.payload; // Extract user_id from the payload
 
-    if (!user_id) {
-      return res.status(400).send({ message: "User ID is required." });
+    console.log('Extracted user_id:', user_id);
+    console.log('Extracted id:', id);
+
+    if (!id && !user_id) {
+      return res.status(400).send({ message: "User ID or ID is required." });
     }
 
-    const user = await User.findById(user_id);
+    let user;
+    if (id) {
+      // If id is provided, search by id
+      user = await User.findById(id);
+    } else {
+      // Otherwise, search by user_id
+      user = await User.findById(user_id);
+    }
+
+    console.log('Fetched user:', user);
+
     if (!user) {
       return res.status(400).send({ message: "User not found" });
     }
 
     return res.status(200).json({
       success: true,
-      educationDetails: user.educationDetails || [], 
+      educationDetails: user.educationDetails || [],
     });
 
   } catch (err) {
-    console.error("Error in GetEducationDetails: ", err);
+    console.error("Error in GetEducationDetails:", err);
     return res.status(500).send({
       success: false,
-      message: "Internal Server Error"
+      message: "Internal Server Error",
     });
   }
 };
+
 
 // Controller to UpdateEducation Details
 
@@ -722,34 +748,44 @@ exports.CreateAbout = async (req, res, next) => {
 
 // Controller to read about
 
-exports.ReadAbout = async(req, res, next) => {
-  try{
-    const { user_id } = req.payload;
-    // console.log("This is the payload: ", req.payload);
-    // console.log("ReadAbout executed")
+exports.ReadAbout = async (req, res, next) => {
+ 
 
-    if(!user_id){
-      return res.status(400).send({ message: "UserId is required"});
+  try {
+    const { id} = req.body;
+     const { user_id } = req.payload;
+
+    // console.log("Extracted payload:", req.payload);
+    // console.log("Extracted user_id:", user_id);
+    // console.log("Extracted id:", id);
+
+    // Validate if at least one identifier is provided
+    if (!user_id && !id) {
+      return res.status(400).send({ message: "UserId or ID is required" });
     }
-    
-    const user = await User.findById(user_id);
-    if(!user){
-      return res.status(400).send({ message: "User not found" });
+
+    // Find user by either user_id or id
+    const user = await User.findById(id ? id : user_id);
+    // console.log('Fetched user:', user);
+
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
     }
+
     return res.status(200).json({
       about: user.about,
       message: "About fetched successfully",
-      success: true
-    })
-    
-  }catch(error){
-    console.log("Error getting the about: ", error)
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error fetching the about section:", error);
     res.status(500).send({
       success: false,
-      message: "Internal Server Error"
+      message: "Internal Server Error",
     });
   }
-}
+};
+
 
 // Controller to Add skills
 
@@ -817,10 +853,11 @@ exports.DeleteSkill = async(req, res, next) => {
 
 exports.ReadSkills = async(req, res, next) => {
   try{
-
+    console.log('read skills',req.body)
+    const { id} = req.body;
     const { user_id } =req.payload;
     
-    const user = await User.findById(user_id);
+    const user = await User.findById(id ? id : user_id);
     if(!user){
       return res.status(404).send({ message: "User not found"})
     }
