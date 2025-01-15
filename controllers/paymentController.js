@@ -652,3 +652,32 @@ exports.saveWithdrawls = async (req, res, next) => {
   }
 };
 
+
+exports.getTransactions = async (req, res) => {
+  const { mentorId } = req.body;
+
+  try {
+    const payouts = await Payout.find({ mentorId })
+      .populate('mentorId', 'name email') // Populate mentorId with specific fields
+      .populate('withdrawlData.sessionData.bookingIds', 'title date'); // Populate bookingIds with specific fields
+
+    if (!payouts || payouts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No payouts found for this mentorId',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: payouts,
+    });
+  } catch (error) {
+    console.error('Error fetching payouts:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching payouts',
+    });
+  }
+};
+

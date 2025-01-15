@@ -58,6 +58,7 @@ router.route("/getUser").post(userController.getProfile);
 router.route("/followerControl").post(userController.followerController);
 
 router.route("/recommendedUsers").post(userController.recommendedUsers);
+router.route("/unfollow").post(userController.unfollowController);
 
 router.route("/removeFollower").post(userController.removeFollower);
 

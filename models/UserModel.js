@@ -21,6 +21,10 @@ const userSchema = new mongoose.Schema(
     userName: {
       type: String,
     },
+    about: {
+      type: String
+    }
+    ,
     headline: {
       type: String,
      
@@ -36,7 +40,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    phone: {
+    mobileNumber: {
       type: String,
       // required: true,
       // unique: true,
@@ -95,23 +99,13 @@ const userSchema = new mongoose.Schema(
 
     experienceDetails: [
       {
-        domain: { type: String, required: false },
-        institute: { type: String, required: false },
-        start: { type: String , required: false},
-        end: { type: String, required: false },
-        year: { type: String, required: false },
+        
+        startYear: { type: String , required: false},
+        endYear: { type: String, required: false },
         company: { type: String , required: false},
-        areaOfBusiness: { type: String, required: false },
-        profession: { type: String, required: false },
         designation: { type: String, required: false },
-        Achievements: { type: String, required: false },
-        Published: { type: String, required: false },
-        StartupExperience: { type: String, required: false },
-        Consultancy: { type: String, required: false },
-        Profession: { type: String, required: false },
-        TotalWorkExperience: { type: String, required: false },
+        // Profession: { type: String, required: false },
         Description: { type: String, required: false },
-        Customers: { type: String, required: false },
         CompanyLocation: { type: String, required: false },
         Banner: {
           public_id: {
@@ -133,9 +127,6 @@ const userSchema = new mongoose.Schema(
             required: false
           },
         },
-        Services: { type: String, required: false },
-        startupName: { type: String, required: false },
-        workingStatus: { type: String, required: false },
       },
     ],
     educationDetails: [

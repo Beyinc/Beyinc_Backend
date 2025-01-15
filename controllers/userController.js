@@ -56,7 +56,7 @@ exports.userDetails = async (req, res, next) => {
 
 
 exports.getProfile = async (req, res, next) => {
-  console.log('getProfile')
+  // console.log('getProfile')
   try {
     const { id } = req.body;
     const { user_id } = req.payload;
@@ -75,7 +75,7 @@ exports.getProfile = async (req, res, next) => {
       .populate("role_details");
 
     // console.log(removePass);
-    console.log(userDoesExist);
+    // console.log(userDoesExist);
     
     if (userDoesExist) {
       return res.status(200).json(userDoesExist);
@@ -117,6 +117,7 @@ exports.recommendedUsers = async (req, res, next) => {
   }
 };
 
+
 exports.removeFollower = async (req, res, next) => {
   try {
     const { userId } = req.body;
@@ -138,6 +139,8 @@ exports.removeFollower = async (req, res, next) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
 
 
 exports.followerController = async (req, res, next) => {
@@ -203,6 +206,74 @@ exports.followerController = async (req, res, next) => {
     return res.status(200).json(userDoesExist);
   }
 };
+
+
+exports.unfollowController = async (req, res, next) => {
+  console.log('body', req.body);
+  const { unfollowReqBy, unfollowReqTo } = req.body;
+
+  console.log("Unfollow request received:", { unfollowReqBy, unfollowReqTo });
+
+  try {
+    const requestBy = await User.findOne({ _id: unfollowReqBy });
+    const requestTo = await User.findOne({ _id: unfollowReqTo });
+
+    console.log("RequestBy User:", requestBy);
+    console.log("RequestTo User:", requestTo);
+
+    if (!requestBy || !requestTo) {
+      console.error("One or both users not found:", { unfollowReqBy, unfollowReqTo });
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Check if the users are already connected
+    if (requestTo.followers.includes(unfollowReqBy)) {
+      console.log(`Unfollowing user ${unfollowReqTo} by ${unfollowReqBy}`);
+
+      // Remove follower
+      requestTo.followers = requestTo.followers.filter(
+        (followerId) => followerId.toString() !== unfollowReqBy
+      );
+      await requestTo.save();
+
+      console.log("Updated followers for RequestTo:", requestTo.followers);
+
+      // Remove following
+      requestBy.following = requestBy.following.filter(
+        (followingId) => followingId.toString() !== unfollowReqTo
+      );
+      await requestBy.save();
+
+      console.log("Updated following for RequestBy:", requestBy.following);
+
+      // Refetch and populate data
+      const userDoesExist = await User.findOne(
+        { _id: requestTo._id },
+        { password: 0, chatBlockedBy: 0 }
+      )
+        .populate({
+          path: "followers",
+          select: ["userName", "image", "role", "_id"],
+        })
+        .populate({
+          path: "following",
+          select: ["userName", "image", "role", "_id"],
+        })
+        .populate("role_details");
+
+      console.log("Final user data after unfollow:", userDoesExist);
+
+      return res.status(200).json(userDoesExist);
+    } else {
+      console.warn(`User ${unfollowReqBy} is not following ${unfollowReqTo}`);
+      return res.status(400).json({ message: "You are not following this user." });
+    }
+  } catch (error) {
+    console.error("Error in unfollowController:", error);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+};
+
 
 exports.getApprovalRequestProfile = async (req, res, next) => {
   try {
@@ -1517,6 +1588,8 @@ exports.getUsers = async (req, res, next) => {
     return res.status(400).json("Error while fetching");
   }
 };
+
+
 
 exports.getAllUserProfileRequests = async (req, res, next) => {
   try {
