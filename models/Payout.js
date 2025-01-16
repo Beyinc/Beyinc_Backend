@@ -23,6 +23,10 @@ const PayoutSchema = new Schema({
     currency: {
       type: String,
       required: false
+    },
+    country: {
+      type: String,
+      required: false
     }
   },
   upi: {

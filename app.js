@@ -32,6 +32,7 @@ const swaggerSpecs = require("./swagger");
 const { verifyAccessToken } = require("./helpers/jwt_helpers");
 const userProfileRoutes = require('./routes/userProfileRoutes');
 const filterRoutes = require('./routes/filterRoutes');
+const paymentController = require('./controllers/paymentController.js')
 
 const cors = require("cors");
 const morgan = require("morgan");
@@ -87,6 +88,9 @@ app.get("/api/calendarRedirect",calendarController.Redirect );
 // app.post("/api/saveBeyincProfessional", verifyAccessToken, beyincProfileController.saveBeyincProfile );
 
 app.use("/api/professionalProfile", verifyAccessToken, professionalProfileRouter)
+
+
+// app.post('/api/payment/savePayoutDetails', verifyAccessToken, paymentController.savePayoutDetails );
 
 
 

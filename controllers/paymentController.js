@@ -621,36 +621,92 @@ exports.checkPayoutStatus = async (req, res, next) => {
 
 
 
+// exports.saveWithdrawls = async (req, res, next) => {
+//   const { selectedIds, totalAmount, commission, remainingAmount } = req.body;
+//   const userId = req.payload.user_id;
+//   console.log("This is the userId from middleware: ", userId);
+
+//   try {
+//     // Define the data structure based on the withdrawlData schema
+//     const withdrawlData = {
+//       withdrawlData: [
+//         {
+//           totalAmount,                   // Total amount for this withdrawal
+//           withdrawlAmount: remainingAmount, // Amount after commission
+//           sessionData: {
+//             bookingIds: selectedIds,     // IDs of the selected bookings
+//           },
+//         },
+//       ],
+//     };
+
+//     // Save the data to the database
+//     const newWithdrawl = new Payout(withdrawlData);
+//     const savedWithdrawl = await newWithdrawl.save();
+
+//     res.status(201).json({
+//       message: 'Withdrawl data saved successfully',
+//       data: savedWithdrawl,
+//     });
+//   } catch (error) {
+//     console.error("Error saving withdrawl data:", error);
+//     res.status(500).json({ message: 'Failed to save withdrawl data', error });
+//   }
+// };
+
+
+
+
 exports.saveWithdrawls = async (req, res, next) => {
   const { selectedIds, totalAmount, commission, remainingAmount } = req.body;
+  const userId = req.payload.user_id;  // User ID from JWT token or session
+  // console.log("This is the userId from middleware: ", userId);
 
   try {
-    // Define the data structure based on the withdrawlData schema
+    // Define the new withdrawal data
     const withdrawlData = {
-      withdrawlData: [
-        {
-          totalAmount,                   // Total amount for this withdrawal
-          withdrawlAmount: remainingAmount, // Amount after commission
-          sessionData: {
-            bookingIds: selectedIds,     // IDs of the selected bookings
-          },
-        },
-      ],
+      totalAmount,                   // Total amount for this withdrawal
+      withdrawlAmount: remainingAmount, // Amount after commission
+      sessionData: {
+        bookingIds: selectedIds,     // IDs of the selected bookings
+      },
     };
 
-    // Save the data to the database
-    const newWithdrawl = new Payout(withdrawlData);
-    const savedWithdrawl = await newWithdrawl.save();
+    // Check if a user entry with the given userId already exists in the database
+    const existingUser = await Payout.findOne({ 'mentorId': userId });
+    // console.log("This is the existing User: ", existingUser);
 
-    res.status(201).json({
-      message: 'Withdrawl data saved successfully',
-      data: savedWithdrawl,
-    });
+    if (existingUser) {
+      // If the user exists, add the new withdrawl data to the withdrawlData array
+      existingUser.withdrawlData.push(withdrawlData);
+
+      // Save the updated user entry
+      const updatedUser = await existingUser.save();
+
+      res.status(200).json({
+        message: 'Withdrawl data added successfully for existing user',
+        data: updatedUser,
+      });
+    } else {
+      // If the user does not exist, create a new entry
+      const newWithdrawl = new Payout({
+        mentorId: userId,  // Save the userId to associate the data with the user
+        withdrawlData: [withdrawlData], // Add the new withdrawl data in an array
+      });
+
+      const savedWithdrawl = await newWithdrawl.save();
+
+      res.status(201).json({
+        message: 'Withdrawl data saved successfully for new user',
+        data: savedWithdrawl,
+      });
+    }
   } catch (error) {
     console.error("Error saving withdrawl data:", error);
     res.status(500).json({ message: 'Failed to save withdrawl data', error });
   }
 };
+
 
 
 exports.getTransactions = async (req, res) => {
@@ -680,4 +736,89 @@ exports.getTransactions = async (req, res) => {
     });
   }
 };
+
+
+
+
+exports.savePayoutDetails = async (req, res) => {
+  const userId = req.payload.user_id;  // User ID from JWT token or session
+  const { bankName, accountNumber, ifscCode, currency, upiId, accountHolderName } = req.body;
+
+  // Check if required data is present
+  if (!bankName && !upiId) {
+    return res.status(401).json({
+      message: "Either bank details or UPI details must be provided"
+    });
+  }
+
+  try {
+    // Create payout details object
+    const payoutDetails = {
+      mentorId: userId  // Add user ID as the mentorId
+    };
+
+    // console.log("These are the bank details: ", bankName, accountNumber, ifscCode, currency);
+
+    // If bank details are provided
+    if (bankName && accountNumber && ifscCode && currency) {
+      payoutDetails.bank = {
+        name: bankName,
+        accNo: accountNumber,
+        ifsc: ifscCode,
+        currency: currency,
+
+      };
+    }
+
+    // If UPI details are provided
+    if (upiId) {
+      payoutDetails.upi = upiId;
+    }
+
+    // Use findOneAndUpdate to find the document by mentorId and update or create a new one
+    const updatedPayout = await Payout.findOneAndUpdate(
+      { mentorId: userId }, // Find the document by mentorId
+      payoutDetails, // The new payout details to save
+      { new: true, upsert: true } // 'new' returns the updated document, 'upsert' creates a new document if not found
+    );
+
+    return res.status(200).json({
+      message: "Payout details saved successfully",
+      payout: updatedPayout
+    });
+
+  } catch (err) {
+    console.error("Error saving payout details:", err);
+    return res.status(500).json({
+      message: "Server error. Failed to save payout details."
+    });
+  }
+};
+
+
+exports.getPayoutDetails = async (req, res) => {
+  const userId = req.payload.user_id;  
+  
+  try {
+    const existingUser = await Payout.findOne({ mentorId: userId });
+
+    if (!existingUser) {
+      return res.status(404).json({
+        message: "User does not exist"
+      });
+    }
+
+    res.status(200).json({
+      existingUser,
+    });
+
+  } catch (error) {
+    console.error(error);  
+    
+    res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message
+    });
+  }
+}
 
