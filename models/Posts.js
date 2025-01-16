@@ -28,6 +28,19 @@ const postSchema = new mongoose.Schema(
         },
         type: {
             type: String,
+            enum: [
+                'Idea Discussion', 
+                'Co-founder Needed', 
+                'Tech Partner Needed', 
+                'Mentor Needed', 
+                'General Post', 
+                'Question and Answer', 
+                'Announcement', 
+                'News', 
+                'Hiring', 
+                'Opportunities', 
+                'Investment'
+            ],
         },
         postTitle: {
             type: String,

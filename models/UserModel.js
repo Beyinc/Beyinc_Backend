@@ -20,8 +20,14 @@ const userSchema = new mongoose.Schema(
     ],
     userName: {
       type: String,
-      required: true,
-      unique: true,
+    },
+    about: {
+      type: String
+    }
+    ,
+    headline: {
+      type: String,
+     
     },
     twitter: {
       type: String,
@@ -34,7 +40,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    phone: {
+    mobileNumber: {
       type: String,
       // required: true,
       // unique: true,
@@ -93,50 +99,41 @@ const userSchema = new mongoose.Schema(
 
     experienceDetails: [
       {
-        domain: { type: String },
-        institute: { type: String },
-        start: { type: String },
-        end: { type: String },
-        year: { type: String },
-        company: { type: String },
-        areaOfBusiness: { type: String },
-        profession: { type: String },
-        designation: { type: String },
-        Achievements: { type: String, required: false },
-        Published: { type: String, required: false },
-        StartupExperience: { type: String, required: false },
-        Consultancy: { type: String, required: false },
-        Profession: { type: String, required: false },
-        TotalWorkExperience: { type: String, required: false },
+        
+        startYear: { type: String , required: false},
+        endYear: { type: String, required: false },
+        company: { type: String , required: false},
+        designation: { type: String, required: false },
+        // Profession: { type: String, required: false },
         Description: { type: String, required: false },
-        Customers: { type: String, required: false },
         CompanyLocation: { type: String, required: false },
         Banner: {
           public_id: {
             type: String,
+            required: false
           },
           secure_url: {
             type: String,
+            required: false
           },
         },
         Logo: {
           public_id: {
             type: String,
+            required: false
           },
           secure_url: {
             type: String,
+            required: false
           },
         },
-        Services: { type: String, required: false },
-        startupName: { type: String, required: false },
-        workingStatus: { type: String, required: false },
       },
     ],
     educationDetails: [
       {
         Edstart: { type: String },
         Edend: { type: String },
-        year: { type: String },
+        // year: { type: String },
         grade: { type: String },
         college: { type: String },
       },
@@ -158,11 +155,48 @@ const userSchema = new mongoose.Schema(
     },
     // Mentors/ Investores registered in beyinc
     // comment
-    beyincProfile: { type: String, required: false, default: "" },
+    beyincProfile: { type: String, required: false, default:""},
     industries: { type: [String], required: false },
     expertise: { type: [String], required: false },
     stages: { type: [String], required: false },
     investmentRange: { type: Number, required: false },
+
+    interests: {
+      type: [String],
+      required: false,
+      enum: [
+        "Individual /Entrepreneur",
+        "Startup",
+        "Mentor",
+        "Incubator",
+        "Accelerator",
+        "InstituteInvestor",
+        "InstituteInvestor",
+        "TradeBody",
+        "GovernmentBody",
+        "Corporate",
+        "TechPartner",
+      ],
+    },
+
+    categoryUserRole: {
+      type: String,
+      required: false,
+      enum: [
+        "Entrepreneur",
+        "Startup",
+        "Mentor",
+        "Incubator",
+        "Accelerator",
+        "InstituteInvestor",
+        "InstituteInvestor",
+        "TradeBody",
+        "GovernmentBody",
+        "Corporate",
+        "TechPartner",
+      ],
+    },
+
 
     role_type: {
       type: String,
@@ -181,6 +215,9 @@ const userSchema = new mongoose.Schema(
         "TechPartner",
       ],
     },
+
+
+    
     documents: {
       resume: {
         public_id: {
