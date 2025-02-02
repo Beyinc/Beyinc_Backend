@@ -21,6 +21,7 @@ router.route('/getTransactions').post(paymentController.getTransactions);
 
 
 router.post('/savePayoutDetails', paymentController.savePayoutDetails );
+router.post('/getPayoutDetails', paymentController.getPayoutDetails);
 
 
 

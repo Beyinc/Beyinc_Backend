@@ -43,28 +43,39 @@ const PayoutSchema = new Schema({
         type: Number,
         required: false
       },
-      sessionData: {
-        bookingIds: [
-          {
-            type: Schema.Types.ObjectId,
-            ref: 'BookingData',
-            required: false
-          }
-        ],
-        payoutStatus: {
-          type: String,
-          enum: ['Pending', 'Completed', 'Failed'],
-          default: 'Pending'
-        },
-        payoutId: {
-          type: String,
-          required: false
-        },
-        payoutProof: {
-          type: String,
-          required: false
-        }
-      }
+      payoutStatus: {
+        type: String,
+        enum: ['Pending', 'Complete', 'Failed'],
+        default: 'Pending'
+
+      },
+      PaymentProof:{
+        type: String,
+        required: false
+      },
+
+      // sessionData: {
+      //   bookingIds: [
+      //     {
+      //       type: Schema.Types.ObjectId,
+      //       ref: 'BookingData',
+      //       required: false
+      //     }
+      //   ],
+      //   payoutStatus: {
+      //     type: String,
+      //     enum: ['Pending', 'Completed', 'Failed'],
+      //     default: 'Pending'
+      //   },
+      //   payoutId: {
+      //     type: String,
+      //     required: false
+      //   },
+      //   payoutProof: {
+      //     type: String,
+      //     required: false
+      //   }
+      // }
     }
   ]
 }, { timestamps: true });

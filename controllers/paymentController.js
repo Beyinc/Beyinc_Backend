@@ -809,9 +809,9 @@ exports.getPayoutDetails = async (req, res) => {
     }
 
     res.status(200).json({
-      existingUser,
+      withdrawlData: existingUser.withdrawlData,
     });
-
+    
   } catch (error) {
     console.error(error);  
     
