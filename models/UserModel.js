@@ -165,7 +165,7 @@ const userSchema = new mongoose.Schema(
       type: [String],
       required: false,
       enum: [
-        "Individual /Entrepreneur",
+        "Individual/Entrepreneur",
         "Startup",
         "Mentor",
         "Incubator",
