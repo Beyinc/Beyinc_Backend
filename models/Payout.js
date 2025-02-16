@@ -53,15 +53,16 @@ const PayoutSchema = new Schema({
         type: String,
         required: false
       },
+      bookingIds: [
+          {
+            type: Schema.Types.ObjectId,
+            ref: 'BookingData',
+            required: false
+          }
+        ],
 
       // sessionData: {
-      //   bookingIds: [
-      //     {
-      //       type: Schema.Types.ObjectId,
-      //       ref: 'BookingData',
-      //       required: false
-      //     }
-      //   ],
+      //   
       //   payoutStatus: {
       //     type: String,
       //     enum: ['Pending', 'Completed', 'Failed'],
