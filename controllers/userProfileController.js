@@ -3,10 +3,9 @@ const cloudinary = require("../helpers/UploadImage");
 
 // Save User Data Function
 exports.saveData = async (req, res) => {
-  const { bio, experience, education, skills } = req.body;
-  const { user_id } = req.payload;
-console.log("data recieved"+ bio, experience, education, skills);
-console.log("Received experience data:", experience);
+  const { bio, experience, education, skills, user_id } = req.body;
+  console.log("data recieved"+ bio, experience, education, skills);
+  console.log("Received experience data:", experience);
 
   console.log("Saving data for user:", user_id);
 
@@ -58,10 +57,10 @@ console.log("Received experience data:", experience);
 
 // Function to handle input form data
 exports.InputFormData = async (req, res) => {
+  console.log("formdata",req.body);
   const {
-    salutation,
     fullName,
-    mentorCategories,
+    headline,
     mobileNumber,
     twitter,
     linkedin,
@@ -69,23 +68,14 @@ exports.InputFormData = async (req, res) => {
     state,
     town,
     languages,
+    user_id
   } = req.body; // Destructure the formState from req.body
-
-  const { user_id } = req.payload; // Assuming you're getting user_id from the request payload
-
-  // Validate fields if necessary
-  if (typeof salutation !== "string") {
-    return res.status(400).json({ message: "Invalid salutation." });
-  }
+ // Assuming you're getting user_id from the request payload
 
   if (typeof fullName !== "string" || fullName.length > 100) {
     return res.status(400).json({ message: "Invalid full name." });
   }
-
-  if (mentorCategories && typeof mentorCategories !== "string") {
-    return res.status(400).json({ message: "Invalid mentor categories." });
-  }
-
+ 
   if (mobileNumber && typeof mobileNumber !== "string") {
     return res.status(400).json({ message: "Invalid mobile number." });
   }
@@ -117,9 +107,8 @@ exports.InputFormData = async (req, res) => {
   try {
     // Update the user in the database, assuming you want to update these fields
     const updateFields = {
-      salutation,
       fullName,
-      mentorCategories,
+      headline,
       mobileNumber,
       twitter,
       linkedin,
@@ -141,8 +130,6 @@ exports.InputFormData = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
 
 exports.inputEntryData = async (req, res) => {
   console.log(req.body)
@@ -175,7 +162,6 @@ exports.inputEntryData = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 exports.SaveDocuments = async (req, res, next) => {
   try {
@@ -227,7 +213,52 @@ exports.SaveDocuments = async (req, res, next) => {
     return res.status(400).json({ error: "Error while saving documents", details: err.message });
   }
 };
-//
+
+exports.SaveDocument = async (req, res, next) => {
+  try {
+    const { resume, userId } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(400).send("User not found");
+
+    let uploadedDocuments = {};
+
+    // Handle document uploads with condition checks
+    const uploadDocument = async (document, key) => {
+      if (document) {
+        // Delete existing document if it exists
+        if (user.documents[key]?.public_id) {
+          await cloudinary.uploader.destroy(user.documents[key].public_id);
+        }
+        // Upload new document and store the result
+        const uploadedDoc = await cloudinary.uploader.upload(document, {
+          folder: `${user.email}/document`,
+        });
+        uploadedDocuments[key] = {
+          public_id: uploadedDoc.public_id,
+          secure_url: uploadedDoc.secure_url,
+        };
+      }
+    };
+
+    // Execute uploads
+    await uploadDocument(resume, "resume");
+
+    // Update user with uploaded document details
+    await User.updateOne(
+      { _id: userId },
+      {
+        $set: { documents: { ...user.documents, ...uploadedDocuments } },
+      }
+    );
+
+    return res.send({ message: "Documents uploaded successfully" });
+  } catch (err) {
+    console.error("Error details:", err.message);
+    console.error("Error stack:", err.stack);
+    return res.status(400).json({ error: "Error while saving documents", details: err.message });
+  }
+};
 
 // Controller to save the education details of the user in an array
 
@@ -298,7 +329,6 @@ exports.SaveEducationDetails = async (req, res, next) => {
   }
 };
 
-
 // Controller to delete the education Details of the user from an array
 
 exports.DeleteEducationDetails = async (req, res, next) => {
@@ -336,7 +366,6 @@ exports.DeleteEducationDetails = async (req, res, next) => {
     return res.status(500).send("Internal Server Error");
   }
 };
-
 
 // Controller to save experience details
 
@@ -459,12 +488,19 @@ exports.DeleteExperienceDetails = async (req, res, next) => {
 exports.GetExperienceDetails = async (req, res, next) => {
   try {
     const { user_id } = req.payload; 
-
-    if (!user_id) {
+    const { id } = req.body;
+    if (!id && !user_id) {
       return res.status(400).send({ message: "User ID is required." });
     }
 
-    const user = await User.findById(user_id);
+    let user;
+    if (id) {
+      // If id is provided, search by id
+      user = await User.findById(id);
+    } else {
+      // Otherwise, search by user_id
+      user = await User.findById(user_id);
+    }
     if (!user) {
       return res.status(400).send({ message: "User not found" });
     }
@@ -484,32 +520,48 @@ exports.GetExperienceDetails = async (req, res, next) => {
 };
 
 // Controller to get Education Details
+// Controller to get Education Details
 exports.GetEducationDetails = async (req, res, next) => {
   try {
-    const { user_id } = req.payload; 
+    const { id } = req.body; // Extract id from the request body
+    const { user_id } = req.payload; // Extract user_id from the payload
 
-    if (!user_id) {
-      return res.status(400).send({ message: "User ID is required." });
+    console.log('Extracted user_id:', user_id);
+    console.log('Extracted id:', id);
+
+    if (!id && !user_id) {
+      return res.status(400).send({ message: "User ID or ID is required." });
     }
 
-    const user = await User.findById(user_id);
+    let user;
+    if (id) {
+      // If id is provided, search by id
+      user = await User.findById(id);
+    } else {
+      // Otherwise, search by user_id
+      user = await User.findById(user_id);
+    }
+
+    console.log('Fetched user:', user);
+
     if (!user) {
       return res.status(400).send({ message: "User not found" });
     }
 
     return res.status(200).json({
       success: true,
-      educationDetails: user.educationDetails || [], 
+      educationDetails: user.educationDetails || [],
     });
 
   } catch (err) {
-    console.error("Error in GetEducationDetails: ", err);
+    console.error("Error in GetEducationDetails:", err);
     return res.status(500).send({
       success: false,
-      message: "Internal Server Error"
+      message: "Internal Server Error",
     });
   }
 };
+
 
 // Controller to UpdateEducation Details
 
@@ -562,7 +614,6 @@ exports.UpdateEducationDetails = async (req, res, next) => {
   }
 };
 
-
 // Controller to update Experience Details
 exports.UpdateExperienceDetails = async (req, res, next) => {
   try {
@@ -611,6 +662,53 @@ exports.UpdateExperienceDetails = async (req, res, next) => {
 
 // Controller to create about
 
+exports.uploadResume = async (req, res, next) => {
+  try {
+    const { resume, user_id } = req.body;
+    console.log("Request Body:", req.body);
+
+  //   const user = await User.findById(user_id);
+  //   if (!user) return res.status(400).send("User not found");
+
+  //   let uploadedDocuments = {};
+
+  //   // Handle document uploads with condition checks
+  //   const uploadDocument = async (document, key) => {
+  //     if (document) {
+  //       // Delete existing document if it exists
+  //       if (user.documents[key]?.public_id) {
+  //         await cloudinary.uploader.destroy(user.documents[key].public_id);
+  //       }
+  //       // Upload new document and store the result
+  //       const uploadedDoc = await cloudinary.uploader.upload(document, {
+  //         folder: `${user.email}/documents`,
+  //       });
+  //       uploadedDocuments[key] = {
+  //         public_id: uploadedDoc.public_id,
+  //         secure_url: uploadedDoc.secure_url,
+  //       };
+  //     }
+  //   };
+
+  //   // Execute uploads
+  //   await uploadDocument(resume, "resume");
+
+  //   // Update user with uploaded document details
+  //   await User.updateOne(
+  //     { _id: user_id },
+  //     {
+  //       $set: { documents: { ...user.documents, ...uploadedDocuments } },
+  //     }
+  //   );
+
+  //   return res.send({ message: "Documents uploaded successfully" });
+  } catch (err) {
+    console.error("Error details:", err.message);
+    console.error("Error stack:", err.stack);
+    return res.status(400).json({ error: "Error while saving documents", details: err.message });
+  }
+};
+
 exports.CreateAbout = async (req, res, next) => {
   try {
     const { about } = req.body;
@@ -650,34 +748,43 @@ exports.CreateAbout = async (req, res, next) => {
 
 // Controller to read about
 
-exports.ReadAbout = async(req, res, next) => {
-  try{
-    const { user_id } = req.payload;
-    // console.log("This is the payload: ", req.payload);
-    // console.log("ReadAbout executed")
+exports.ReadAbout = async (req, res, next) => {
+ 
 
-    if(!user_id){
-      return res.status(400).send({ message: "UserId is required"});
+  try {
+    const { id} = req.body;
+     const { user_id } = req.payload;
+
+    // console.log("Extracted payload:", req.payload);
+    // console.log("Extracted user_id:", user_id);
+    // console.log("Extracted id:", id);
+
+    // Validate if at least one identifier is provided
+    if (!user_id && !id) {
+      return res.status(400).send({ message: "UserId or ID is required" });
     }
-    
-    const user = await User.findById(user_id);
-    if(!user){
-      return res.status(400).send({ message: "User not found" });
+
+    // Find user by either user_id or id
+    const user = await User.findById(id ? id : user_id);
+    // console.log('Fetched user:', user);
+
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
     }
+
     return res.status(200).json({
       about: user.about,
       message: "About fetched successfully",
-      success: true
-    })
-    
-  }catch(error){
-    console.log("Error getting the about: ", error)
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error fetching the about section:", error);
     res.status(500).send({
       success: false,
-      message: "Internal Server Error"
+      message: "Internal Server Error",
     });
   }
-}
+};
 
 
 // Controller to Add skills
@@ -736,29 +843,24 @@ exports.DeleteSkill = async(req, res, next) => {
 
     return res.status(200).send({ message: "Skills deleted successfully", skills: user.skills });
 
-
-
   }catch(error){
     console.log("There was an error while deleting skills", error);
     res.status(500).send({ message: "Internal Server Error" })
   }
 
 }
-
-
 // Controller to get Skills
 
 exports.ReadSkills = async(req, res, next) => {
   try{
-
+    console.log('read skills',req.body)
+    const { id} = req.body;
     const { user_id } =req.payload;
     
-    const user = await User.findById(user_id);
+    const user = await User.findById(id ? id : user_id);
     if(!user){
       return res.status(404).send({ message: "User not found"})
     }
-    
-    
     
     return res.status(200).json({
       message: "Skills fetched successfully",
@@ -770,8 +872,3 @@ exports.ReadSkills = async(req, res, next) => {
   }
     
 }
-
-
-
-
-
