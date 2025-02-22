@@ -93,22 +93,6 @@ app.use("/api/professionalProfile", verifyAccessToken, professionalProfileRouter
 
 
 
-// app.post("/api/saveEducationDetails", userProfileController.SaveEducationDetails);
-// app.post("/api/deleteEducationDetails", userProfileController.DeleteEducationDetails);
-// app.post("/api/SaveExperienceDetails", userProfileController.SaveExperienceDetails);
-// app.post("/api/deleteExperienceDetails", userProfileController.DeleteExperienceDetails);
-// app.post("/api/getExperienceDetails", userProfileController.GetExperienceDetails);
-// app.post("/api/getEducationDetails", userProfileController.GetEducationDetails);
-// app.post("/api/updateEducationDetails", userProfileController.UpdateEducationDetails);
-// app.post("/api/updateExperienceDetails", userProfileController.UpdateExperienceDetails);
-// app.post("/api/createAbout", userProfileController.CreateAbout);
-// app.post("/api/getabout", userProfileController.ReadAbout);
-
-
-app.use("/api", userProfileRoutes);  // Router without verifyAccessToken
-
-
-
 app.use('/api',verifyAccessToken, userProfileRoutes);
 
 app.use('/api',verifyAccessToken,filterRoutes);
