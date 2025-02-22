@@ -3,11 +3,11 @@ const nodemailer = require("nodemailer");
 const bcrypt = require("bcrypt");
 const crypto = require('crypto')
 const {
-    signAccessToken,
-    signRefreshToken,
-    verifyRefreshToken,
-    signEmailOTpToken,
-    verifyEmailOtpToken,
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+  signEmailOTpToken,
+  verifyEmailOtpToken,
 } = require("../helpers/jwt_helpers");
 const User = require("../models/UserModel");
 const Payment = require("../models/PayIn");
@@ -17,7 +17,7 @@ const twilio = require("twilio");
 const cloudinary = require("../helpers/UploadImage");
 const Notification = require("../models/NotificationModel");
 const send_Notification_mail = require("../helpers/EmailSending");
-const {razorpay }= require("../helpers/Razorpay");
+const { razorpay } = require("../helpers/Razorpay");
 const Benificiary = require("../models/BenificiaryModel");
 const PayIn = require("../models/PayIn");
 const mongoose = require('mongoose');
@@ -25,35 +25,35 @@ const Payout = require("../models/Payout");
 
 // RAZORPAY DOCS
 exports.orders = async (req, res, next) => {
-    const { amount, currency, email } = req.body;
-    console.log( 'body',req.body)
-    try {
-        const options = {
-            amount: Number(amount)*100,
-            currency: "INR",
-            // receipt: `receipt_order_${new Date().getTime()}`
-        };
-        
-        console.log('options',options);
-        console.log(razorpay.orders)
-        const order = await razorpay.orders.create(options);
-        
-        console.log(order)
-        
+  const { amount, currency, email } = req.body;
+  console.log('body', req.body)
+  try {
+    const options = {
+      amount: Number(amount) * 100,
+      currency: "INR",
+      // receipt: `receipt_order_${new Date().getTime()}`
+    };
 
-        return res.status(200).json({
-            success: true,
-            order,
-          });
-    } catch (error) {
-      console.error('Error creating order:', error);
-        console.log(error)
-        return res.status(500).json({ error: error.message });
-    }
+    console.log('options', options);
+    console.log(razorpay.orders)
+    const order = await razorpay.orders.create(options);
+
+    console.log(order)
+
+
+    return res.status(200).json({
+      success: true,
+      order,
+    });
+  } catch (error) {
+    console.error('Error creating order:', error);
+    console.log(error)
+    return res.status(500).json({ error: error.message });
+  }
 };
 
 // Function to check payment capture status
-const checkPaymentCapture = async (paymentId, userId,userPayload) => {
+const checkPaymentCapture = async (paymentId, userId, userPayload) => {
   try {
     const payment = await razorpay.payments.fetch(paymentId);
     const {
@@ -71,9 +71,9 @@ const checkPaymentCapture = async (paymentId, userId,userPayload) => {
     if (payment && payment.status === 'captured') {
       const paymentDetails = {
         userId,
-        paymentId, 
+        paymentId,
         amount,
-        currency,        
+        currency,
         order_id,
         method,
         amount_refunded,
@@ -91,14 +91,14 @@ const checkPaymentCapture = async (paymentId, userId,userPayload) => {
         await newPayIn.save();
         console.log('Payment details saved successfully');
 
-    //     const pdfBuffer = await generatePDFReceipt(paymentDetails);
+        //     const pdfBuffer = await generatePDFReceipt(paymentDetails);
 
-    // // Send notification email with PDF attachment
-    //     const attachmentName = `receipt_${paymentId}.pdf`;
-    //     // await send_Notification_mail(userEmail, subject, body, userName, fLink
-          
-          
-    //     //   , pdfBuffer, attachmentName);
+        // // Send notification email with PDF attachment
+        //     const attachmentName = `receipt_${paymentId}.pdf`;
+        //     // await send_Notification_mail(userEmail, subject, body, userName, fLink
+
+
+        //     //   , pdfBuffer, attachmentName);
         const amountInPaise = amount;
         const amountInRupees = (amountInPaise / 100).toFixed(2); // Convert paise to rupees with 2 decimal places
 
@@ -114,8 +114,8 @@ const checkPaymentCapture = async (paymentId, userId,userPayload) => {
          
           `,
           "",
-          "",     
-        );  
+          "",
+        );
 
 
         return { success: true };
@@ -168,69 +168,69 @@ const checkPaymentCapture = async (paymentId, userId,userPayload) => {
 // RAZORPAY VERIFICATION
 
 exports.paymentVerification = async (req, res) => {
-    try {
-      const userPayload = req.payload
-      const userId = req.payload.user_id;
-      console.log(req.body);
-      const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-  
-      const body = razorpay_order_id + "|" + razorpay_payment_id;
-  
-      const expectedSignature = crypto
-        .createHmac("sha256", process.env.RAZORPAY_APT_SECRET)
-        .update(body.toString())
-        .digest("hex");
-  
-      console.log("Signature received:", razorpay_signature);
-      console.log("Expected signature:", expectedSignature);
-  
-      const isAuthentic = expectedSignature === razorpay_signature;
-  
-      if (isAuthentic) {
-        // Checking capture status
-        const paymentId = razorpay_payment_id;
-        
-        try {
-          const captureResult = await checkPaymentCapture(paymentId,userId,userPayload);
-          
-          if (captureResult.success) {
-      
-            return res.status(200).json({ success: true });
-          } else {
-            return res.status(400).json({ error: captureResult.error });
-          }
-        } catch (error) {
-          return res.status(500).json({ error: error.message });
+  try {
+    const userPayload = req.payload
+    const userId = req.payload.user_id;
+    console.log(req.body);
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_APT_SECRET)
+      .update(body.toString())
+      .digest("hex");
+
+    console.log("Signature received:", razorpay_signature);
+    console.log("Expected signature:", expectedSignature);
+
+    const isAuthentic = expectedSignature === razorpay_signature;
+
+    if (isAuthentic) {
+      // Checking capture status
+      const paymentId = razorpay_payment_id;
+
+      try {
+        const captureResult = await checkPaymentCapture(paymentId, userId, userPayload);
+
+        if (captureResult.success) {
+
+          return res.status(200).json({ success: true });
+        } else {
+          return res.status(400).json({ error: captureResult.error });
         }
-  
-      } else {
-        return res.status(400).json({ success: false, error: "Invalid signature" });
+      } catch (error) {
+        return res.status(500).json({ error: error.message });
       }
-    } catch (error) {
-      console.error('Error in payment verification:', error);
-      return res.status(500).json({ error: "Internal Server Error" });
+
+    } else {
+      return res.status(400).json({ success: false, error: "Invalid signature" });
     }
-  };
+  } catch (error) {
+    console.error('Error in payment verification:', error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
 //  OUR VERIFICATION  
 exports.success = async (req, res, next) => {
-    const { paymentId, amount, userId } = req.body;
+  const { paymentId, amount, userId } = req.body;
 
 
-    try {
-        const payment = await razorpay.payments.fetch(paymentId);
-        if (payment.status === 'captured') {
+  try {
+    const payment = await razorpay.payments.fetch(paymentId);
+    if (payment.status === 'captured') {
 
-            await User.updateOne(
-                { _id: userId },
-                { $inc: { realMoney: parseFloat(amount) } }
-            ); return res.status(200).json({ success: true });
-        } else {
-            return res.status(400).json({ error: 'Payment not captured' });
-        }
-    } catch (error) {
-        return res.status(500).json({ error: error.message });
+      await User.updateOne(
+        { _id: userId },
+        { $inc: { realMoney: parseFloat(amount) } }
+      ); return res.status(200).json({ success: true });
+    } else {
+      return res.status(400).json({ error: 'Payment not captured' });
     }
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
 };
 
 
@@ -239,7 +239,7 @@ exports.success = async (req, res, next) => {
 //  *****   Customer Details can be updated using new email only *****
 exports.addBenificiaryAccount = async (req, res, next) => {
   console.log(razorpay.fundAccount)
- 
+
 
   try {
     const { proffesionType, mobile } = req.body;
@@ -251,11 +251,11 @@ exports.addBenificiaryAccount = async (req, res, next) => {
       contact: mobile,
       type: "employee", // Example type, adjust as necessary
       reference_id: user_id,
-      
+
     };
     console.log(beneficiaryDetails);
     // Check if the user already exists in the Benificiary collection
-    const userExist = await Benificiary.findOne({  userId: user_id });
+    const userExist = await Benificiary.findOne({ userId: user_id });
     if (userExist) {
       console.log("Already user exists in the Benificiary collection")
       return res.status(400).json({ error: 'Beneficiary already exists for this user' });
@@ -272,7 +272,7 @@ exports.addBenificiaryAccount = async (req, res, next) => {
       body: JSON.stringify(beneficiaryDetails)
     });
 
-    
+
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -285,10 +285,10 @@ exports.addBenificiaryAccount = async (req, res, next) => {
 
     // Save the customerId in the Benificiary model
     const newBenificiary = new Benificiary({
-      userId:user_id,
+      userId: user_id,
       customerId: responseData.id,
       // customerId: "cust_OZ1c3zDvDZXz1H",
-     
+
     });
     await newBenificiary.save();
     res.status(201).json({ message: 'Beneficiary account created successfully in Razorpay and saved in the database', data: newBenificiary });
@@ -326,7 +326,7 @@ exports.createFundAccount = async (req, res) => {
     if (method === 'bank') {
       fundAccountData = {
         // contact_id: beneficiary.customerId, 
-        contact_id: beneficiary.customerId , 
+        contact_id: beneficiary.customerId,
         account_type: 'bank_account',
         bank_account: {
           name: registeredName,
@@ -345,7 +345,7 @@ exports.createFundAccount = async (req, res) => {
     } else {
       return res.status(400).json({ error: 'Invalid payment method' });
     }
-   
+
     console.log(fundAccountData);
     // Create fund account in Razorpay
     const fundAccount = await razorpay.fundAccount.create(fundAccountData);
@@ -353,8 +353,8 @@ exports.createFundAccount = async (req, res) => {
     // Log and respond with the created fund account
     console.log('Fund Account:', fundAccount);
 
-     // Validate the created fund account
-    await validateFundAccount(fundAccount,registeredName,beneficiary);
+    // Validate the created fund account
+    await validateFundAccount(fundAccount, registeredName, beneficiary);
 
     res.status(201).json({ message: 'Fund account created successfully', data: fundAccount });
 
@@ -395,7 +395,7 @@ const validateFundAccount = async (fundAccount, registeredName, beneficiary) => 
         fund_account: {
           id: fundAccount.id
         },
-        amount: amount,  
+        amount: amount,
         currency: 'INR',
         notes: {
           random_key_1: "Make it so.",
@@ -424,33 +424,33 @@ const validateFundAccount = async (fundAccount, registeredName, beneficiary) => 
     const validationResult = await validationResponse.json();
     console.log('Validation Result:', validationResult);
 
-  // Additional validation checks based on the response
-  if (fundAccount.account_type === 'bank_account') {
-    if (validationResult.results.account_status !== 'active') {
-      throw new Error('Bank account is not active');
+    // Additional validation checks based on the response
+    if (fundAccount.account_type === 'bank_account') {
+      if (validationResult.results.account_status !== 'active') {
+        throw new Error('Bank account is not active');
+      }
+
+      if (validationResult.results.registered_name !== registeredName) {
+        throw new Error('Registered name does not match');
+      }
+
+      // Save the bank account details in the Benificiary model
+      beneficiary.accountNumber = fundAccount.bank_account.account_number;
+      beneficiary.ifsc = fundAccount.bank_account.ifsc;
+      beneficiary.mode = 'bank'
+
+    } else if (fundAccount.account_type === 'vpa') {
+      if (validationResult.results.account_status !== 'active') {
+        throw new Error('VPA account is not active');
+      }
+
+      // Save the VPA address in the Benificiary model
+      beneficiary.upi = fundAccount.vpa.address;
+      beneficiary.mode = 'upi'
+
     }
 
-    if (validationResult.results.registered_name !== registeredName) {
-      throw new Error('Registered name does not match');
-    }
-
-    // Save the bank account details in the Benificiary model
-    beneficiary.accountNumber = fundAccount.bank_account.account_number;
-    beneficiary.ifsc = fundAccount.bank_account.ifsc;
-    beneficiary.mode = 'bank'
-
-  } else if (fundAccount.account_type === 'vpa') {
-    if (validationResult.results.account_status !== 'active') {
-      throw new Error('VPA account is not active');
-    }
-
-    // Save the VPA address in the Benificiary model
-    beneficiary.upi = fundAccount.vpa.address;
-    beneficiary.mode = 'upi'
-
-  }
-
-  await beneficiary.save();
+    await beneficiary.save();
 
 
   } catch (error) {
@@ -468,7 +468,7 @@ exports.getAllContacts = async (req, res) => {
 
     // Log and respond with the fetched contacts
     console.log('Contacts:', contacts);
-   return contacts;
+    return contacts;
   } catch (error) {
     console.error('Error fetching contacts:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -478,7 +478,7 @@ exports.getAllContacts = async (req, res) => {
 
 
 
- exports.payOutTransfer = async (req, res, next) => {
+exports.payOutTransfer = async (req, res, next) => {
   const { amount } = req.body;
   const userId = req.payload.user_id;
   console.log(amount);
@@ -515,11 +515,11 @@ exports.getAllContacts = async (req, res) => {
     } else {
       return res.status(400).json({ error: 'Invalid beneficiary mode' });
     }
-    
+
     const response = await razorpay.payouts.create(payoutDetails);
-     // Save the payout ID in the Beneficiary model
-     beneficiary.payoutId = response.id;
-     await beneficiary.save();
+    // Save the payout ID in the Beneficiary model
+    beneficiary.payoutId = response.id;
+    await beneficiary.save();
 
     console.log(response);
     return res.json(response);
@@ -662,14 +662,17 @@ exports.saveWithdrawls = async (req, res, next) => {
   const userId = req.payload.user_id;  // User ID from JWT token or session
   // console.log("This is the userId from middleware: ", userId);
 
+
+  console.log("This is the things coming from the frontend: ", req.body);
+
   try {
     // Define the new withdrawal data
     const withdrawlData = {
       totalAmount,                   // Total amount for this withdrawal
       withdrawlAmount: remainingAmount, // Amount after commission
-      sessionData: {
-        bookingIds: selectedIds,     // IDs of the selected bookings
-      },
+
+      bookingIds: selectedIds,     // IDs of the selected bookings
+
     };
 
     // Check if a user entry with the given userId already exists in the database
@@ -797,10 +800,13 @@ exports.savePayoutDetails = async (req, res) => {
 
 
 exports.getPayoutDetails = async (req, res) => {
-  const userId = req.payload.user_id;  
-  
+  const userId = req.payload.user_id;
+
+  console.log("This is working: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", userId);
+
   try {
     const existingUser = await Payout.findOne({ mentorId: userId });
+    console.log("This is the existing user: ", existingUser);
 
     if (!existingUser) {
       return res.status(404).json({
@@ -811,10 +817,10 @@ exports.getPayoutDetails = async (req, res) => {
     res.status(200).json({
       withdrawlData: existingUser.withdrawlData,
     });
-    
+
   } catch (error) {
-    console.error(error);  
-    
+    console.error(error);
+
     res.status(500).json({
       message: "Internal Server Error",
       error: error.message
@@ -822,3 +828,62 @@ exports.getPayoutDetails = async (req, res) => {
   }
 }
 
+
+exports.getPayoutDetailsAdmin = async (req, res) => {
+  try {
+    const usersData = await Payout.find(); // Fetching payout details
+
+    console.log("These are the users: ", usersData);
+
+    // Loop through each payout detail and add username and image from the User model
+    for (let payout of usersData) {
+      const mentor = await User.findById(payout.mentorId); // Fetch user data by mentorId
+
+      if (mentor) {
+        payout.username = mentor.username;  // Add username to payout
+        payout.image = mentor.image;        // Add image to payout
+      } else {
+        console.log(`User with mentorId ${payout.mentorId} not found.`);
+      }
+    }
+
+    console.log("Updated usersData: ", usersData);
+
+    // Return the updated payout details
+    res.status(200).json({
+      payoutDetails: usersData
+    });
+
+  } catch (error) {
+    console.log("There was some error: ", error);
+
+    res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message
+    });
+  }
+}
+
+
+exports.editPayoutStatusAdmin = async (req, res) => {
+  try {
+    // Extract data from the request body
+    const { payoutId, withdrawlDataId, newPayoutStatus } = req.body;
+
+    // Update the payoutStatus of the specific withdrawlData in the payout document
+    const result = await Payout.updateOne(
+      { "_id": payoutId, "withdrawlData._id": withdrawlDataId }, // find the document and withdrawlData
+      { $set: { "withdrawlData.$.payoutStatus": newPayoutStatus } } // update payoutStatus in withdrawlData
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: "No matching record found to update." });
+    }
+
+    // Return success message
+    res.status(200).json({ message: "Payout status updated successfully." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+}

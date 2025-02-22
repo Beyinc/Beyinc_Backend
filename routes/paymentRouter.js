@@ -23,6 +23,9 @@ router.route('/getTransactions').post(paymentController.getTransactions);
 router.post('/savePayoutDetails', paymentController.savePayoutDetails );
 router.post('/getPayoutDetails', paymentController.getPayoutDetails);
 
+// router.post('/getPayoutDetailsAdmin', paymentController.getPayoutDetailsAdmin);
+// router.post('/editPayoutStatusAdmin', paymentController.editPayoutStatusAdmin);
+
 
 
 module.exports = router;

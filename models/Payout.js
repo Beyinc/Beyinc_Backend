@@ -45,7 +45,7 @@ const PayoutSchema = new Schema({
       },
       payoutStatus: {
         type: String,
-        enum: ['Pending', 'Complete', 'Failed'],
+        enum: ['Pending', 'Complete', 'Failed', 'Incorrect Bank Details'],
         default: 'Pending'
 
       },
@@ -60,7 +60,7 @@ const PayoutSchema = new Schema({
             required: false
           }
         ],
-        
+
 
       // sessionData: {
       //   

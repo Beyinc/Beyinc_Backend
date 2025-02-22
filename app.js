@@ -104,6 +104,8 @@ app.use("/api/professionalProfile", verifyAccessToken, professionalProfileRouter
 // app.post("/api/updateExperienceDetails", userProfileController.UpdateExperienceDetails);
 // app.post("/api/createAbout", userProfileController.CreateAbout);
 // app.post("/api/getabout", userProfileController.ReadAbout);
+app.post('/api/getPayoutDetailsAdmin', paymentController.getPayoutDetailsAdmin);
+app.post('/api/editPayoutStatusAdmin', paymentController.editPayoutStatusAdmin);
 
 
 app.use("/api", userProfileRoutes);  // Router without verifyAccessToken
