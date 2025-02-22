@@ -69,7 +69,6 @@ app.use("/api/notification", verifyAccessToken, NotificationRouter);
 
 app.use("/api/pitch", verifyAccessToken, pitchRouter);
 
-app.use("/api/notification", verifyAccessToken, NotificationRouter);
 
 app.use("/api/posts", verifyAccessToken, PostRouter);
 
