@@ -1772,7 +1772,6 @@ exports.addReview = async (req, res, next) => {
     let date = new Date();
     let createdAt = date.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
-    // Find the user and add review to their review array
     const user = await User.findById(userId);
     const reviewByUser = await User.findById(reviewByID);
     const reviewBy = reviewByUser.userName;
@@ -1781,7 +1780,6 @@ exports.addReview = async (req, res, next) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Create new review object
     const newReview = {
       reviewBy,
       reviewByID,
@@ -1790,13 +1788,10 @@ exports.addReview = async (req, res, next) => {
       createdAt,
     };
 
-    // Add to user's review array
     user.review.push(newReview);
 
-    // Save the updated user
     await user.save();
 
-    // Return the newly added review
     const result = user.review[user.review.length - 1];
 
     return res.status(200).json(result);
@@ -1808,20 +1803,16 @@ exports.addReview = async (req, res, next) => {
 
 exports.getReviews = async (req, res, next) => {
   try {
-    console.log("this is working")
-    console.log(req.body)
-    const userId = req.body.user_id;
+    const userId = req.body.userID;
 
-    // Input validation
     if (!userId) {
       return res.status(400).json({ message: "User ID is required" });
     }
 
-    // Find user and populate the reviewBy field in reviews
     const user = await User.findById(userId).select("review")
     .populate({
       path: "review.reviewBy",
-      select: "userName image", // Select fields you want to include from reviewer
+      select: "userName image",
     });
     console.log(user)
 
@@ -1829,7 +1820,6 @@ exports.getReviews = async (req, res, next) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // If no reviews found
     if (!user.review || user.review.length === 0) {
       return res.status(200).json({
         message: "No reviews found for this user",
@@ -1837,12 +1827,10 @@ exports.getReviews = async (req, res, next) => {
       });
     }
 
-    // Sort reviews by date (newest first)
     const sortedReviews = user.review.sort(
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
     );
 
-    // Calculate average rating
     const totalRatings = user.review.reduce(
       (sum, review) => sum + review.rating,
       0
