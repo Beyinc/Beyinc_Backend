@@ -266,15 +266,21 @@ const userSchema = new mongoose.Schema(
     },
     review: [
       {
-        reviewBy: {
+        reviewBy:{
+          type: String,
+        },
+        reviewByID: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "User",
         },
-        review: {
+        rating: {
           type: Number,
         },
+        review: {
+          type: String,
+        },
         createdAt: {
-          type: Date,
+          type: String,
         },
       },
     ],

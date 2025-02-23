@@ -116,4 +116,6 @@ app.use('/api',verifyAccessToken,filterRoutes);
 
 app.get("/api/searchProfiles", verifyAccessToken, searchController.searchProfiles);
 
+app.use("/api/review", verifyAccessToken, userRouter);
+
 module.exports = app;

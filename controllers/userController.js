@@ -25,35 +25,34 @@ exports.userDetails = async (req, res, next) => {
   // console.log(req)
   try {
     // const { id } = req.body;  // Extract the id from the request body
-    const { user_id } = req.payload;  // Extract the user_id from the payload (e.g., JWT token)
+    const { user_id } = req.payload; // Extract the user_id from the payload (e.g., JWT token)
 
     // Find the user by ID (either from body or from the authenticated user)
     const userDoesExist = await User.findOne(
-      { _id: id ? id : user_id },  // If id is provided in the body, use that, else use authenticated user's id
-      { password: 0, chatBlockedBy: 0 }  // Exclude the password and chatBlockedBy fields
+      { _id: id ? id : user_id }, // If id is provided in the body, use that, else use authenticated user's id
+      { password: 0, chatBlockedBy: 0 } // Exclude the password and chatBlockedBy fields
     )
       .populate({
-        path: "followers",  // Populate followers field
-        select: ["userName", "image", "role", "_id"],  // Select specific fields for followers
+        path: "followers", // Populate followers field
+        select: ["userName", "image", "role", "_id"], // Select specific fields for followers
       })
       .populate({
-        path: "following",  // Populate following field
-        select: ["userName", "image", "role", "_id"],  // Select specific fields for following
+        path: "following", // Populate following field
+        select: ["userName", "image", "role", "_id"], // Select specific fields for following
       })
-      .populate("role_details");  // Populate role_details
+      .populate("role_details"); // Populate role_details
 
     // If the user exists, return their profile data
     if (userDoesExist) {
-      return res.status(200).json(userDoesExist);  // Respond with status 200 and the user's profile data
+      return res.status(200).json(userDoesExist); // Respond with status 200 and the user's profile data
     } else {
-      return res.status(404).json({ message: "User not found" });  // If no user found, respond with 404
+      return res.status(404).json({ message: "User not found" }); // If no user found, respond with 404
     }
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: "Server error", error });  // Handle any errors
+    return res.status(500).json({ message: "Server error", error }); // Handle any errors
   }
 };
-
 
 exports.getProfile = async (req, res, next) => {
   // console.log('getProfile')
@@ -76,7 +75,7 @@ exports.getProfile = async (req, res, next) => {
 
     // console.log(removePass);
     // console.log(userDoesExist);
-    
+
     if (userDoesExist) {
       return res.status(200).json(userDoesExist);
     }
@@ -117,7 +116,6 @@ exports.recommendedUsers = async (req, res, next) => {
   }
 };
 
-
 exports.removeFollower = async (req, res, next) => {
   try {
     const { userId } = req.body;
@@ -140,14 +138,11 @@ exports.removeFollower = async (req, res, next) => {
   }
 };
 
-
-
-
 exports.followerController = async (req, res, next) => {
   const { followerReqBy, followerReqTo } = req.body;
-  console.log('followerReqBy', followerReqBy)
-  console.log('follow to', followerReqTo)
-  
+  console.log("followerReqBy", followerReqBy);
+  console.log("follow to", followerReqTo);
+
   const requestBy = await User.findOne({ _id: followerReqBy });
   const requestTo = await User.findOne({ _id: followerReqTo });
 
@@ -207,9 +202,8 @@ exports.followerController = async (req, res, next) => {
   }
 };
 
-
 exports.unfollowController = async (req, res, next) => {
-  console.log('body', req.body);
+  console.log("body", req.body);
   const { unfollowReqBy, unfollowReqTo } = req.body;
 
   console.log("Unfollow request received:", { unfollowReqBy, unfollowReqTo });
@@ -222,7 +216,10 @@ exports.unfollowController = async (req, res, next) => {
     console.log("RequestTo User:", requestTo);
 
     if (!requestBy || !requestTo) {
-      console.error("One or both users not found:", { unfollowReqBy, unfollowReqTo });
+      console.error("One or both users not found:", {
+        unfollowReqBy,
+        unfollowReqTo,
+      });
       return res.status(404).json({ message: "User not found." });
     }
 
@@ -266,14 +263,15 @@ exports.unfollowController = async (req, res, next) => {
       return res.status(200).json(userDoesExist);
     } else {
       console.warn(`User ${unfollowReqBy} is not following ${unfollowReqTo}`);
-      return res.status(400).json({ message: "You are not following this user." });
+      return res
+        .status(400)
+        .json({ message: "You are not following this user." });
     }
   } catch (error) {
     console.error("Error in unfollowController:", error);
     return res.status(500).json({ message: "Internal server error." });
   }
 };
-
 
 exports.getApprovalRequestProfile = async (req, res, next) => {
   try {
@@ -870,8 +868,6 @@ exports.directeditprofile = async (req, res, next) => {
     } = req.body;
 
     // validating email and password
-
-   
 
     const userDoesExist = await User.findOne({ email: email });
 
@@ -1589,8 +1585,6 @@ exports.getUsers = async (req, res, next) => {
   }
 };
 
-
-
 exports.getAllUserProfileRequests = async (req, res, next) => {
   try {
     const { filters } = req.body;
@@ -1766,6 +1760,102 @@ exports.addPayment = async (req, res, next) => {
   }
 };
 
+exports.addReview = async (req, res, next) => {
+  try {
+    const { user_id, reviewByID, rating, review } = req.body;
+    const userId = user_id;
 
+    if (!reviewByID || !rating || !review || !userId) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
 
+    let date = new Date();
+    let createdAt = date.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
+    // Find the user and add review to their review array
+    const user = await User.findById(userId);
+    const reviewByUser = await User.findById(reviewByID);
+    const reviewBy = reviewByUser.userName;
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Create new review object
+    const newReview = {
+      reviewBy,
+      reviewByID,
+      rating: Number(rating),
+      review,
+      createdAt,
+    };
+
+    // Add to user's review array
+    user.review.push(newReview);
+
+    // Save the updated user
+    await user.save();
+
+    // Return the newly added review
+    const result = user.review[user.review.length - 1];
+
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error("Error adding review:", err);
+    return res.status(400).json("Error while adding review");
+  }
+};
+
+exports.getReviews = async (req, res, next) => {
+  try {
+    console.log("this is working")
+    console.log(req.body)
+    const userId = req.body.user_id;
+
+    // Input validation
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    // Find user and populate the reviewBy field in reviews
+    const user = await User.findById(userId).select("review")
+    .populate({
+      path: "review.reviewBy",
+      select: "userName image", // Select fields you want to include from reviewer
+    });
+    console.log(user)
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // If no reviews found
+    if (!user.review || user.review.length === 0) {
+      return res.status(200).json({
+        message: "No reviews found for this user",
+        reviews: [],
+      });
+    }
+
+    // Sort reviews by date (newest first)
+    const sortedReviews = user.review.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    // Calculate average rating
+    const totalRatings = user.review.reduce(
+      (sum, review) => sum + review.rating,
+      0
+    );
+    const averageRating = totalRatings / user.review.length;
+
+    return res.status(200).json({
+      count: user.review.length,
+      averageRating: parseFloat(averageRating.toFixed(1)),
+      reviews: sortedReviews,
+    });
+  } catch (err) {
+    console.error("Error fetching reviews:", err);
+    return res.status(500).json("Error while fetching reviews");
+  }
+};

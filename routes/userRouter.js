@@ -100,4 +100,7 @@ router.route("/deleteProfileImage").post(userController.deleteProfileImage);
 
 router.route("/addPayment").post(userController.addPayment);
 
+router.route("/addReview").post(userController.addReview);
+router.route("/getReviews").post(userController.getReviews);
+
 module.exports = router;
