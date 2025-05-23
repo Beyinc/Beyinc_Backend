@@ -794,51 +794,129 @@ exports.deletePost = async (req, res, next) => {
 };
 
 // filterposts
-exports.filterposts = async (req, res, next) => {
+// exports.filterposts = async (req, res, next) => {
   
-  try {
-    // const { people, sortOption, tags, selectedPostType } = req.body; // Extract people, sortOption, and tags from the request body
-    const { people, sortOption, tags , public: isPublic, private: isPrivate } = req.body; // Extract people, sortOption, and tags from the request body
+//   try {
+//     // const { people, sortOption, tags, selectedPostType } = req.body; // Extract people, sortOption, and tags from the request body
+//     const { people, sortOption, tags , public: isPublic, private: isPrivate } = req.body; // Extract people, sortOption, and tags from the request body
 
-    // Create the filter object
+//     // Create the filter object
+//     const filter = {};
+
+//     // Search for posts by people (username) if 'people' is provided
+//     if (people) {
+//       const users = await User.find({ userName: { $regex: people, $options: 'i' } }).select('_id');
+
+//       // const users = await User.find({
+//       //   userName: { $regex: people, $options: "i" },
+//       // }).select("_id");
+//       const userIds = users.map((user) => user._id);
+//       filter.createdBy = { $in: userIds };
+//     }
+
+//     // Search for posts by tags (in 'type') if 'tags' is provided
+//     if (tags && tags.length > 0) {
+//       filter.type = { $in: tags }; // Match 'type' with any value from the 'tags' array
+//     }
+
+//     // Add filter for posts created within the last 1 day if sortOption is 'recent'
+//     if (sortOption === "recent") {
+//       const oneDayAgo = new Date();
+//       oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+//       filter.createdAt = { $gte: oneDayAgo };
+//     }
+
+//     if (isPublic) {
+//       filter.visibility = "public"; 
+//     }
+//     if (isPrivate) {
+//       filter.visibility = "private";
+
+//     }
+
+//     // Fetch posts that match the filter
+//     const filteredPosts = await Posts.find(filter)
+//       .populate({
+//         path: "createdBy",
+//         select: ["userName", "image", "role", "_id"],
+//       })
+//       .populate({
+//         path: "tags",
+//         select: ["userName", "image", "role", "_id"],
+//       })
+//       .populate({
+//         path: "pitchId",
+//         select: ["title", "_id"],
+//       })
+//       .populate({
+//         path: "likes",
+//         select: ["userName", "image", "role", "_id"],
+//       })
+//       .populate({
+//         path: "disLikes",
+//         select: ["userName", "image", "role", "_id"],
+//       })
+//       .populate({
+//         path: "openDiscussionTeam",
+//         select: ["userName", "image", "role", "_id"],
+//       })
+//       .populate({
+//         path: "openDiscussionRequests",
+//         select: ["userName", "image", "role", "_id"],
+//       });
+
+//     // Return the filtered posts
+//     return res.status(200).json(filteredPosts);
+//   } catch (error) {
+//     console.error("Error filtering posts:", error);
+//     return res.status(500).json({ message: "Server error." });
+//   }
+// };
+
+exports.filterposts = async (req, res, next) => {
+  try {
+    const { people, sortOption, tags, public: isPublic, private: isPrivate } = req.body;
+
     const filter = {};
 
-    // Search for posts by people (username) if 'people' is provided
+    // Filter by username
     if (people) {
       const users = await User.find({ userName: { $regex: people, $options: 'i' } }).select('_id');
-
-      // const users = await User.find({
-      //   userName: { $regex: people, $options: "i" },
-      // }).select("_id");
       const userIds = users.map((user) => user._id);
       filter.createdBy = { $in: userIds };
     }
 
-    // Search for posts by tags (in 'type') if 'tags' is provided
+    // Filter by tags
     if (tags && tags.length > 0) {
-      filter.type = { $in: tags }; // Match 'type' with any value from the 'tags' array
+      filter.type = { $in: tags };
     }
 
-    // Add filter for posts created within the last 1 day if sortOption is 'recent'
+    // Filter by recent posts
     if (sortOption === "recent") {
       const oneDayAgo = new Date();
       oneDayAgo.setDate(oneDayAgo.getDate() - 1);
       filter.createdAt = { $gte: oneDayAgo };
     }
 
+    // Filter by visibility
     if (isPublic) {
-      filter.visibility = "public"; 
+      filter.visibility = "public";
     }
     if (isPrivate) {
       filter.visibility = "private";
-
     }
 
-    // Fetch posts that match the filter
+    // Exclude posts from the current user
+    filter.createdBy = {
+      ...filter.createdBy,
+      $ne: req.payload.aud // this is returned by midddleware
+    };
+
+    // Fetch filtered posts
     const filteredPosts = await Posts.find(filter)
       .populate({
         path: "createdBy",
-        select: ["userName", "image", "role", "_id"],
+        select: ["userName", "image", "role", "_id", "isProfileComplete"],
       })
       .populate({
         path: "tags",
@@ -865,8 +943,12 @@ exports.filterposts = async (req, res, next) => {
         select: ["userName", "image", "role", "_id"],
       });
 
-    // Return the filtered posts
-    return res.status(200).json(filteredPosts);
+    // Filter out posts where the creator's profile is not completed
+    const finalPosts = filteredPosts.filter(
+      (post) => post.createdBy?.isProfileComplete === true
+    );
+
+    return res.status(200).json(finalPosts);
   } catch (error) {
     console.error("Error filtering posts:", error);
     return res.status(500).json({ message: "Server error." });
