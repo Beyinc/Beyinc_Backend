@@ -872,3 +872,28 @@ exports.ReadSkills = async(req, res, next) => {
   }
     
 }
+
+exports.getNewProfiles = async (req, res, next) => {
+  try {
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    const loggedInUserId = new mongoose.Types.ObjectId(req.payload.user_id);
+
+    const users = await User.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: oneMonthAgo },
+          email: { $ne: req.payload.email },
+          followers: { $nin: [loggedInUserId] },
+          _id: { $ne: loggedInUserId }
+        }
+      }
+    ]);
+
+
+    return res.status(200).json(users);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};

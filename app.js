@@ -56,7 +56,7 @@ app.use("/api/chat", verifyAccessToken, chatRouter);
 app.use("/api/dashboard", verifyAccessToken, dashboardRouter);
 
 app.use("/api/userDetails", verifyAccessToken, userRouter);
-
+app.get("/api/newProfiles", verifyAccessToken, userProfileController.getNewProfiles);
 app.use("/api/test", testingRouter);
 
 
