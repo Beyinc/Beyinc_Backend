@@ -314,7 +314,7 @@ exports.editPost = async (req, res, next) => {
 
     const PostDoesExist = await Posts.findOne({ _id: id });
     let result = "";
-    if (image.public_id == undefined) {
+    if (image && !image.public_id ) {
       if (PostDoesExist?.image.public_id !== undefined) {
         await cloudinary.uploader.destroy(
           PostDoesExist?.image.public_id,
@@ -795,10 +795,10 @@ exports.deletePost = async (req, res, next) => {
 
 // filterposts
 exports.filterposts = async (req, res, next) => {
-  
+
   try {
     // const { people, sortOption, tags, selectedPostType } = req.body; // Extract people, sortOption, and tags from the request body
-    const { people, sortOption, tags , public: isPublic, private: isPrivate } = req.body; // Extract people, sortOption, and tags from the request body
+    const { people, sortOption, tags, public: isPublic, private: isPrivate } = req.body; // Extract people, sortOption, and tags from the request body
 
     // Create the filter object
     const filter = {};
@@ -827,7 +827,7 @@ exports.filterposts = async (req, res, next) => {
     }
 
     if (isPublic) {
-      filter.visibility = "public"; 
+      filter.visibility = "public";
     }
     if (isPrivate) {
       filter.visibility = "private";
