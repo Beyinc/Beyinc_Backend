@@ -1,5 +1,6 @@
 const User = require("../models/UserModel");
 const cloudinary = require("../helpers/UploadImage");
+const { default: mongoose } = require("mongoose");
 
 // Save User Data Function
 exports.saveData = async (req, res) => {
