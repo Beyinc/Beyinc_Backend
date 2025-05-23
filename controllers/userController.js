@@ -76,7 +76,7 @@ exports.getProfile = async (req, res, next) => {
 
     // console.log(removePass);
     // console.log(userDoesExist);
-    
+
     if (userDoesExist) {
       return res.status(200).json(userDoesExist);
     }
@@ -89,7 +89,6 @@ exports.recommendedUsers = async (req, res, next) => {
   try {
     const { userId } = req.body;
     const loggedInUserId = new mongoose.Types.ObjectId(userId);
-
     const data = await User.aggregate([
       {
         $match: {
@@ -147,7 +146,7 @@ exports.followerController = async (req, res, next) => {
   const { followerReqBy, followerReqTo } = req.body;
   console.log('followerReqBy', followerReqBy)
   console.log('follow to', followerReqTo)
-  
+
   const requestBy = await User.findOne({ _id: followerReqBy });
   const requestTo = await User.findOne({ _id: followerReqTo });
 
@@ -871,7 +870,7 @@ exports.directeditprofile = async (req, res, next) => {
 
     // validating email and password
 
-   
+
 
     const userDoesExist = await User.findOne({ email: email });
 
