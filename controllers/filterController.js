@@ -31,8 +31,10 @@ exports.filterData = async (req, res) => {
     
 
     // Fetch users based on the constructed query
-    const users = await User.find(query);
-
+   const usersRaw = await User.find(query);
+    const requestingUser = req.payload
+    const users = usersRaw.filter(user => user.isProfileComplete && user.email !== requestingUser.email); 
+    
     // Return the filtered users
     res.status(200).json(users);
   } catch (error) {
