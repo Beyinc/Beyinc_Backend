@@ -23,6 +23,18 @@ const PostCommentsSchema = new mongoose.Schema(
         comment: {
             type: String,
         },
+        file: {
+            public_id: {
+                type: String,
+            },
+            url: {
+                type: String,
+            },
+            type: {
+                type: String,
+                enum: ['image', 'video', 'pdf']
+            }
+        },
         subComments: [{
             type: mongoose.Schema.Types.ObjectId,
             ref: "PostComments",
