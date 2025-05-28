@@ -775,21 +775,26 @@ exports.deletePost = async (req, res, next) => {
   try {
     const { id } = req.body;
     const result = await Posts.findOne({ _id: id });
-    await cloudinary.uploader.destroy(
-      result.image.public_id,
-      (error, result) => {
-        if (error) {
-          console.error("Error deleting image:", error);
-        } else {
-          console.log("Image deleted successfully:", result);
+    if(result.image.public_id){
+
+      await cloudinary.uploader.destroy(
+        result.image.public_id,
+        (error, result) => {
+          if (error) {
+            console.error("Error deleting image:", error);
+          } else {
+            console.log("Image deleted successfully:", result);
+          }
         }
-      }
-    );
+      );
+    }
     await PostComment.deleteMany({ postId: id });
     await Posts.deleteOne({ _id: id });
+    
     return res.status(200).json("Post deleted");
   } catch (error) {
-    console.log(error);
+    console.log('error deleting post:', error);
+    return res.status(500).json({ message: "Server error while deleting post." });
   }
 };
 
