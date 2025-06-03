@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema(
     ,
     headline: {
       type: String,
-     
+
     },
     twitter: {
       type: String,
@@ -99,10 +99,10 @@ const userSchema = new mongoose.Schema(
 
     experienceDetails: [
       {
-        
-        startYear: { type: String , required: false},
+
+        startYear: { type: String, required: false },
         endYear: { type: String, required: false },
-        company: { type: String , required: false},
+        company: { type: String, required: false },
         designation: { type: String, required: false },
         // Profession: { type: String, required: false },
         Description: { type: String, required: false },
@@ -155,7 +155,7 @@ const userSchema = new mongoose.Schema(
     },
     // Mentors/ Investores registered in beyinc
     // comment
-    beyincProfile: { type: String, required: false, default:""},
+    beyincProfile: { type: String, required: false, default: "" },
     industries: { type: [String], required: false },
     expertise: { type: [String], required: false },
     stages: { type: [String], required: false },
@@ -165,17 +165,17 @@ const userSchema = new mongoose.Schema(
       type: [String],
       required: false,
       enum: [
-        "individualEntrepreneur",
-        "startup",
-        "mentor",
-        "incubator",
-        "accelerator",
-        "institutionalInvestor",
-        "individualInvestor",
-        "tradeBodies",
-        "governmentBody",
-        "corporate",
-        "technologyPartner",
+        "Individual /Entrepreneur",
+        "Startup",
+        "Mentor",
+        "Incubator",
+        "Accelerator",
+        "InstituteInvestor",
+        "InstituteInvestor",
+        "TradeBody",
+        "GovernmentBody",
+        "Corporate",
+        "TechPartner",
       ],
     },
 
@@ -217,7 +217,7 @@ const userSchema = new mongoose.Schema(
     },
 
 
-    
+
     documents: {
       resume: {
         public_id: {
