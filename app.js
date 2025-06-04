@@ -32,6 +32,7 @@ const swaggerSpecs = require("./swagger");
 const { verifyAccessToken } = require("./helpers/jwt_helpers");
 const userProfileRoutes = require('./routes/userProfileRoutes');
 const filterRoutes = require('./routes/filterRoutes');
+const paymentController = require('./controllers/paymentController.js')
 
 const cors = require("cors");
 const morgan = require("morgan");
@@ -55,7 +56,7 @@ app.use("/api/chat", verifyAccessToken, chatRouter);
 app.use("/api/dashboard", verifyAccessToken, dashboardRouter);
 
 app.use("/api/userDetails", verifyAccessToken, userRouter);
-
+app.get("/api/newProfiles", verifyAccessToken, userProfileController.getNewProfiles);
 app.use("/api/test", testingRouter);
 
 
@@ -68,7 +69,6 @@ app.use("/api/notification", verifyAccessToken, NotificationRouter);
 
 app.use("/api/pitch", verifyAccessToken, pitchRouter);
 
-app.use("/api/notification", verifyAccessToken, NotificationRouter);
 
 app.use("/api/posts", verifyAccessToken, PostRouter);
 
@@ -89,20 +89,7 @@ app.get("/api/calendarRedirect",calendarController.Redirect );
 app.use("/api/professionalProfile", verifyAccessToken, professionalProfileRouter)
 
 
-
-// app.post("/api/saveEducationDetails", userProfileController.SaveEducationDetails);
-// app.post("/api/deleteEducationDetails", userProfileController.DeleteEducationDetails);
-// app.post("/api/SaveExperienceDetails", userProfileController.SaveExperienceDetails);
-// app.post("/api/deleteExperienceDetails", userProfileController.DeleteExperienceDetails);
-// app.post("/api/getExperienceDetails", userProfileController.GetExperienceDetails);
-// app.post("/api/getEducationDetails", userProfileController.GetEducationDetails);
-// app.post("/api/updateEducationDetails", userProfileController.UpdateEducationDetails);
-// app.post("/api/updateExperienceDetails", userProfileController.UpdateExperienceDetails);
-// app.post("/api/createAbout", userProfileController.CreateAbout);
-// app.post("/api/getabout", userProfileController.ReadAbout);
-
-
-app.use("/api", userProfileRoutes);  // Router without verifyAccessToken
+// app.post('/api/payment/savePayoutDetails', verifyAccessToken, paymentController.savePayoutDetails );
 
 
 
