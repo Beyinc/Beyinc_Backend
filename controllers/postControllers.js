@@ -314,7 +314,7 @@ exports.editPost = async (req, res, next) => {
 
     const PostDoesExist = await Posts.findOne({ _id: id });
     let result = "";
-    if (image.public_id == undefined) {
+    if (image && !image.public_id) {
       if (PostDoesExist?.image.public_id !== undefined) {
         await cloudinary.uploader.destroy(
           PostDoesExist?.image.public_id,
@@ -775,30 +775,35 @@ exports.deletePost = async (req, res, next) => {
   try {
     const { id } = req.body;
     const result = await Posts.findOne({ _id: id });
-    await cloudinary.uploader.destroy(
-      result.image.public_id,
-      (error, result) => {
-        if (error) {
-          console.error("Error deleting image:", error);
-        } else {
-          console.log("Image deleted successfully:", result);
+    if(result.image.public_id){
+
+      await cloudinary.uploader.destroy(
+        result.image.public_id,
+        (error, result) => {
+          if (error) {
+            console.error("Error deleting image:", error);
+          } else {
+            console.log("Image deleted successfully:", result);
+          }
         }
-      }
-    );
+      );
+    }
     await PostComment.deleteMany({ postId: id });
     await Posts.deleteOne({ _id: id });
+    
     return res.status(200).json("Post deleted");
   } catch (error) {
-    console.log(error);
+    console.log('error deleting post:', error);
+    return res.status(500).json({ message: "Server error while deleting post." });
   }
 };
 
 // filterposts
 exports.filterposts = async (req, res, next) => {
-  
+
   try {
     // const { people, sortOption, tags, selectedPostType } = req.body; // Extract people, sortOption, and tags from the request body
-    const { people, sortOption, tags , public: isPublic, private: isPrivate } = req.body; // Extract people, sortOption, and tags from the request body
+    const { people, sortOption, tags, public: isPublic, private: isPrivate } = req.body; // Extract people, sortOption, and tags from the request body
 
     // Create the filter object
     const filter = {};
@@ -827,7 +832,7 @@ exports.filterposts = async (req, res, next) => {
     }
 
     if (isPublic) {
-      filter.visibility = "public"; 
+      filter.visibility = "public";
     }
     if (isPrivate) {
       filter.visibility = "private";

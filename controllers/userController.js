@@ -87,9 +87,9 @@ exports.getProfile = async (req, res, next) => {
 
 exports.recommendedUsers = async (req, res, next) => {
   try {
-    const { userId } = req.body;
-    const loggedInUserId = new mongoose.Types.ObjectId(userId);
-
+    const { user_id } = req.payload;
+    const loggedInUserId = new mongoose.Types.ObjectId(user_id);
+    
     const data = await User.aggregate([
       {
         $match: {
@@ -110,6 +110,7 @@ exports.recommendedUsers = async (req, res, next) => {
       { $sort: { totalReviewSum: -1 } },
       { $limit: 3 },
     ]);
+
     return res.status(200).json(data);
   } catch (error) {
     console.log(error);
