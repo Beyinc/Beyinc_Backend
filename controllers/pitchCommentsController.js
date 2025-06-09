@@ -21,18 +21,58 @@ const PitchComment = require("../models/PitchCommentModel");
 
 exports.addPitchComment = async (req, res, next) => {
     try {
-        const { pitchId, comment, commentBy, parentCommentId } = req.body
-        const newComment = await PitchComment.create({ comment: comment, commentBy: commentBy, pitchId: pitchId, parentCommentId: parentCommentId })
-        if (parentCommentId !== undefined) {
-            await PitchComment.updateOne({ _id: parentCommentId }, { $push: { subComments: newComment._id}})
+        const { pitchId, comment, commentBy, parentCommentId } = req.body;
+        let fileData = null;
+
+        // Handle file upload if present
+        if (req.files && req.files.file) {
+            const file = req.files.file;
+            
+            // Determine file type
+            let fileType = '';
+            if (file.mimetype.startsWith('image/')) {
+                fileType = 'image';
+            } else if (file.mimetype.startsWith('video/')) {
+                fileType = 'video';
+            } else if (file.mimetype === 'application/pdf') {
+                fileType = 'pdf';
+            }
+
+            // Upload to cloudinary
+            const result = await cloudinary.uploader.upload(file.tempFilePath, {
+                resource_type: fileType === 'video' ? 'video' : 'auto',
+                folder: 'comment_files'
+            });
+
+            fileData = {
+                public_id: result.public_id,
+                url: result.secure_url,
+                type: fileType
+            };
         }
-        await newComment.save()
+
+        const newComment = await PitchComment.create({ 
+            comment: comment, 
+            commentBy: commentBy, 
+            pitchId: pitchId, 
+            parentCommentId: parentCommentId,
+            file: fileData
+        });
+
+        if (parentCommentId !== undefined) {
+            await PitchComment.updateOne(
+                { _id: parentCommentId }, 
+                { $push: { subComments: newComment._id }}
+            );
+        }
+
+        await newComment.save();
         return res.status(200).json("Comment Added");
     } catch (err) {
+        console.error(err);
         return res.status(400).json(err);
     }
 };
-
 
 exports.getPitchComment = async (req, res, next) => {
     try {
@@ -54,8 +94,6 @@ exports.getPitchComment = async (req, res, next) => {
     }
 };
 
-
-
 exports.likePitchComment = async (req, res, next) => {
     try {
         const comment = await PitchComment.findById(req.body.comment_id);
@@ -75,7 +113,6 @@ exports.likePitchComment = async (req, res, next) => {
         return res.status(400).json(err);
     }
 };
-
 
 exports.DispitchlikelikeComment = async (req, res, next) => {
     try {

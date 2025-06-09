@@ -36,6 +36,7 @@ const paymentController = require('./controllers/paymentController.js')
 
 const cors = require("cors");
 const morgan = require("morgan");
+const fileUpload = require('express-fileupload');
 
 const app = express();
 // MIDDLEWARES
@@ -43,6 +44,19 @@ app.use(cors());
 app.use(morgan("tiny"));
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
+
+// Configure express-fileupload
+app.use(fileUpload({
+    createParentPath: true,
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB max file size
+    },
+    abortOnLimit: true,
+    useTempFiles: true,
+    tempFileDir: './tmp/',
+    debug: true
+}));
+
 app.use("/hello", (req, res) => res.send("helooo!"));
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 // ROUTES
@@ -59,24 +73,18 @@ app.use("/api/userDetails", verifyAccessToken, userRouter);
 app.get("/api/newProfiles", verifyAccessToken, userProfileController.getNewProfiles);
 app.use("/api/test", testingRouter);
 
-
 app.use("/api/pitch", verifyAccessToken, pitchCommentRouter);
 app.use("/api/post", verifyAccessToken, postCommentRouter);
-
-
 
 app.use("/api/notification", verifyAccessToken, NotificationRouter);
 
 app.use("/api/pitch", verifyAccessToken, pitchRouter);
 
-
 app.use("/api/posts", verifyAccessToken, PostRouter);
-
 
 app.use("/api/role", rolerouter);
 
 app.use("/api/payment", verifyAccessToken, paymentRouter);
-
 
 app.use("/api/referral", verifyAccessToken, referralRouter);
 
@@ -84,14 +92,7 @@ app.use("/api/calendar", verifyAccessToken, calenderRouter);
 
 app.get("/api/calendarRedirect",calendarController.Redirect );
 
-// app.post("/api/saveBeyincProfessional", verifyAccessToken, beyincProfileController.saveBeyincProfile );
-
 app.use("/api/professionalProfile", verifyAccessToken, professionalProfileRouter)
-
-
-// app.post('/api/payment/savePayoutDetails', verifyAccessToken, paymentController.savePayoutDetails );
-
-
 
 app.use('/api',verifyAccessToken, userProfileRoutes);
 
