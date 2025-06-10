@@ -40,6 +40,12 @@ const morgan = require("morgan");
 const app = express();
 // MIDDLEWARES
 app.use(cors());
+
+const path = require("path");
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+
+
 app.use(morgan("tiny"));
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
