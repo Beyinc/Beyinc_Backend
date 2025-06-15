@@ -45,6 +45,8 @@ const path = require("path");
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
+// app.js
+app.use(express.json({ limit: "10mb" }));
 
 app.use(morgan("tiny"));
 app.use(express.json({ limit: "25mb" }));
