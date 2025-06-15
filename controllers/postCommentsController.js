@@ -39,7 +39,7 @@ exports.addPostComment = async (req, res, next) => {
 
     let fileUrl = "";
     if (req.file) {
-      fileUrl = `/uploads/comments/${req.file.filename}`;
+      fileUrl = req.file.path;
     }
 
     const newComment = await PostComment.create({
