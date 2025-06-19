@@ -145,66 +145,113 @@ exports.removeFollower = async (req, res, next) => {
 
 
 exports.followerController = async (req, res, next) => {
-  const { followerReqBy, followerReqTo } = req.body;
-  console.log('followerReqBy', followerReqBy)
-  console.log('follow to', followerReqTo)
-  
-  const requestBy = await User.findOne({ _id: followerReqBy });
-  const requestTo = await User.findOne({ _id: followerReqTo });
+  try {
+    const { followerReqBy, followerReqTo } = req.body;
+    console.log('followerReqBy', followerReqBy)
+    console.log('follow to', followerReqTo)
+    
+    const requestBy = await User.findOne({ _id: followerReqBy });
+    const requestTo = await User.findOne({ _id: followerReqTo });
 
-  if (!requestTo.followers.includes(followerReqBy)) {
-    requestTo.followers.push(followerReqBy);
-    await requestTo.save();
-    requestBy.following.push(followerReqTo);
-    await requestBy.save();
-    const userDoesExist = await User.findOne(
-      { _id: requestTo._id },
-      { password: 0, chatBlockedBy: 0 }
-    )
-      .populate({
-        path: "followers",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "following",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate("role_details");
-    await send_Notification_mail(
-      requestTo.email,
-      "Follower added!",
-      `${requestBy.userName} is following you`,
-      requestTo.userName,
-      `/user/${followerReqBy}`
-    );
-    await Notification.create({
-      senderInfo: requestBy._id,
-      receiver: requestTo._id,
-      message: `${requestBy.userName} is following you.`,
-      type: "followerRequest",
-      read: false,
-    });
+    console.log('RequestBy user found:', requestBy ? 'Yes' : 'No');
+    console.log('RequestTo user found:', requestTo ? 'Yes' : 'No');
 
-    return res.status(200).json(userDoesExist);
-  } else {
-    requestTo.followers.splice(requestTo.followers.indexOf(followerReqBy), 1);
-    await requestTo.save();
-    requestBy.following.splice(requestBy.following.indexOf(followerReqTo), 1);
-    await requestBy.save();
-    const userDoesExist = await User.findOne(
-      { _id: requestTo._id },
-      { password: 0, chatBlockedBy: 0 }
-    )
-      .populate({
-        path: "followers",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "following",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate("role_details");
-    return res.status(200).json(userDoesExist);
+    if (!requestBy || !requestTo) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!requestTo.followers.includes(followerReqBy)) {
+      console.log('Before adding - RequestTo followers:', requestTo.followers);
+      console.log('Before adding - RequestBy following:', requestBy.following);
+      
+      requestTo.followers.push(followerReqBy);
+      try {
+        const savedRequestTo = await requestTo.save();
+        console.log('RequestTo user saved successfully - followers:', savedRequestTo.followers);
+      } catch (saveError) {
+        console.error('Error saving RequestTo user:', saveError);
+        throw saveError;
+      }
+      
+      requestBy.following.push(followerReqTo);
+      try {
+        const savedRequestBy = await requestBy.save();
+        console.log('RequestBy user saved successfully - following:', savedRequestBy.following);
+      } catch (saveError) {
+        console.error('Error saving RequestBy user:', saveError);
+        throw saveError;
+      }
+      
+      const userDoesExist = await User.findOne(
+        { _id: requestTo._id },
+        { password: 0, chatBlockedBy: 0 }
+      )
+        .populate({
+          path: "followers",
+          select: ["userName", "image", "role", "_id"],
+        })
+        .populate({
+          path: "following",
+          select: ["userName", "image", "role", "_id"],
+        })
+        .populate("role_details");
+        
+      await send_Notification_mail(
+        requestTo.email,
+        "Follower added!",
+        `${requestBy.userName} is following you`,
+        requestTo.userName,
+        `/user/${followerReqBy}`
+      );
+      await Notification.create({
+        senderInfo: requestBy._id,
+        receiver: requestTo._id,
+        message: `${requestBy.userName} is following you.`,
+        type: "followerRequest",
+        read: false,
+      });
+
+      return res.status(200).json(userDoesExist);
+    } else {
+      console.log('Before removing - RequestTo followers:', requestTo.followers);
+      console.log('Before removing - RequestBy following:', requestBy.following);
+      
+      requestTo.followers.splice(requestTo.followers.indexOf(followerReqBy), 1);
+      try {
+        const savedRequestTo = await requestTo.save();
+        console.log('RequestTo user unfollowed successfully - followers:', savedRequestTo.followers);
+      } catch (saveError) {
+        console.error('Error saving RequestTo user (unfollow):', saveError);
+        throw saveError;
+      }
+      
+      requestBy.following.splice(requestBy.following.indexOf(followerReqTo), 1);
+      try {
+        const savedRequestBy = await requestBy.save();
+        console.log('RequestBy user unfollowed successfully - following:', savedRequestBy.following);
+      } catch (saveError) {
+        console.error('Error saving RequestBy user (unfollow):', saveError);
+        throw saveError;
+      }
+      
+      const userDoesExist = await User.findOne(
+        { _id: requestTo._id },
+        { password: 0, chatBlockedBy: 0 }
+      )
+        .populate({
+          path: "followers",
+          select: ["userName", "image", "role", "_id"],
+        })
+        .populate({
+          path: "following",
+          select: ["userName", "image", "role", "_id"],
+        })
+        .populate("role_details");
+      return res.status(200).json(userDoesExist);
+    }
+  } catch (error) {
+    console.error('Error in followerController:', error);
+    return res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 };
 
