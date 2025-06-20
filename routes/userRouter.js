@@ -71,7 +71,7 @@ router
 
 router.route("/getUsers").post(userController.getUsers);
 router.route("/getFollowers").post(userController.getFollowers);
-router.route("/getFollowers").post(userController.getFollowing);
+router.route("/getFollowings").post(userController.getFollowings);
 router.route("/isProfileComplete").get(userController.getIsProfileComplete);
 router
   .route("/updateProfile")
