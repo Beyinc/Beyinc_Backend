@@ -100,4 +100,8 @@ router.route("/deleteProfileImage").post(userController.deleteProfileImage);
 
 router.route("/addPayment").post(userController.addPayment);
 
+
+//added this mew route
+// router.route("/connections").post(userController.getConnections);
+
 module.exports = router;
