@@ -76,7 +76,7 @@ exports.getProfile = async (req, res, next) => {
 
     // console.log(removePass);
     // console.log(userDoesExist);
-    
+
     if (userDoesExist) {
       return res.status(200).json(userDoesExist);
     }
@@ -89,7 +89,7 @@ exports.recommendedUsers = async (req, res, next) => {
   try {
     const { user_id } = req.payload;
     const loggedInUserId = new mongoose.Types.ObjectId(user_id);
-    
+
     const data = await User.aggregate([
       {
         $match: {
@@ -149,7 +149,7 @@ exports.followerController = async (req, res, next) => {
     const { followerReqBy, followerReqTo } = req.body;
     console.log('followerReqBy', followerReqBy)
     console.log('follow to', followerReqTo)
-    
+
     const requestBy = await User.findOne({ _id: followerReqBy });
     const requestTo = await User.findOne({ _id: followerReqTo });
 
@@ -163,7 +163,7 @@ exports.followerController = async (req, res, next) => {
     if (!requestTo.followers.includes(followerReqBy)) {
       console.log('Before adding - RequestTo followers:', requestTo.followers);
       console.log('Before adding - RequestBy following:', requestBy.following);
-      
+
       requestTo.followers.push(followerReqBy);
       try {
         const savedRequestTo = await requestTo.save();
@@ -172,7 +172,7 @@ exports.followerController = async (req, res, next) => {
         console.error('Error saving RequestTo user:', saveError);
         throw saveError;
       }
-      
+
       requestBy.following.push(followerReqTo);
       try {
         const savedRequestBy = await requestBy.save();
@@ -181,7 +181,7 @@ exports.followerController = async (req, res, next) => {
         console.error('Error saving RequestBy user:', saveError);
         throw saveError;
       }
-      
+
       const userDoesExist = await User.findOne(
         { _id: requestTo._id },
         { password: 0, chatBlockedBy: 0 }
@@ -195,7 +195,7 @@ exports.followerController = async (req, res, next) => {
           select: ["userName", "image", "role", "_id"],
         })
         .populate("role_details");
-        
+
       await send_Notification_mail(
         requestTo.email,
         "Follower added!",
@@ -215,7 +215,7 @@ exports.followerController = async (req, res, next) => {
     } else {
       console.log('Before removing - RequestTo followers:', requestTo.followers);
       console.log('Before removing - RequestBy following:', requestBy.following);
-      
+
       requestTo.followers.splice(requestTo.followers.indexOf(followerReqBy), 1);
       try {
         const savedRequestTo = await requestTo.save();
@@ -224,7 +224,7 @@ exports.followerController = async (req, res, next) => {
         console.error('Error saving RequestTo user (unfollow):', saveError);
         throw saveError;
       }
-      
+
       requestBy.following.splice(requestBy.following.indexOf(followerReqTo), 1);
       try {
         const savedRequestBy = await requestBy.save();
@@ -233,7 +233,7 @@ exports.followerController = async (req, res, next) => {
         console.error('Error saving RequestBy user (unfollow):', saveError);
         throw saveError;
       }
-      
+
       const userDoesExist = await User.findOne(
         { _id: requestTo._id },
         { password: 0, chatBlockedBy: 0 }
@@ -919,7 +919,7 @@ exports.directeditprofile = async (req, res, next) => {
 
     // validating email and password
 
-   
+
 
     const userDoesExist = await User.findOne({ email: email });
 
@@ -1642,7 +1642,18 @@ exports.getUsers = async (req, res, next) => {
 exports.getFollowers = async (req, res, next) => {
   try {
     const userId = req.payload.user_id;
-    const result = await User.find({following:{$in:[new mongoose.Types.ObjectId(userId)]}});
+    const result = await User.find({ following: { $in: [new mongoose.Types.ObjectId(userId)] }, is_profile: true });
+    return res.status(200).json(result);
+  } catch (err) {
+
+    return res.status(400).json("Error while fetching");
+  }
+};
+
+exports.getFollowings = async (req, res, next) => {
+  try {
+    const userId = req.payload.user_id;
+    const result = await User.find({ followers: { $in: [new mongoose.Types.ObjectId(userId)] }, is_profile: true });
     return res.status(200).json(result);
   } catch (err) {
 
