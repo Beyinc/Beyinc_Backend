@@ -1642,7 +1642,7 @@ exports.getUsers = async (req, res, next) => {
 exports.getFollowers = async (req, res, next) => {
   try {
     const userId = req.payload.user_id;
-    const result = await User.find({ following: { $in: [new mongoose.Types.ObjectId(userId)] }, is_profile: true });
+    const result = await User.find({ following: { $in: [new mongoose.Types.ObjectId(userId)] }, isProfileComplete: true });    
     return res.status(200).json(result);
   } catch (err) {
 
@@ -1653,7 +1653,7 @@ exports.getFollowers = async (req, res, next) => {
 exports.getFollowings = async (req, res, next) => {
   try {
     const userId = req.payload.user_id;
-    const result = await User.find({ followers: { $in: [new mongoose.Types.ObjectId(userId)] }, is_profile: true });
+    const result = await User.find({ followers: { $in: [new mongoose.Types.ObjectId(userId)] }, isProfileComplete: true });
     return res.status(200).json(result);
   } catch (err) {
 
