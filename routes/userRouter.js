@@ -70,6 +70,8 @@ router
   .post(userController.getApprovalRequestProfile);
 
 router.route("/getUsers").post(userController.getUsers);
+router.route("/getFollowers").get(userController.getFollowers);
+router.route("/getFollowings").get(userController.getFollowings);
 router.route("/isProfileComplete").get(userController.getIsProfileComplete);
 router
   .route("/updateProfile")
@@ -99,5 +101,9 @@ router.route("/deleteProfileImage").post(userController.deleteProfileImage);
 
 
 router.route("/addPayment").post(userController.addPayment);
+
+
+//added this mew route
+// router.route("/connections").post(userController.getConnections);
 
 module.exports = router;

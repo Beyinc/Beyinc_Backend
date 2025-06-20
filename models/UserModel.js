@@ -170,7 +170,7 @@ const userSchema = new mongoose.Schema(
         "Mentor",
         "Incubator",
         "Accelerator",
-        "InstituteInvestor",
+        "IndividualInvestor",
         "InstituteInvestor",
         "TradeBody",
         "GovernmentBody",
