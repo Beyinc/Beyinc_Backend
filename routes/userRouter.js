@@ -70,6 +70,7 @@ router
   .post(userController.getApprovalRequestProfile);
 
 router.route("/getUsers").post(userController.getUsers);
+router.route("/getFollowers").post(userController.getFollowers);
 router.route("/isProfileComplete").get(userController.getIsProfileComplete);
 router
   .route("/updateProfile")

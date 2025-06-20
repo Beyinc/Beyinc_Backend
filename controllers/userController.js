@@ -1639,6 +1639,16 @@ exports.getUsers = async (req, res, next) => {
 
 
 
+exports.getFollowers = async (req, res, next) => {
+  try {
+    const userId = req.payload.user_id;
+    const result = await User.find({following:{$in:[new mongoose.Types.ObjectId(userId)]}});
+    return res.status(200).json(result);
+  } catch (err) {
+
+    return res.status(400).json("Error while fetching");
+  }
+};
 exports.getAllUserProfileRequests = async (req, res, next) => {
   try {
     const { filters } = req.body;
