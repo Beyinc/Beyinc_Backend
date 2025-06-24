@@ -64,14 +64,8 @@ exports.getProfile = async (req, res, next) => {
       { _id: id ? id : user_id },
       { password: 0, chatBlockedBy: 0 }
     )
-      .populate({
-        path: "followers",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "following",
-        select: ["userName", "image", "role", "_id"],
-      })
+      .populate('followers')
+      .populate("following")
       .populate("role_details");
 
     // console.log(removePass);
@@ -1642,7 +1636,12 @@ exports.getUsers = async (req, res, next) => {
 exports.getFollowers = async (req, res, next) => {
   try {
     const userId = req.payload.user_id;
-    const result = await User.find({ following: { $in: [new mongoose.Types.ObjectId(userId)] }, isProfileComplete: true });    
+    const result = await User.find({
+      _id: { $ne: userId }, // exclude self
+      following: { $in: [new mongoose.Types.ObjectId(userId)] },
+      isProfileComplete: true
+    });
+
     return res.status(200).json(result);
   } catch (err) {
 
@@ -1653,7 +1652,7 @@ exports.getFollowers = async (req, res, next) => {
 exports.getFollowings = async (req, res, next) => {
   try {
     const userId = req.payload.user_id;
-    const result = await User.find({ followers: { $in: [new mongoose.Types.ObjectId(userId)] }, isProfileComplete: true });
+    const result = await User.find({_id: { $ne: userId }, followers: { $in: [new mongoose.Types.ObjectId(userId)] }, isProfileComplete: true });
     return res.status(200).json(result);
   } catch (err) {
 
