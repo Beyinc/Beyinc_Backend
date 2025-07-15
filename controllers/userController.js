@@ -89,6 +89,7 @@ exports.recommendedUsers = async (req, res, next) => {
         $match: {
           followers: { $nin: [loggedInUserId] },
           _id: { $ne: loggedInUserId },
+          isProfileComplete: true
         },
       },
       {
@@ -1602,7 +1603,7 @@ exports.getUsers = async (req, res, next) => {
     const { type } = req.body;
     if (type !== "") {
       let result = await User.find(
-        { role: type },
+        { role: type, isProfileComplete: true },
         { projection: { password: 0 } }
       )
         .populate({
@@ -1615,7 +1616,7 @@ exports.getUsers = async (req, res, next) => {
         });
       return res.status(200).json(result);
     } else {
-      let result = await User.find({}, { password: 0 })
+      let result = await User.find({ isProfileComplete: true }, { password: 0 })
         .populate({
           path: "followers",
           select: ["userName", "image", "role", "_id"],
@@ -1652,7 +1653,7 @@ exports.getFollowers = async (req, res, next) => {
 exports.getFollowings = async (req, res, next) => {
   try {
     const userId = req.payload.user_id;
-    const result = await User.find({_id: { $ne: userId }, followers: { $in: [new mongoose.Types.ObjectId(userId)] }, isProfileComplete: true });
+    const result = await User.find({ _id: { $ne: userId }, followers: { $in: [new mongoose.Types.ObjectId(userId)] }, isProfileComplete: true });
     return res.status(200).json(result);
   } catch (err) {
 
