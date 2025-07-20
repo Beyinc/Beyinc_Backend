@@ -884,6 +884,7 @@ exports.getNewProfiles = async (req, res, next) => {
       {
         $match: {
           email: { $ne: req.payload.email },
+          isProfileComplete: true,
           followers: { $nin: [loggedInUserId] },
           _id: { $ne: loggedInUserId }
         }
