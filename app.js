@@ -33,6 +33,7 @@ const { verifyAccessToken } = require("./helpers/jwt_helpers");
 const userProfileRoutes = require('./routes/userProfileRoutes');
 const filterRoutes = require('./routes/filterRoutes');
 const paymentController = require('./controllers/paymentController.js')
+const postLiveChatRouter = require('./routes/postLiveChatRouter');
 
 const cors = require("cors");
 const morgan = require("morgan");
@@ -105,6 +106,8 @@ app.use("/api/professionalProfile", verifyAccessToken, professionalProfileRouter
 app.use('/api',verifyAccessToken, userProfileRoutes);
 
 app.use('/api',verifyAccessToken,filterRoutes);
+
+app.use('/api/postLiveChat', verifyAccessToken, postLiveChatRouter);
 
 app.get("/api/searchProfiles", verifyAccessToken, searchController.searchProfiles);
 
