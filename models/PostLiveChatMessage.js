@@ -12,10 +12,6 @@ const postLiveChatMessageSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    senderName: {
-      type: String,
-      required: true,
-    },
     message: {
       type: String,
       required: true,
