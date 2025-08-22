@@ -7,7 +7,7 @@ exports.getPostLiveChatMessages = async (req, res) => {
             .sort({ timestamp: 1 })
             .limit(50).populate({
                 path: "senderId",
-                select: "userName image"
+                select: "userName image role"
             });
         res.json(messages);
     } catch (error) {
