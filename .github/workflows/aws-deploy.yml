@@ -1,6 +1,5 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
 name: Deploy
 
 on:
@@ -26,7 +25,7 @@ jobs:
       - name: Test SSH Connection
         env:
           PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
-          HOSTNAME: 4.150.184.113 
+          HOSTNAME: 4.150.184.113   # 👈 hardcoded IP
           USERNAME: ${{ secrets.VMUSERNAME }}
         run: |
           echo "$PRIVATE_KEY" > private_key.pem
@@ -39,7 +38,7 @@ jobs:
         if: success()  # only run if SSH worked above
         env:
           PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
-          HOSTNAME: ${{ secrets.VM_IP }}
+          HOSTNAME: 4.150.184.113   # 👈 same IP used here
           USERNAME: ${{ secrets.VMUSERNAME }}
           PROD_ENV_FILE: ${{ secrets.ENV }}
         run: |
@@ -63,11 +62,15 @@ jobs:
             sudo apt install git -y
             npm i -g pm2
 
+            # ensure app directory exists
+            mkdir -p /home/${USERNAME}/apps/backend
+            cd /home/${USERNAME}/apps/backend
+
             # redeploy app
-            rm -rf ./Beyinc_Backend
+            rm -rf Beyinc_Backend
             git clone https://github.com/Beyinc/Beyinc_Backend.git
-            cd ./Beyinc_Backend
-            npm i
+            cd Beyinc_Backend
+            npm install --production
 
             # write environment variables
             echo "$PROD_ENV_FILE" > config.env
@@ -77,7 +80,6 @@ jobs:
             pm2 start server.js --name beyinc-backend-api
             pm2 save
           '
-
 
 
 
