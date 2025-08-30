@@ -64,19 +64,13 @@ exports.getProfile = async (req, res, next) => {
       { _id: id ? id : user_id },
       { password: 0, chatBlockedBy: 0 }
     )
-      .populate({
-        path: "followers",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "following",
-        select: ["userName", "image", "role", "_id"],
-      })
+      .populate('followers')
+      .populate("following")
       .populate("role_details");
 
     // console.log(removePass);
     // console.log(userDoesExist);
-    
+
     if (userDoesExist) {
       return res.status(200).json(userDoesExist);
     }
@@ -89,12 +83,13 @@ exports.recommendedUsers = async (req, res, next) => {
   try {
     const { user_id } = req.payload;
     const loggedInUserId = new mongoose.Types.ObjectId(user_id);
-    
+
     const data = await User.aggregate([
       {
         $match: {
           followers: { $nin: [loggedInUserId] },
           _id: { $ne: loggedInUserId },
+          isProfileComplete: true
         },
       },
       {
@@ -145,66 +140,113 @@ exports.removeFollower = async (req, res, next) => {
 
 
 exports.followerController = async (req, res, next) => {
-  const { followerReqBy, followerReqTo } = req.body;
-  console.log('followerReqBy', followerReqBy)
-  console.log('follow to', followerReqTo)
-  
-  const requestBy = await User.findOne({ _id: followerReqBy });
-  const requestTo = await User.findOne({ _id: followerReqTo });
+  try {
+    const { followerReqBy, followerReqTo } = req.body;
+    console.log('followerReqBy', followerReqBy)
+    console.log('follow to', followerReqTo)
 
-  if (!requestTo.followers.includes(followerReqBy)) {
-    requestTo.followers.push(followerReqBy);
-    await requestTo.save();
-    requestBy.following.push(followerReqTo);
-    await requestBy.save();
-    const userDoesExist = await User.findOne(
-      { _id: requestTo._id },
-      { password: 0, chatBlockedBy: 0 }
-    )
-      .populate({
-        path: "followers",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "following",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate("role_details");
-    await send_Notification_mail(
-      requestTo.email,
-      "Follower added!",
-      `${requestBy.userName} is following you`,
-      requestTo.userName,
-      `/user/${followerReqBy}`
-    );
-    await Notification.create({
-      senderInfo: requestBy._id,
-      receiver: requestTo._id,
-      message: `${requestBy.userName} is following you.`,
-      type: "followerRequest",
-      read: false,
-    });
+    const requestBy = await User.findOne({ _id: followerReqBy });
+    const requestTo = await User.findOne({ _id: followerReqTo });
 
-    return res.status(200).json(userDoesExist);
-  } else {
-    requestTo.followers.splice(requestTo.followers.indexOf(followerReqBy), 1);
-    await requestTo.save();
-    requestBy.following.splice(requestBy.following.indexOf(followerReqTo), 1);
-    await requestBy.save();
-    const userDoesExist = await User.findOne(
-      { _id: requestTo._id },
-      { password: 0, chatBlockedBy: 0 }
-    )
-      .populate({
-        path: "followers",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "following",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate("role_details");
-    return res.status(200).json(userDoesExist);
+    console.log('RequestBy user found:', requestBy ? 'Yes' : 'No');
+    console.log('RequestTo user found:', requestTo ? 'Yes' : 'No');
+
+    if (!requestBy || !requestTo) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!requestTo.followers.includes(followerReqBy)) {
+      console.log('Before adding - RequestTo followers:', requestTo.followers);
+      console.log('Before adding - RequestBy following:', requestBy.following);
+
+      requestTo.followers.push(followerReqBy);
+      try {
+        const savedRequestTo = await requestTo.save();
+        console.log('RequestTo user saved successfully - followers:', savedRequestTo.followers);
+      } catch (saveError) {
+        console.error('Error saving RequestTo user:', saveError);
+        throw saveError;
+      }
+
+      requestBy.following.push(followerReqTo);
+      try {
+        const savedRequestBy = await requestBy.save();
+        console.log('RequestBy user saved successfully - following:', savedRequestBy.following);
+      } catch (saveError) {
+        console.error('Error saving RequestBy user:', saveError);
+        throw saveError;
+      }
+
+      const userDoesExist = await User.findOne(
+        { _id: requestTo._id },
+        { password: 0, chatBlockedBy: 0 }
+      )
+        .populate({
+          path: "followers",
+          select: ["userName", "image", "role", "_id"],
+        })
+        .populate({
+          path: "following",
+          select: ["userName", "image", "role", "_id"],
+        })
+        .populate("role_details");
+
+      await send_Notification_mail(
+        requestTo.email,
+        "Follower added!",
+        `${requestBy.userName} is following you`,
+        requestTo.userName,
+        `/user/${followerReqBy}`
+      );
+      await Notification.create({
+        senderInfo: requestBy._id,
+        receiver: requestTo._id,
+        message: `${requestBy.userName} is following you.`,
+        type: "followerRequest",
+        read: false,
+      });
+
+      return res.status(200).json(userDoesExist);
+    } else {
+      console.log('Before removing - RequestTo followers:', requestTo.followers);
+      console.log('Before removing - RequestBy following:', requestBy.following);
+
+      requestTo.followers.splice(requestTo.followers.indexOf(followerReqBy), 1);
+      try {
+        const savedRequestTo = await requestTo.save();
+        console.log('RequestTo user unfollowed successfully - followers:', savedRequestTo.followers);
+      } catch (saveError) {
+        console.error('Error saving RequestTo user (unfollow):', saveError);
+        throw saveError;
+      }
+
+      requestBy.following.splice(requestBy.following.indexOf(followerReqTo), 1);
+      try {
+        const savedRequestBy = await requestBy.save();
+        console.log('RequestBy user unfollowed successfully - following:', savedRequestBy.following);
+      } catch (saveError) {
+        console.error('Error saving RequestBy user (unfollow):', saveError);
+        throw saveError;
+      }
+
+      const userDoesExist = await User.findOne(
+        { _id: requestTo._id },
+        { password: 0, chatBlockedBy: 0 }
+      )
+        .populate({
+          path: "followers",
+          select: ["userName", "image", "role", "_id"],
+        })
+        .populate({
+          path: "following",
+          select: ["userName", "image", "role", "_id"],
+        })
+        .populate("role_details");
+      return res.status(200).json(userDoesExist);
+    }
+  } catch (error) {
+    console.error('Error in followerController:', error);
+    return res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 };
 
@@ -872,7 +914,7 @@ exports.directeditprofile = async (req, res, next) => {
 
     // validating email and password
 
-   
+
 
     const userDoesExist = await User.findOne({ email: email });
 
@@ -1561,7 +1603,7 @@ exports.getUsers = async (req, res, next) => {
     const { type } = req.body;
     if (type !== "") {
       let result = await User.find(
-        { role: type },
+        { role: type, isProfileComplete: true },
         { projection: { password: 0 } }
       )
         .populate({
@@ -1574,7 +1616,7 @@ exports.getUsers = async (req, res, next) => {
         });
       return res.status(200).json(result);
     } else {
-      let result = await User.find({}, { password: 0 })
+      let result = await User.find({ isProfileComplete: true }, { password: 0 })
         .populate({
           path: "followers",
           select: ["userName", "image", "role", "_id"],
@@ -1592,6 +1634,32 @@ exports.getUsers = async (req, res, next) => {
 
 
 
+exports.getFollowers = async (req, res, next) => {
+  try {
+    const userId = req.payload.user_id;
+    const result = await User.find({
+      _id: { $ne: userId }, // exclude self
+      following: { $in: [new mongoose.Types.ObjectId(userId)] },
+      isProfileComplete: true
+    });
+
+    return res.status(200).json(result);
+  } catch (err) {
+
+    return res.status(400).json("Error while fetching");
+  }
+};
+
+exports.getFollowings = async (req, res, next) => {
+  try {
+    const userId = req.payload.user_id;
+    const result = await User.find({ _id: { $ne: userId }, followers: { $in: [new mongoose.Types.ObjectId(userId)] }, isProfileComplete: true });
+    return res.status(200).json(result);
+  } catch (err) {
+
+    return res.status(400).json("Error while fetching");
+  }
+};
 exports.getAllUserProfileRequests = async (req, res, next) => {
   try {
     const { filters } = req.body;

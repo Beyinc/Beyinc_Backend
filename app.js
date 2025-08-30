@@ -33,13 +33,23 @@ const { verifyAccessToken } = require("./helpers/jwt_helpers");
 const userProfileRoutes = require('./routes/userProfileRoutes');
 const filterRoutes = require('./routes/filterRoutes');
 const paymentController = require('./controllers/paymentController.js')
+const postLiveChatRouter = require('./routes/postLiveChatRouter');
 
 const cors = require("cors");
 const morgan = require("morgan");
 
 const app = express();
 // MIDDLEWARES
+app.use(cors({origin:['http://localhost:3000','https://beyinc-frontend.vercel.app']}));
 app.use(cors());
+
+const path = require("path");
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+
+// app.js
+app.use(express.json({ limit: "10mb" }));
+
 app.use(morgan("tiny"));
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
@@ -96,6 +106,8 @@ app.use("/api/professionalProfile", verifyAccessToken, professionalProfileRouter
 app.use('/api',verifyAccessToken, userProfileRoutes);
 
 app.use('/api',verifyAccessToken,filterRoutes);
+
+app.use('/api/postLiveChat', verifyAccessToken, postLiveChatRouter);
 
 app.get("/api/searchProfiles", verifyAccessToken, searchController.searchProfiles);
 

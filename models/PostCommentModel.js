@@ -1,36 +1,40 @@
 const mongoose = require("mongoose");
 
 const PostCommentsSchema = new mongoose.Schema(
-    {
-        postId: { type: String },
-        parentCommentId: { type: String },
-        commentBy: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
-        },
-        likes: [
-            {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "User",
-            },
-        ],
-        Dislikes: [
-            {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "User",
-            },
-        ],
-        comment: {
-            type: String,
-        },
-        subComments: [{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "PostComments",
-        },]
+  {
+    postId: { type: String },
+    parentCommentId: { type: String },
+    commentBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
-    {
-        timestamps: true, // This adds 'createdAt' and 'updatedAt' fields
-    }
+    likes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    Dislikes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    comment: {
+      type: String,
+    },
+    fileUrl: { type: String, default: "" },
+
+    subComments: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "PostComments",
+      },
+    ],
+  },
+  {
+    timestamps: true, // This adds 'createdAt' and 'updatedAt' fields
+  }
 );
 
 const PostComments = new mongoose.model("PostComments", PostCommentsSchema);

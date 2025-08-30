@@ -390,7 +390,7 @@ exports.editPost = async (req, res, next) => {
 
 exports.reportPost = async (req, res, next) => {
   try {
-    const { id, reportBy, reason } = req.body;
+    const { id, reportBy, reason,reportType} = req.body;
     const PostExist = await Posts.findOne({ _id: id })
       .populate({
         path: "createdBy",
@@ -432,6 +432,7 @@ exports.reportPost = async (req, res, next) => {
             user: reportBy,
             reportedTime: new Date(),
             reason: reason,
+            reportType:reportType
           },
         },
       }

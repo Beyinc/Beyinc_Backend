@@ -883,8 +883,8 @@ exports.getNewProfiles = async (req, res, next) => {
     const users = await User.aggregate([
       {
         $match: {
-          createdAt: { $gte: oneMonthAgo },
           email: { $ne: req.payload.email },
+          isProfileComplete: true,
           followers: { $nin: [loggedInUserId] },
           _id: { $ne: loggedInUserId }
         }

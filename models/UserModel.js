@@ -170,7 +170,7 @@ const userSchema = new mongoose.Schema(
         "Mentor",
         "Incubator",
         "Accelerator",
-        "InstituteInvestor",
+        "IndividualInvestor",
         "InstituteInvestor",
         "TradeBody",
         "GovernmentBody",
@@ -184,6 +184,7 @@ const userSchema = new mongoose.Schema(
       required: false,
       enum: [
         "Entrepreneur",
+        "Individual/Entrepreneur",
         "Startup",
         "Mentor",
         "Incubator",
