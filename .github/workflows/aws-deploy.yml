@@ -15,13 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Debug Secrets (masked automatically)
-        run: |
-          echo "🔑 Username: ${{ secrets.VMUSERNAME }}"
-          echo "🌍 Host (VM IP or DNS): ${{ secrets.VM_IP }}"
-          echo "🗝️ Private key length: $(echo '${{ secrets.AZURE_VM_KEY }}' | wc -c)"
-          echo "📦 ENV file size: $(echo '${{ secrets.ENV }}' | wc -c)"
-
       - name: Test SSH Connection
         env:
           PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
