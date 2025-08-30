@@ -26,7 +26,7 @@ jobs:
       - name: Test SSH Connection
         env:
           PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
-          HOSTNAME: ${{ secrets.VM_IP }}
+          HOSTNAME: 4.150.184.113 
           USERNAME: ${{ secrets.VMUSERNAME }}
         run: |
           echo "$PRIVATE_KEY" > private_key.pem
