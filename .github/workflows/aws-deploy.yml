@@ -6,6 +6,7 @@ name: Deploy
 on:
   push:
     branches: ["main"]
+  workflow_dispatch:   # 👈 allows you to manually trigger for testing
 
 jobs:
   Deploy:
@@ -15,21 +16,41 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Debug Secrets (masked automatically)
+        run: |
+          echo "🔑 Username: ${{ secrets.VMUSERNAME }}"
+          echo "🌍 Host (VM IP or DNS): ${{ secrets.VM_IP }}"
+          echo "🗝️ Private key length: $(echo '${{ secrets.AZURE_VM_KEY }}' | wc -c)"
+          echo "📦 ENV file size: $(echo '${{ secrets.ENV }}' | wc -c)"
+
+      - name: Test SSH Connection
+        env:
+          PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
+          HOSTNAME: ${{ secrets.VM_IP }}
+          USERNAME: ${{ secrets.VMUSERNAME }}
+        run: |
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+
+          echo "➡️ Testing SSH to $USERNAME@$HOSTNAME ..."
+          ssh -vvv -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} "echo '✅ SSH connection successful on VM $(hostname)'"
+
       - name: Build & Deploy
+        if: success()  # only run if SSH worked above
         env:
           PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
           HOSTNAME: ${{ secrets.VM_IP }}
           USERNAME: ${{ secrets.VMUSERNAME }}
           PROD_ENV_FILE: ${{ secrets.ENV }}
         run: |
-          # save private key
           echo "$PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
 
-          # ssh into Azure VM
           ssh -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} '
             set -e
             sudo su -
+
+            echo "🚀 Starting deployment on $(hostname)"
 
             # install nvm & node
             if ! command -v nvm &> /dev/null; then
@@ -56,8 +77,6 @@ jobs:
             pm2 start server.js --name beyinc-backend-api
             pm2 save
           '
-
-
 
 
 
