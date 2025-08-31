@@ -5,7 +5,7 @@ name: Deploy
 on:
   push:
     branches: ["main"]
-  workflow_dispatch:   # 👈 allows you to manually trigger for testing
+  workflow_dispatch:
 
 jobs:
   Deploy:
@@ -15,23 +15,29 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Debug Values
+        run: |
+          echo "👤 Username: ${{ secrets.VMUSERNAME }}"
+          echo "🌍 Host: 4.150.184.113"
+          echo "🗝️ Private key length: $(echo '${{ secrets.AZURE_VM_KEY }}' | wc -c)"
+
       - name: Test SSH Connection
         env:
           PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
-          HOSTNAME: 4.150.184.113   # 👈 hardcoded IP
+          HOSTNAME: 4.150.184.113
           USERNAME: ${{ secrets.VMUSERNAME }}
         run: |
           echo "$PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
 
           echo "➡️ Testing SSH to $USERNAME@$HOSTNAME ..."
-          ssh -vvv -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} "echo '✅ SSH connection successful on VM $(hostname)'"
+          ssh -vvv -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} "echo '✅ SSH connected on VM $(hostname)'" || echo "❌ SSH FAILED"
 
       - name: Build & Deploy
         if: success()  # only run if SSH worked above
         env:
           PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
-          HOSTNAME: 4.150.184.113   # 👈 same IP used here
+          HOSTNAME: 4.150.184.113
           USERNAME: ${{ secrets.VMUSERNAME }}
           PROD_ENV_FILE: ${{ secrets.ENV }}
         run: |
