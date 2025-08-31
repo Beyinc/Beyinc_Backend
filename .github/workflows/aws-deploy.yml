@@ -1,30 +1,27 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 
-name: Deploy Node.js Backend
+name: Deploy
 
 on:
   push:
     branches: ["main"]
-  workflow_dispatch:   # allows manual triggering
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  Deploy:
     name: Deploy to Azure VM
     runs-on: ubuntu-latest
     environment: azure
     steps:
-      # Step 1: Checkout repository (optional, mainly for debugging or artifacts)
       - uses: actions/checkout@v3
 
-      # Step 2: Debug output
       - name: Debug Values
         run: |
           echo "👤 User: azureuser"
           echo "🌍 Host: 4.150.184.113"
           echo "🗝️ Private key length: $(echo '${{ secrets.AZURE_VM_KEY }}' | wc -c)"
 
-      # Step 3: Test SSH connection
       - name: Test SSH Connection
         env:
           PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
@@ -33,12 +30,31 @@ jobs:
         run: |
           echo "$PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
-          echo "➡️ Testing SSH to $USERNAME@$HOSTNAME ..."
-          ssh -vvv -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} \
-            "echo '✅ SSH connected on VM $(hostname)'" || echo "❌ SSH FAILED"
 
-      # Step 4: Deploy directly on VM
-      - name: Deploy on VM
+          echo "➡️ Testing SSH to $USERNAME@$HOSTNAME ..."
+          ssh -vvv -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} "echo '✅ SSH connected on VM $(hostname)'" || echo "❌ SSH FAILED"
+
+      - name: Add Swap Memory on VM
+        env:
+          PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
+          HOSTNAME: 4.150.184.113
+          USERNAME: azureuser
+        run: |
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} '
+            set -e
+            echo "⚡ Adding 2GB swap memory"
+            sudo fallocate -l 2G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+            sudo chmod 600 /swapfile
+            sudo mkswap /swapfile
+            sudo swapon /swapfile
+            sudo swapon --show
+            echo "✅ Swap memory added"
+          '
+
+      - name: Deploy Node.js App
         env:
           PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
           HOSTNAME: 4.150.184.113
@@ -50,6 +66,7 @@ jobs:
 
           ssh -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} '
             set -e
+            sudo su -
 
             echo "🚀 Starting deployment on $(hostname)"
 
@@ -64,33 +81,26 @@ jobs:
             sudo apt install git -y
             npm i -g pm2
 
-            # ensure backend directory exists
+            # ensure app directory exists
             mkdir -p ~/apps/backend
             cd ~/apps/backend
 
-            # remove old repo if exists
-            if [ -d "Beyinc_Backend" ]; then
-              rm -rf Beyinc_Backend
-            fi
-
-            # clone repo fresh
+            # redeploy app
+            rm -rf Beyinc_Backend
             git clone https://github.com/Beyinc/Beyinc_Backend.git
             cd Beyinc_Backend
 
-            # install only production dependencies (lightweight)
-            npm install --production
+            # install dependencies with limited memory
+            NODE_OPTIONS="--max-old-space-size=1024" npm install --production
 
             # write environment variables
             echo "$PROD_ENV_FILE" > config.env
 
-            # restart pm2 process
+            # restart app with pm2
             pm2 delete beyinc-backend-api || :
             pm2 start server.js --name beyinc-backend-api
             pm2 save
-
-            echo "✅ Deployment completed"
           '
-
 
 
 
