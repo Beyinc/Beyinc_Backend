@@ -1,5 +1,6 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
 name: Deploy Node.js Backend
 
 on:
@@ -16,12 +17,12 @@ jobs:
       - name: SSH and Deploy to VM
         uses: appleboy/ssh-action@v0.1.7
         with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
+          host: 4.150.184.113            # hardcoded VM IP
+          username: azureuser            # SSH login user
+          key: ${{ secrets.AZURE_VM_KEY }}  # private key from GitHub secrets
           script: |
             set -e
-            echo "🚀 Deploying backend on $(hostname)"
+            echo "🚀 Deploying backend on $(host)"
 
             # navigate to app folder
             mkdir -p ~/apps/backend
@@ -40,12 +41,13 @@ jobs:
             # install production dependencies only
             npm install --only=production
 
+            # write environment variables if secret provided
+            echo "${{ secrets.ENV }}" > config.env
+
             # restart server with pm2
             pm2 delete beyinc-backend-api || :
             pm2 start server.js --name beyinc-backend-api
             pm2 save
-
-
 
 
 
