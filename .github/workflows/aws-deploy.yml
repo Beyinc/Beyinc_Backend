@@ -32,29 +32,10 @@ jobs:
           chmod 600 private_key.pem
 
           echo "➡️ Testing SSH to $USERNAME@$HOSTNAME ..."
-          ssh -vvv -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} "echo '✅ SSH connected on VM $(hostname)'" || echo "❌ SSH FAILED"
+          ssh -vvv -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} \
+          "echo '✅ SSH connected on VM $(hostname)'" || echo "❌ SSH FAILED"
 
-      - name: Add Swap Memory on VM
-        env:
-          PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
-          HOSTNAME: 4.150.184.113
-          USERNAME: azureuser
-        run: |
-          echo "$PRIVATE_KEY" > private_key.pem
-          chmod 600 private_key.pem
-
-          ssh -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} '
-            set -e
-            echo "⚡ Adding 2GB swap memory"
-            sudo fallocate -l 2G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
-            sudo chmod 600 /swapfile
-            sudo mkswap /swapfile
-            sudo swapon /swapfile
-            sudo swapon --show
-            echo "✅ Swap memory added"
-          '
-
-      - name: Deploy Node.js App
+      - name: Deploy Node.js backend
         env:
           PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
           HOSTNAME: 4.150.184.113
@@ -66,11 +47,23 @@ jobs:
 
           ssh -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} '
             set -e
-            sudo su -
+
+            # Add swap only if it does not exist
+            if ! swapon --show | grep -q "/swapfile"; then
+              echo "⚡ Adding 2GB swap memory"
+              sudo fallocate -l 2G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+              sudo chmod 600 /swapfile
+              sudo mkswap /swapfile
+              sudo swapon /swapfile
+              sudo bash -c "echo \"/swapfile none swap sw 0 0\" >> /etc/fstab"
+              echo "✅ Swap memory added"
+            else
+              echo "✅ Swap memory already exists"
+            fi
 
             echo "🚀 Starting deployment on $(hostname)"
 
-            # install nvm & node if missing
+            # install nvm & node if not present
             if ! command -v nvm &> /dev/null; then
               curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
               . ~/.nvm/nvm.sh
@@ -85,13 +78,15 @@ jobs:
             mkdir -p ~/apps/backend
             cd ~/apps/backend
 
-            # redeploy app
-            rm -rf Beyinc_Backend
+            # redeploy app: delete old folder if exists
+            if [ -d "Beyinc_Backend" ]; then
+              rm -rf Beyinc_Backend
+            fi
             git clone https://github.com/Beyinc/Beyinc_Backend.git
             cd Beyinc_Backend
 
-            # install dependencies with limited memory
-            NODE_OPTIONS="--max-old-space-size=1024" npm install --production
+            # install production dependencies
+            NODE_OPTIONS="--max-old-space-size=1024" npm ci --omit=dev
 
             # write environment variables
             echo "$PROD_ENV_FILE" > config.env
@@ -101,7 +96,6 @@ jobs:
             pm2 start server.js --name beyinc-backend-api
             pm2 save
           '
-
 
 
 
