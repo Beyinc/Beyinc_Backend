@@ -1,87 +1,72 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-name: Deploy
+name: Build and Deploy
 
 on:
   push:
-    branches: ["main"]
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
-  Deploy:
-    name: Deploy to Azure VM
+  build:
     runs-on: ubuntu-latest
-    environment: azure
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-      - name: Debug Values
-        run: |
-          echo "👤 User: azureuser"
-          echo "🌍 Host: 4.150.184.113"
-          echo "🗝️ Private key length: $(echo '${{ secrets.AZURE_VM_KEY }}' | wc -c)"
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
 
-      - name: Test SSH Connection
-        env:
-          PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
-          HOSTNAME: 4.150.184.113
-          USERNAME: azureuser
-        run: |
-          echo "$PRIVATE_KEY" > private_key.pem
-          chmod 600 private_key.pem
+      - name: Install dependencies
+        run: npm install
 
-          echo "➡️ Testing SSH to $USERNAME@$HOSTNAME ..."
-          ssh -vvv -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} "echo '✅ SSH connected on VM $(hostname)'" || echo "❌ SSH FAILED"
+      - name: Build project
+        run: npm run build
 
-      - name: Build & Deploy
-        if: success()  # only run if SSH worked above
-        env:
-          PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
-          HOSTNAME: 4.150.184.113
-          USERNAME: azureuser
-          PROD_ENV_FILE: ${{ secrets.ENV }}
-        run: |
-          echo "$PRIVATE_KEY" > private_key.pem
-          chmod 600 private_key.pem
+      - name: Archive build artifacts
+        run: tar -czf build.tar.gz build package.json package-lock.json
 
-          ssh -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} '
-            set -e
-            sudo su -
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifact
+          path: build.tar.gz
 
-            echo "🚀 Starting deployment on $(hostname)"
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
 
-            # install nvm & node
-            if ! command -v nvm &> /dev/null; then
-              curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
-              . ~/.nvm/nvm.sh
-              nvm install node
-            fi
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifact
+          path: .
 
-            sudo apt update -y
-            sudo apt install git -y
-            npm i -g pm2
+      - name: Copy files to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          source: "build.tar.gz"
+          target: "~/apps/"
 
-            # ensure app directory exists
-            mkdir -p ~/apps/backend
-            cd ~/apps/backend
-
-            # redeploy app
-            rm -rf Beyinc_Backend
-            git clone https://github.com/Beyinc/Beyinc_Backend.git
-            cd Beyinc_Backend
-
-            # lighter + safer install
-            NODE_OPTIONS="--max-old-space-size=1024" npm ci --omit=dev
-
-            # write environment variables
-            echo "$PROD_ENV_FILE" > config.env
-
-            # restart app with pm2
-            pm2 delete beyinc-backend-api || :
-            pm2 start server.js --name beyinc-backend-api
-            pm2 save
-          '
-
+      - name: SSH into VM and deploy
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd ~/apps
+            tar -xzf build.tar.gz -C ./app
+            cd ./app
+            npm install --only=production
+            pm2 restart server || pm2 start server.js --name myapp
 
 
 
