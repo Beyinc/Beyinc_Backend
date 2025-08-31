@@ -6,84 +6,90 @@ name: Deploy Node.js Backend
 on:
   push:
     branches: ["main"]
-  workflow_dispatch:
+  workflow_dispatch:   # allows manual triggering
 
 jobs:
-  build:
-    name: Prepare artifact
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - name: Install production dependencies
-        run: npm ci --omit=dev
-
-      - name: Package app for VM
-        run: |
-          tar -czf Beyinc_Backend.tar.gz \
-            server.js \
-            package.json \
-            package-lock.json \
-            .env \
-            routes \
-            controllers \
-            models \
-            utils \
-            middlewares \
-            public \
-            node_modules
-
-      - name: Upload artifact (optional)
-        uses: actions/upload-artifact@v4
-        with:
-          name: Beyinc_Backend
-          path: Beyinc_Backend.tar.gz
-
   deploy:
     name: Deploy to Azure VM
     runs-on: ubuntu-latest
-    needs: build
-
+    environment: azure
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: Beyinc_Backend
-          path: ./artifact
+      # Step 1: Checkout repository (optional, mainly for debugging or artifacts)
+      - uses: actions/checkout@v3
 
-      - name: Copy files to VM
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: 4.150.184.113
-          username: azureuser
-          key: ${{ secrets.AZURE_VM_KEY }}
-          source: ./artifact/Beyinc_Backend.tar.gz
-          target: ~/apps/backend
+      # Step 2: Debug output
+      - name: Debug Values
+        run: |
+          echo "👤 User: azureuser"
+          echo "🌍 Host: 4.150.184.113"
+          echo "🗝️ Private key length: $(echo '${{ secrets.AZURE_VM_KEY }}' | wc -c)"
 
-      - name: SSH into VM and deploy
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: 4.150.184.113
-          username: azureuser
-          key: ${{ secrets.AZURE_VM_KEY }}
-          script: |
+      # Step 3: Test SSH connection
+      - name: Test SSH Connection
+        env:
+          PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
+          HOSTNAME: 4.150.184.113
+          USERNAME: azureuser
+        run: |
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+          echo "➡️ Testing SSH to $USERNAME@$HOSTNAME ..."
+          ssh -vvv -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} \
+            "echo '✅ SSH connected on VM $(hostname)'" || echo "❌ SSH FAILED"
+
+      # Step 4: Deploy directly on VM
+      - name: Deploy on VM
+        env:
+          PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
+          HOSTNAME: 4.150.184.113
+          USERNAME: azureuser
+          PROD_ENV_FILE: ${{ secrets.ENV }}
+        run: |
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} '
+            set -e
+
+            echo "🚀 Starting deployment on $(hostname)"
+
+            # install nvm & node if missing
+            if ! command -v nvm &> /dev/null; then
+              curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+              . ~/.nvm/nvm.sh
+              nvm install node
+            fi
+
+            sudo apt update -y
+            sudo apt install git -y
+            npm i -g pm2
+
+            # ensure backend directory exists
+            mkdir -p ~/apps/backend
             cd ~/apps/backend
-            # Remove old folder and extract new
-            rm -rf Beyinc_Backend
-            mkdir -p Beyinc_Backend
-            tar -xzf Beyinc_Backend.tar.gz -C Beyinc_Backend
+
+            # remove old repo if exists
+            if [ -d "Beyinc_Backend" ]; then
+              rm -rf Beyinc_Backend
+            fi
+
+            # clone repo fresh
+            git clone https://github.com/Beyinc/Beyinc_Backend.git
             cd Beyinc_Backend
-            # No npm install needed, node_modules already included
+
+            # install only production dependencies (lightweight)
+            npm install --production
+
+            # write environment variables
+            echo "$PROD_ENV_FILE" > config.env
+
+            # restart pm2 process
             pm2 delete beyinc-backend-api || :
             pm2 start server.js --name beyinc-backend-api
             pm2 save
+
+            echo "✅ Deployment completed"
+          '
 
 
 
