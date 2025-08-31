@@ -17,7 +17,7 @@ jobs:
 
       - name: Debug Values
         run: |
-          echo "👤 Username: ${{ secrets.VMUSERNAME }}"
+          echo  azureuser
           echo "🌍 Host: 4.150.184.113"
           echo "🗝️ Private key length: $(echo '${{ secrets.AZURE_VM_KEY }}' | wc -c)"
 
@@ -25,7 +25,7 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
           HOSTNAME: 4.150.184.113
-          USERNAME: ${{ secrets.VMUSERNAME }}
+          USERNAME: azureuser
         run: |
           echo "$PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
@@ -38,7 +38,7 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
           HOSTNAME: 4.150.184.113
-          USERNAME: ${{ secrets.VMUSERNAME }}
+          USERNAME: azureuser
           PROD_ENV_FILE: ${{ secrets.ENV }}
         run: |
           echo "$PRIVATE_KEY" > private_key.pem
