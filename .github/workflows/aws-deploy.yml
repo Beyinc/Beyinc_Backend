@@ -1,80 +1,49 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-name: Build and Deploy
+name: Deploy Node.js Backend
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:  # optional manual trigger
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build project
-        run: npm run build
-
-      - name: Archive build artifacts
-        run: tar -czf build.tar.gz build package.json package-lock.json
-        
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build
-          path: build/
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build
-          path: build/
-
-
   deploy:
     runs-on: ubuntu-latest
-    needs: build
 
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: build-artifact
-          path: .
-
-      - name: Copy files to VM
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          source: "build.tar.gz"
-          target: "~/apps/"
-
-      - name: SSH into VM and deploy
+      - name: SSH and Deploy to VM
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
-            cd ~/apps
-            tar -xzf build.tar.gz -C ./app
-            cd ./app
-            npm install --only=production
-            pm2 restart server || pm2 start server.js --name myapp
+            set -e
+            echo "🚀 Deploying backend on $(hostname)"
 
+            # navigate to app folder
+            mkdir -p ~/apps/backend
+            cd ~/apps/backend
+
+            # pull latest code
+            if [ -d Beyinc_Backend ]; then
+              cd Beyinc_Backend
+              git reset --hard
+              git pull origin main
+            else
+              git clone https://github.com/Beyinc/Beyinc_Backend.git
+              cd Beyinc_Backend
+            fi
+
+            # install production dependencies only
+            npm install --only=production
+
+            # restart server with pm2
+            pm2 delete beyinc-backend-api || :
+            pm2 start server.js --name beyinc-backend-api
+            pm2 save
 
 
 
