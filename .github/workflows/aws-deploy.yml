@@ -17,7 +17,7 @@ jobs:
 
       - name: Debug Values
         run: |
-          echo  azureuser
+          echo "👤 User: azureuser"
           echo "🌍 Host: 4.150.184.113"
           echo "🗝️ Private key length: $(echo '${{ secrets.AZURE_VM_KEY }}' | wc -c)"
 
@@ -62,16 +62,16 @@ jobs:
             npm i -g pm2
 
             # ensure app directory exists
-
             mkdir -p ~/apps/backend
             cd ~/apps/backend
-
 
             # redeploy app
             rm -rf Beyinc_Backend
             git clone https://github.com/Beyinc/Beyinc_Backend.git
             cd Beyinc_Backend
-            npm install --production
+
+            # lighter + safer install
+            NODE_OPTIONS="--max-old-space-size=1024" npm ci --omit=dev
 
             # write environment variables
             echo "$PROD_ENV_FILE" > config.env
