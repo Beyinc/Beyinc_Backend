@@ -62,8 +62,10 @@ jobs:
             npm i -g pm2
 
             # ensure app directory exists
-            mkdir -p /home/${USERNAME}/apps/backend
-            cd /home/${USERNAME}/apps/backend
+
+            mkdir -p ~/apps/backend
+            cd ~/apps/backend
+
 
             # redeploy app
             rm -rf Beyinc_Backend
