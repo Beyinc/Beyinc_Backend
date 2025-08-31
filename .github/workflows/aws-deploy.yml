@@ -1,53 +1,86 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 
-name: Deploy Node.js Backend
+name: Deploy
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:  # optional manual trigger
+    branches: ["main"]
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  Deploy:
+    name: Deploy to Azure VM
     runs-on: ubuntu-latest
-
+    environment: azure
     steps:
-      - name: SSH and Deploy to VM
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: 4.150.184.113            # hardcoded VM IP
-          username: azureuser            # SSH login user
-          key: ${{ secrets.AZURE_VM_KEY }}  # private key from GitHub secrets
-          script: |
-            set -e
-            echo "🚀 Deploying backend on $(host)"
+      - uses: actions/checkout@v3
 
-            # navigate to app folder
+      - name: Debug Values
+        run: |
+          echo "👤 User: azureuser"
+          echo "🌍 Host: 4.150.184.113"
+          echo "🗝️ Private key length: $(echo '${{ secrets.AZURE_VM_KEY }}' | wc -c)"
+
+      - name: Test SSH Connection
+        env:
+          PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
+          HOSTNAME: 4.150.184.113
+          USERNAME: azureuser
+        run: |
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+
+          echo "➡️ Testing SSH to $USERNAME@$HOSTNAME ..."
+          ssh -vvv -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} "echo '✅ SSH connected on VM $(hostname)'" || echo "❌ SSH FAILED"
+
+      - name: Deploy Node.js Backend
+        if: success()  # only run if SSH worked above
+        env:
+          PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
+          HOSTNAME: 4.150.184.113
+          USERNAME: azureuser
+          PROD_ENV_FILE: ${{ secrets.ENV }}
+        run: |
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} '
+            set -e
+
+            echo "🚀 Starting deployment on $(hostname)"
+
+            # install nvm & node if not present
+            if ! command -v nvm &> /dev/null; then
+              curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+              . ~/.nvm/nvm.sh
+              nvm install node
+            fi
+
+            sudo apt update -y
+            sudo apt install git -y
+            npm i -g pm2
+
+            # ensure app directory exists
             mkdir -p ~/apps/backend
             cd ~/apps/backend
 
-            # pull latest code
-            if [ -d Beyinc_Backend ]; then
-              cd Beyinc_Backend
-              git reset --hard
-              git pull origin main
-            else
-              git clone https://github.com/Beyinc/Beyinc_Backend.git
-              cd Beyinc_Backend
-            fi
+            # redeploy app
+            rm -rf Beyinc_Backend
+            git clone https://github.com/Beyinc/Beyinc_Backend.git
+            cd Beyinc_Backend
 
-            # install production dependencies only
-            npm install --only=production
+            # install only production dependencies (lighter + safer)
+            NODE_OPTIONS="--max-old-space-size=1024" npm ci --omit=dev
 
-            # write environment variables if secret provided
-            echo "${{ secrets.ENV }}" > config.env
+            # write environment variables
+            echo "$PROD_ENV_FILE" > config.env
 
-            # restart server with pm2
+            # restart app with pm2
             pm2 delete beyinc-backend-api || :
             pm2 start server.js --name beyinc-backend-api
             pm2 save
+          '
 
 
 
