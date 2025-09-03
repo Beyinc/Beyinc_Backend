@@ -8,6 +8,15 @@ const PitchCommentSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
         },
+        // Add these fields to your schema
+
+    // ... existing fields ...
+    attachments: [{
+      url: String,
+      type: String, // 'image' or 'video'
+      public_id: String
+    }],
+
         likes: [
             {
                 type: mongoose.Schema.Types.ObjectId,
