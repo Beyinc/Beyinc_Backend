@@ -43,7 +43,7 @@ const app = express();
 app.use(cors({origin:['http://localhost:3000','https://beyinc-frontend.vercel.app', 'https://icy-rock-0858e3b1e.2.azurestaticapps.net' ]}));
 app.use(cors());
 
-const path = require("path"
+const path = require("path")
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
