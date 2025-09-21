@@ -40,7 +40,7 @@ const morgan = require("morgan");
 
 const app = express();
 // MIDDLEWARES
-app.use(cors({origin:['http://localhost:3000','https://beyinc-frontend.vercel.app', 'https://yellow-mushroom-0aec0e610.2.azurestaticapps.net' ]}));
+app.use(cors({origin:['http://localhost:3000','https://beyinc-frontend.vercel.app','https://yellow-mushroom-0aec0e610.2.azurestaticapps.net']}));
 app.use(cors());
 
 const path = require("path")
