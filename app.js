@@ -40,7 +40,20 @@ const morgan = require("morgan");
 
 const app = express();
 // MIDDLEWARES
-app.use(cors({origin:['http://localhost:3000','https://beyinc-frontend.vercel.app','https://yellow-mushroom-0aec0e610.2.azurestaticapps.net','https://www.bloomr.world']}));
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'https://beyinc-frontend.vercel.app',
+    'https://yellow-mushroom-0aec0e610.2.azurestaticapps.net',
+    'https://www.bloomr.world'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true, // if you send cookies or auth headers
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // handle preflight for all routes
 
 const path = require("path")
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
