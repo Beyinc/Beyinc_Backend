@@ -176,6 +176,7 @@ const userSchema = new mongoose.Schema(
         "GovernmentBody",
         "Corporate",
         "TechPartner",
+        ""
       ],
     },
 
