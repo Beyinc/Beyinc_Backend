@@ -33,13 +33,35 @@ const { verifyAccessToken } = require("./helpers/jwt_helpers");
 const userProfileRoutes = require('./routes/userProfileRoutes');
 const filterRoutes = require('./routes/filterRoutes');
 const paymentController = require('./controllers/paymentController.js')
+const postLiveChatRouter = require('./routes/postLiveChatRouter');
 
 const cors = require("cors");
 const morgan = require("morgan");
 
 const app = express();
 // MIDDLEWARES
-app.use(cors());
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'https://beyinc-frontend.vercel.app',
+    'https://yellow-mushroom-0aec0e610.2.azurestaticapps.net',
+    'https://www.bloomr.world'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true, // if you send cookies or auth headers
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // handle preflight for all routes
+
+const path = require("path")
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+
+// app.js
+app.use(express.json({ limit: "10mb" }));
+
 app.use(morgan("tiny"));
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
@@ -56,7 +78,7 @@ app.use("/api/chat", verifyAccessToken, chatRouter);
 app.use("/api/dashboard", verifyAccessToken, dashboardRouter);
 
 app.use("/api/userDetails", verifyAccessToken, userRouter);
-
+app.get("/api/newProfiles", verifyAccessToken, userProfileController.getNewProfiles);
 app.use("/api/test", testingRouter);
 
 
@@ -69,14 +91,13 @@ app.use("/api/notification", verifyAccessToken, NotificationRouter);
 
 app.use("/api/pitch", verifyAccessToken, pitchRouter);
 
-app.use("/api/notification", verifyAccessToken, NotificationRouter);
 
 app.use("/api/posts", verifyAccessToken, PostRouter);
 
 
 app.use("/api/role", rolerouter);
 
-app.use("/api/payment", verifyAccessToken, paymentRouter);
+// app.use("/api/payment", verifyAccessToken, paymentRouter);
 
 
 app.use("/api/referral", verifyAccessToken, referralRouter);
@@ -94,25 +115,11 @@ app.use("/api/professionalProfile", verifyAccessToken, professionalProfileRouter
 
 
 
-// app.post("/api/saveEducationDetails", userProfileController.SaveEducationDetails);
-// app.post("/api/deleteEducationDetails", userProfileController.DeleteEducationDetails);
-// app.post("/api/SaveExperienceDetails", userProfileController.SaveExperienceDetails);
-// app.post("/api/deleteExperienceDetails", userProfileController.DeleteExperienceDetails);
-// app.post("/api/getExperienceDetails", userProfileController.GetExperienceDetails);
-// app.post("/api/getEducationDetails", userProfileController.GetEducationDetails);
-// app.post("/api/updateEducationDetails", userProfileController.UpdateEducationDetails);
-// app.post("/api/updateExperienceDetails", userProfileController.UpdateExperienceDetails);
-// app.post("/api/createAbout", userProfileController.CreateAbout);
-// app.post("/api/getabout", userProfileController.ReadAbout);
-
-
-app.use("/api", userProfileRoutes);  // Router without verifyAccessToken
-
-
-
 app.use('/api',verifyAccessToken, userProfileRoutes);
 
 app.use('/api',verifyAccessToken,filterRoutes);
+
+app.use('/api/postLiveChat', verifyAccessToken, postLiveChatRouter);
 
 app.get("/api/searchProfiles", verifyAccessToken, searchController.searchProfiles);
 

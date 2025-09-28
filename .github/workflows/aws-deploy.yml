@@ -1,93 +1,163 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
 name: Deploy
 
 on:
   push:
     branches: ["main"]
+  workflow_dispatch:
 
 jobs:
   Deploy:
-    name: Deploy to EC2
+    name: Deploy to Azure VM
     runs-on: ubuntu-latest
-    environment: aws-deploy
+    environment: azure
     steps:
       - uses: actions/checkout@v3
-      - name: Build & Deploy
-        env:
-          PRIVATE_KEY: ${{secrets.AWS_SSH_KEY}}
-          HOSTNAME: ${{secrets.AWS_PUBLIC_KEY}}
-          PROD_ENV_FILE: ${{secrets.PROD_ENV_FILE}}
 
+      - name: Debug Values
         run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${HOSTNAME} '
-            sudo su -
-            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
-            . ~/.nvm/nvm.sh
-            nvm install node
+          echo "👤 User: azureuser"
+          echo "🌍 Host: 4.150.184.113"
+          echo "🗝️ Private key length: $(echo '${{ secrets.AZURE_VM_KEY }}' | wc -c)"
+
+      - name: Test SSH Connection
+        env:
+          PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
+          HOSTNAME: 4.150.184.113
+          USERNAME: azureuser
+        run: |
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+
+          echo "➡️ Testing SSH to $USERNAME@$HOSTNAME ..."
+          ssh -vvv -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} \
+          "echo '✅ SSH connected on VM $(hostname)'" || echo "❌ SSH FAILED"
+
+      - name: Deploy Node.js backend
+        env:
+          PRIVATE_KEY: ${{ secrets.AZURE_VM_KEY }}
+          HOSTNAME: 4.150.184.113
+          USERNAME: azureuser
+          PROD_ENV_FILE: ${{ secrets.ENV }}
+        run: |
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ${USERNAME}@${HOSTNAME} '
+            set -e
+
+            # Add swap only if it does not exist
+            if ! swapon --show | grep -q "/swapfile"; then
+              echo "⚡ Adding 2GB swap memory"
+              sudo fallocate -l 2G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+              sudo chmod 600 /swapfile
+              sudo mkswap /swapfile
+              sudo swapon /swapfile
+              sudo bash -c "echo \"/swapfile none swap sw 0 0\" >> /etc/fstab"
+              echo "✅ Swap memory added"
+            else
+              echo "✅ Swap memory already exists"
+            fi
+
+            echo "🚀 Starting deployment on $(hostname)"
+
+            # install nvm & node if not present
+            if ! command -v nvm &> /dev/null; then
+              curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+              . ~/.nvm/nvm.sh
+              nvm install node
+            fi
+
+            sudo apt update -y
             sudo apt install git -y
             npm i -g pm2
-            rm -rf ./Beyinc_Backend
+
+            # ensure app directory exists
+            mkdir -p ~/apps/backend
+            cd ~/apps/backend
+
+            # redeploy app: delete old folder if exists
+            if [ -d "Beyinc_Backend" ]; then
+              rm -rf Beyinc_Backend
+            fi
             git clone https://github.com/Beyinc/Beyinc_Backend.git
-            cd ./Beyinc_Backend
-            npm i
-            touch config.env
+            cd Beyinc_Backend
 
-            echo PORT=${{ secrets.PORT }} >> config.env
-            echo API_KEY=${{ secrets.API_KEY }} >> config.env
-            echo BEYINC_SITE=${{ secrets.BEYINC_SITE }} >> config.env
-            echo ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }} >> config.env
-            echo ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }} >> config.env
-            echo REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }} >> config.env
-            echo MONGODB_URI=${{ secrets.MONGODB_URI }} >> config.env
-            echo EMAIL=${{ secrets.EMAIL }} >> config.env
-            echo EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }} >> config.env
-            echo CLOUDINARY_NAME=${{ secrets.CLOUDINARY_NAME }} >> config.env
-            echo CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }} >> config.env
-            echo CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }} >> config.env
-            echo TWILIO_ACCOUNTSID=${{ secrets.TWILIO_ACCOUNTSID }} >> config.env
-            echo TWILIO_AUTHTOKEN=${{ secrets.TWILIO_AUTHTOKEN }} >> config.env
-            echo TWILIO_PHONE=${{ secrets.TWILIO_PHONE }} >> config.env
+            # install production dependencies
+            NODE_OPTIONS="--max-old-space-size=1024" npm ci --omit=dev
 
-            pm2 delete beyinc-backend-api || : && pm2 start server.js --name 'beyinc-backend-api'
+            # write environment variables
+            echo "$PROD_ENV_FILE" > config.env
+
+            # restart app with pm2
+            pm2 delete beyinc-backend-api || :
+            pm2 start server.js --name beyinc-backend-api
             pm2 save
-              '
+          '
 
-# name: Deploy to AWS
+
+
+
+# name: Deploy
+
 # on:
 #   push:
-#     branches:
-#       - "main"
-# env:
-#   AWS_REGION: ap-south-1
-#   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
-#   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#   PRIVATE_SSH_KEY: ${{ secrets.AWS_SSH_KEY }}
-#   SERVER_PUBLIC_IP: ${{ secrets.AWS_PUBLIC_KEY }}
-#   PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
+#     branches: ["main"]
 
 # jobs:
-#   deploy:
+#   Deploy:
+#     name: Deploy to EC2
 #     runs-on: ubuntu-latest
+#     environment: aws-deploy
 #     steps:
-#       - name: Checkout
-#         uses: actions/checkout@v3
-#       - name: Deploy backend to EC2
+#       - uses: actions/checkout@v3
+#       - name: Build & Deploy
 #         env:
-#           AWS_DEFAULT_REGION: ap-south-1
-#         uses: appleboy/ssh-action@v0.1.10
-#         with:
-#           host: ${{ env.SERVER_PUBLIC_IP }}
-#           username: ubuntu
-#           key: ${{ env.PRIVATE_SSH_KEY }}
-#           envs: PRIVATE_SSH_KEY,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_DEFAULT_REGION,AWS_REGION,PROD_ENV_FILE
-#           script: |-
-#             sudo su
+#           PRIVATE_KEY: ${{secrets.AWS_SSH_KEY}}
+#           HOSTNAME: ${{secrets.AWS_PUBLIC_KEY}}
+#           PROD_ENV_FILE: ${{secrets.PROD_ENV_FILE}}
+
+#         run: |
+#           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+#           ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${HOSTNAME} '
+#             sudo su -
+#             curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+#             . ~/.nvm/nvm.sh
+#             nvm install node
 #             sudo apt install git -y
+#             npm i -g pm2
+#             rm -rf ./Beyinc_Backend
 #             git clone https://github.com/Beyinc/Beyinc_Backend.git
 #             cd ./Beyinc_Backend
+#             npm i
 #             touch config.env
-#             echo "${{ secrets.PROD_ENV_FILE }}" > config.env
-#             pm2 delete beyinc-backend-api || : && pm2 start server.js -i 1 --name 'beyinc-backend-api'
+
+#             echo PORT=${{ secrets.PORT }} >> config.env
+#             echo API_KEY=${{ secrets.API_KEY }} >> config.env
+#             echo BEYINC_SITE=${{ secrets.BEYINC_SITE }} >> config.env
+#             echo ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }} >> config.env
+#             echo ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }} >> config.env
+#             echo REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }} >> config.env
+#             echo MONGODB_URI=${{ secrets.MONGODB_URI }} >> config.env
+#             echo EMAIL=${{ secrets.EMAIL }} >> config.env
+#             echo EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }} >> config.env
+#             echo CLOUDINARY_NAME=${{ secrets.CLOUDINARY_NAME }} >> config.env
+#             echo CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }} >> config.env
+#             echo CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }} >> config.env
+#             echo TWILIO_ACCOUNTSID=${{ secrets.TWILIO_ACCOUNTSID }} >> config.env
+#             echo TWILIO_AUTHTOKEN=${{ secrets.TWILIO_AUTHTOKEN }} >> config.env
+#             echo TWILIO_PHONE=${{ secrets.TWILIO_PHONE }} >> config.env
+
+#             echo RAZORPAY_APT_SECRET=${{ secrets.RAZORPAY_APT_SECRET }} >> config.env
+#             echo RAZORPAY_API_KEY=${{ secrets.RAZORPAY_API_KEY }} >> config.env
+#             echo YOUR_CLIENT_ID=${{ secrets.YOUR_CLIENT_ID }} >> config.env
+#             echo YOUR_CLIENT_SECRET=${{ secrets.YOUR_CLIENT_SECRET }} >> config.env
+#             echo YOUR_REDIRECT_URL=${{ secrets.YOUR_REDIRECT_URL }} >> config.env
+
+#             pm2 delete beyinc-backend-api || : && pm2 start server.js --name 'beyinc-backend-api'
 #             pm2 save
+#               '
+
+

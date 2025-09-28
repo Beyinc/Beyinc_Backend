@@ -63,10 +63,19 @@ exports.getPost = async (req, res, next) => {
 
 exports.getAllPosts = async (req, res, next) => {
   try {
-    const { page, pageSize } = req.body;
-    const skip = page;
-    const limit = pageSize - page;
+    // const { page, pageSize } = req.body;
+    // const skip = page;
+    // const limit = pageSize - page;
+    // console.log("page1-",page)
+    // console.log("page-",pageSize);
+    // console.log("posts size-",limit);
 
+const { page = 1, pageSize = 10 } = req.body;
+const skip = (page - 1) * pageSize;
+const limit = pageSize;
+
+console.log("skip-",skip);
+console.log("limit-",limit);
     const data = await Posts.find({})
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -99,6 +108,7 @@ exports.getAllPosts = async (req, res, next) => {
         path: "openDiscussionRequests",
         select: ["userName", "image", "role", "_id"],
       });
+      console.log(data);
     return res.status(200).json(data);
   } catch (error) {
     console.log(error);
@@ -314,7 +324,7 @@ exports.editPost = async (req, res, next) => {
 
     const PostDoesExist = await Posts.findOne({ _id: id });
     let result = "";
-    if (image.public_id == undefined) {
+    if (image && !image.public_id) {
       if (PostDoesExist?.image.public_id !== undefined) {
         await cloudinary.uploader.destroy(
           PostDoesExist?.image.public_id,
@@ -390,7 +400,7 @@ exports.editPost = async (req, res, next) => {
 
 exports.reportPost = async (req, res, next) => {
   try {
-    const { id, reportBy, reason } = req.body;
+    const { id, reportBy, reason,reportType} = req.body;
     const PostExist = await Posts.findOne({ _id: id })
       .populate({
         path: "createdBy",
@@ -432,6 +442,7 @@ exports.reportPost = async (req, res, next) => {
             user: reportBy,
             reportedTime: new Date(),
             reason: reason,
+            reportType:reportType
           },
         },
       }
@@ -775,97 +786,156 @@ exports.deletePost = async (req, res, next) => {
   try {
     const { id } = req.body;
     const result = await Posts.findOne({ _id: id });
-    await cloudinary.uploader.destroy(
-      result.image.public_id,
-      (error, result) => {
-        if (error) {
-          console.error("Error deleting image:", error);
-        } else {
-          console.log("Image deleted successfully:", result);
+    if(result.image.public_id){
+
+      await cloudinary.uploader.destroy(
+        result.image.public_id,
+        (error, result) => {
+          if (error) {
+            console.error("Error deleting image:", error);
+          } else {
+            console.log("Image deleted successfully:", result);
+          }
         }
-      }
-    );
+      );
+    }
     await PostComment.deleteMany({ postId: id });
     await Posts.deleteOne({ _id: id });
+    
     return res.status(200).json("Post deleted");
   } catch (error) {
-    console.log(error);
+    console.log('error deleting post:', error);
+    return res.status(500).json({ message: "Server error while deleting post." });
   }
 };
 
 // filterposts
-exports.filterposts = async (req, res, next) => {
-  
-  try {
-    // const { people, sortOption, tags, selectedPostType } = req.body; // Extract people, sortOption, and tags from the request body
-    const { people, sortOption, tags , public: isPublic, private: isPrivate } = req.body; // Extract people, sortOption, and tags from the request body
+// exports.filterposts = async (req, res, next) => {
 
-    // Create the filter object
+//   try {
+//     // const { people, sortOption, tags, selectedPostType } = req.body; // Extract people, sortOption, and tags from the request body
+//     const { people, sortOption, tags, public: isPublic, private: isPrivate } = req.body; // Extract people, sortOption, and tags from the request body
+
+//     // Create the filter object
+//     const filter = {};
+
+//     // Search for posts by people (username) if 'people' is provided
+//     if (people) {
+//       const users = await User.find({ userName: { $regex: people, $options: 'i' } }).select('_id');
+
+//       // const users = await User.find({
+//       //   userName: { $regex: people, $options: "i" },
+//       // }).select("_id");
+//       const userIds = users.map((user) => user._id);
+//       filter.createdBy = { $in: userIds };
+//     }
+
+//     // Search for posts by tags (in 'type') if 'tags' is provided
+//     if (tags && tags.length > 0) {
+//       filter.type = { $in: tags }; // Match 'type' with any value from the 'tags' array
+//     }
+
+//     // Add filter for posts created within the last 1 day if sortOption is 'recent'
+//     if (sortOption === "recent") {
+//       const oneDayAgo = new Date();
+//       oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+//       filter.createdAt = { $gte: oneDayAgo };
+//     }
+
+//     if (isPublic) {
+//       filter.visibility = "public";
+//     }
+//     if (isPrivate) {
+//       filter.visibility = "private";
+
+//     }
+
+//     // Fetch posts that match the filter
+//     const filteredPosts = await Posts.find(filter)
+//       .populate({
+//         path: "createdBy",
+//         select: ["userName", "image", "role", "_id"],
+//       })
+//       .populate({
+//         path: "tags",
+//         select: ["userName", "image", "role", "_id"],
+//       })
+//       .populate({
+//         path: "pitchId",
+//         select: ["title", "_id"],
+//       })
+//       .populate({
+//         path: "likes",
+//         select: ["userName", "image", "role", "_id"],
+//       })
+//       .populate({
+//         path: "disLikes",
+//         select: ["userName", "image", "role", "_id"],
+//       })
+//       .populate({
+//         path: "openDiscussionTeam",
+//         select: ["userName", "image", "role", "_id"],
+//       })
+//       .populate({
+//         path: "openDiscussionRequests",
+//         select: ["userName", "image", "role", "_id"],
+//       });
+
+//     // Return the filtered posts
+//     return res.status(200).json(filteredPosts);
+//   } catch (error) {
+//     console.error("Error filtering posts:", error);
+//     return res.status(500).json({ message: "Server error." });
+//   }
+// };
+
+
+// Backend: filterposts
+exports.filterposts = async (req, res, next) => {
+  try {
+    const {
+      people,
+      sortOption,
+      tags,
+      public: isPublic,
+      private: isPrivate,
+      page = 1,
+      pageSize = 10,
+    } = req.body; // added page & pageSize
+
     const filter = {};
 
-    // Search for posts by people (username) if 'people' is provided
     if (people) {
-      const users = await User.find({ userName: { $regex: people, $options: 'i' } }).select('_id');
-
-      // const users = await User.find({
-      //   userName: { $regex: people, $options: "i" },
-      // }).select("_id");
+      const users = await User.find({ userName: { $regex: people, $options: "i" } }).select("_id");
       const userIds = users.map((user) => user._id);
       filter.createdBy = { $in: userIds };
     }
 
-    // Search for posts by tags (in 'type') if 'tags' is provided
     if (tags && tags.length > 0) {
-      filter.type = { $in: tags }; // Match 'type' with any value from the 'tags' array
+      filter.type = { $in: tags };
     }
 
-    // Add filter for posts created within the last 1 day if sortOption is 'recent'
     if (sortOption === "recent") {
       const oneDayAgo = new Date();
       oneDayAgo.setDate(oneDayAgo.getDate() - 1);
       filter.createdAt = { $gte: oneDayAgo };
     }
 
-    if (isPublic) {
-      filter.visibility = "public"; 
-    }
-    if (isPrivate) {
-      filter.visibility = "private";
+    if (isPublic) filter.visibility = "public";
+    if (isPrivate) filter.visibility = "private";
 
-    }
-
-    // Fetch posts that match the filter
     const filteredPosts = await Posts.find(filter)
-      .populate({
-        path: "createdBy",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "tags",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "pitchId",
-        select: ["title", "_id"],
-      })
-      .populate({
-        path: "likes",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "disLikes",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "openDiscussionTeam",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "openDiscussionRequests",
-        select: ["userName", "image", "role", "_id"],
-      });
+      .populate({ path: "createdBy", select: ["userName", "image", "role", "_id"] })
+      .populate({ path: "tags", select: ["userName", "image", "role", "_id"] })
+      .populate({ path: "pitchId", select: ["title", "_id"] })
+      .populate({ path: "likes", select: ["userName", "image", "role", "_id"] })
+      .populate({ path: "disLikes", select: ["userName", "image", "role", "_id"] })
+      .populate({ path: "openDiscussionTeam", select: ["userName", "image", "role", "_id"] })
+      .populate({ path: "openDiscussionRequests", select: ["userName", "image", "role", "_id"] })
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * pageSize)
+      .limit(pageSize);
 
-    // Return the filtered posts
     return res.status(200).json(filteredPosts);
   } catch (error) {
     console.error("Error filtering posts:", error);

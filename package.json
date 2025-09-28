@@ -1,12 +1,11 @@
 {
   "scripts": {
-    "start": "nodemon server.js",
-    "build": "node build.js"
+    "start": "nodemon server.js"
   },
   "dependencies": {
     "@hapi/joi": "^17.1.1",
     "bcrypt": "^5.1.1",
-    "cloudinary": "^1.41.1",
+    "cloudinary": "^1.41.3",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "dotenv": "^16.3.1",
@@ -22,6 +21,7 @@
     "nodemon": "^2.0.22",
     "pg": "^8.11.3",
     "razorpay": "^2.9.4",
+    "socket.io": "^4.8.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
     "textflow.js": "^0.1.4",
