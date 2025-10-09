@@ -40,6 +40,9 @@ const postSchema = new mongoose.Schema(
         "Hiring",
         "Opportunities",
         "Investment",
+        "Startup Expo",
+        "Startup Story",
+        "Open to work"
       ],
     },
     postTitle: {
