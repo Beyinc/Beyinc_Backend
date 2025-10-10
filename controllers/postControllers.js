@@ -216,6 +216,8 @@ exports.createPost = async (req, res, next) => {
       groupDiscussion,
       postTitle,
       visibility,
+      pollQuestion,
+      pollOptions,
     } = req.body;
 
     // Only upload the image if it's provided
@@ -226,13 +228,21 @@ exports.createPost = async (req, res, next) => {
       });
     }
 
+    let pollData = null;
+    if (pollQuestion && pollOptions?.length >= 2) {
+      pollData = {
+        question: pollQuestion,
+        options: pollOptions.map((text) => ({ text, votes: 0 })),
+        votes: [],
+      };
+    }
     const createdPost = await Posts.create({
       reported: false,
       description,
       postTitle,
       type,
       visibility,
-      createdBy: createdBy._id,
+      createdBy: createdBy?._id,
       ...(tags?.length && { tags: tags.map((m) => m._id) }), // Conditional tags
       ...(pitchId && { pitchId }), // Conditional pitchId
       ...(openDiscussion !== undefined && { openDiscussion }), // Conditional openDiscussion
@@ -240,8 +250,9 @@ exports.createPost = async (req, res, next) => {
       ...(fullDetails && { fullDetails }), // Conditional fullDetails
       ...(groupDiscussion && { groupDiscussion }), // Conditional groupDiscussion
       ...(uploadedImage && { image: uploadedImage }), // Conditional image
+      ...(pollData && { poll: pollData }),
     });
-    if (tags.length > 0) {
+    if (tags?.length > 0) {
       for (let i = 0; i < tags.length; i++) {
         await send_Notification_mail(
           tags[i].email,
@@ -775,8 +786,7 @@ exports.deletePost = async (req, res, next) => {
   try {
     const { id } = req.body;
     const result = await Posts.findOne({ _id: id });
-    if(result.image.public_id){
-
+    if (result.image.public_id) {
       await cloudinary.uploader.destroy(
         result.image.public_id,
         (error, result) => {
@@ -790,27 +800,36 @@ exports.deletePost = async (req, res, next) => {
     }
     await PostComment.deleteMany({ postId: id });
     await Posts.deleteOne({ _id: id });
-    
+
     return res.status(200).json("Post deleted");
   } catch (error) {
-    console.log('error deleting post:', error);
-    return res.status(500).json({ message: "Server error while deleting post." });
+    console.log("error deleting post:", error);
+    return res
+      .status(500)
+      .json({ message: "Server error while deleting post." });
   }
 };
 
 // filterposts
 exports.filterposts = async (req, res, next) => {
-
   try {
     // const { people, sortOption, tags, selectedPostType } = req.body; // Extract people, sortOption, and tags from the request body
-    const { people, sortOption, tags, public: isPublic, private: isPrivate } = req.body; // Extract people, sortOption, and tags from the request body
+    const {
+      people,
+      sortOption,
+      tags,
+      public: isPublic,
+      private: isPrivate,
+    } = req.body; // Extract people, sortOption, and tags from the request body
 
     // Create the filter object
     const filter = {};
 
     // Search for posts by people (username) if 'people' is provided
     if (people) {
-      const users = await User.find({ userName: { $regex: people, $options: 'i' } }).select('_id');
+      const users = await User.find({
+        userName: { $regex: people, $options: "i" },
+      }).select("_id");
 
       // const users = await User.find({
       //   userName: { $regex: people, $options: "i" },
@@ -836,7 +855,6 @@ exports.filterposts = async (req, res, next) => {
     }
     if (isPrivate) {
       filter.visibility = "private";
-
     }
 
     // Fetch posts that match the filter
@@ -875,5 +893,72 @@ exports.filterposts = async (req, res, next) => {
   } catch (error) {
     console.error("Error filtering posts:", error);
     return res.status(500).json({ message: "Server error." });
+  }
+};
+
+
+
+
+exports.voteOnPoll = async (req, res) => {
+  try {
+    const { votedBy, optionIndex, postId } = req.body;
+
+    // Validate inputs
+    if (!votedBy) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    if (optionIndex === undefined) {
+      return res.status(400).json({ message: "Option index is required" });
+    }
+
+    if (!postId) {
+      return res.status(400).json({ message: "Invalid post ID" });
+    }
+
+    // Find the post
+    const post = await Posts.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Check if the post has a poll
+    if (!post.poll || !post.poll.options || post.poll.options.length === 0) {
+      return res.status(400).json({ message: "This post has no poll" });
+    }
+
+    // Prevent user from voting multiple times
+    const hasVoted = post.poll.votes.some(
+      (vote) => vote.userId.toString() === votedBy
+    );
+    if (hasVoted) {
+      return res.status(400).json({ message: "User has already voted" });
+    }
+
+    // Check if optionIndex is valid
+    if (optionIndex < 0 || optionIndex >= post.poll.options.length) {
+      return res.status(400).json({ message: "Invalid option index" });
+    }
+
+
+    //enter the data in the db
+    post.poll.votes.push({
+      userId: votedBy,
+      optionIndex,
+    });
+
+    // Increment the vote count 
+    post.poll.options[optionIndex].votes += 1;
+
+    // Save the post
+    await post.save();
+
+    return res.status(200).json({
+      message: "Vote recorded successfully",
+      poll: post.poll,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error", error });
   }
 };

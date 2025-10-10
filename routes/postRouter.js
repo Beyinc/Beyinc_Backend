@@ -4,6 +4,8 @@ const postControllers = require('../controllers/postControllers');
 const router = express.Router();
 
 router.route("/createPost").post(postControllers.createPost);
+router.route("/voteOnPoll").post(postControllers.voteOnPoll);
+
 router.route("/deletePost").post(postControllers.deletePost);
 router.route("/editPost").post(postControllers.editPost);
 router.route("/likePost").post(postControllers.likePost);
