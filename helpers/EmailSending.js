@@ -11,7 +11,7 @@ const send_Notification_mail = async (to, subject, body, userName, fLink, ...arg
       auth: {
         user: process.env.EMAIL, // Replace with your Gmail email address
         pass: process.env.EMAIL_PASSWORD, // Replace with your Gmail password (or use an app password)
-      },
+    },
     });
 
     // Email options
@@ -25,9 +25,9 @@ const send_Notification_mail = async (to, subject, body, userName, fLink, ...arg
             <p>Hi, <b>${userName}</b></p>
             <p>${body}</p>
               <a href = ${process.env.BEYINC_SITE + fLink} style="display: inline-block; padding: 10px 20px; background-color: #6a73fa; color: #fff; text-decoration: none; border-radius: 5px;">Go to BeyInc</a>       
-              <p style="margin-top: 20px;">Best Regards,<br><b>BeyInc</b></p>
+              <p style="margin-top: 20px;">Best Regards,<br><b>Bloomr</b></p>
               <div style="margin-top: 20px; background-color: #f0f0f0; padding: 10px; border-radius: 5px; text-align: center;">
-                  <p style="margin: 0;">&copy; Copyright BeyInc</p>
+                  <p style="margin: 0;">&copy; Copyright Bloomr</p>
                 </div>
             </div>
               </div>
