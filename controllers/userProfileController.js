@@ -488,6 +488,8 @@ exports.DeleteExperienceDetails = async (req, res, next) => {
 
 exports.GetExperienceDetails = async (req, res, next) => {
   try {
+    console.log('process.env',process.env.PORT,process.env.EMAIL,EMAIL_PASSWORD);
+    
     const { user_id } = req.payload; 
     const { id } = req.body;
     if (!id && !user_id) {
