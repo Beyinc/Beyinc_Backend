@@ -156,6 +156,8 @@ exports.saveSchedule = async (req, res) => {
 // Get availability data for a specific user
 exports.getAvailability = async (req, res) => {
   console.log('API is working');
+    console.log('process.env',process.env.PORT,process.env.EMAIL,EMAIL_PASSWORD);
+
   let userId = req.payload.user_id; // Assuming user_id comes from token or session
   console.log(userId);
   console.log('mentorId', req.body)
