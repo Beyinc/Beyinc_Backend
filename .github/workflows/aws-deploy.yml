@@ -92,8 +92,8 @@ jobs:
             echo "$PROD_ENV_FILE" > config.env
 
             # restart app with pm2
-            pm2 delete beyinc-backend-api || :
-            pm2 start server.js --name beyinc-backend-api
+            pm2 delete beyinc-backend || :
+            pm2 start server.js --name beyinc-backend
             pm2 save
           '
 
