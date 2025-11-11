@@ -24,7 +24,7 @@ const send_Notification_mail = async (to, subject, body, userName, fLink, ...arg
             <img src="cid:logo" alt="Email Banner" style="display: block; margin: 0 auto 20px; max-width: 40%; height: auto;">
             <p>Hi, <b>${userName}</b></p>
             <p>${body}</p>
-              <a href = ${process.env.BEYINC_SITE + fLink} style="display: inline-block; padding: 10px 20px; background-color: #6a73fa; color: #fff; text-decoration: none; border-radius: 5px;">Go to BeyInc</a>       
+              <a href = ${process.env.BEYINC_SITE + fLink} style="display: inline-block; padding: 10px 20px; background-color: #6a73fa; color: #fff; text-decoration: none; border-radius: 5px;">Go to Bloomr</a>       
               <p style="margin-top: 20px;">Best Regards,<br><b>Bloomr</b></p>
               <div style="margin-top: 20px; background-color: #f0f0f0; padding: 10px; border-radius: 5px; text-align: center;">
                   <p style="margin: 0;">&copy; Copyright Bloomr</p>
