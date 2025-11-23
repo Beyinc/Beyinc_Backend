@@ -52,16 +52,14 @@ const corsOptions = {
   credentials: true, // if you send cookies or auth headers
 };
 
-app.use(cors(corsOptions));
+// Handle CORS preflight requests BEFORE body parsing middleware
 app.options('*', cors(corsOptions)); // handle preflight for all routes
+app.use(cors(corsOptions));
 
 const path = require("path")
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-
 // app.js
-app.use(express.json({ limit: "10mb" }));
-
 app.use(morgan("tiny"));
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
