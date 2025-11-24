@@ -36,50 +36,37 @@ exports.Redirect = async (req, res, next) => {
 
 
 async function authorize(userId, code) {
-    // First, try to retrieve the credentials from the database
+    // When an authorization code is provided, always exchange it for new tokens
+    // This handles both initial authorization and re-authorization scenarios
    
     try {
-      // Check if the database has any calendar records for the user
-      const calendarCount = await Calendar.countDocuments({});
-      
-      if (calendarCount === 0) {
-        console.log('No calendar records found in the database. Creating new credentials.');
-  
-        // If there are no records, directly exchange the authorization code for tokens
-        const { tokens } = await oauth2Client.getToken(code);
-        oauth2Client.setCredentials(tokens);
-  
-        console.log('New tokens:', tokens);
-        
-        // Save the new credentials to the database
-        await saveCredentials(userId, tokens);
-      } else {
-        // If calendar records exist, search for the user
-        const user = await Calendar.findOne({ userId });
-        console.log('Google credentials found:', user?.googleCredentials);
-  
-        if (user && user.googleCredentials) {
-          oauth2Client.setCredentials({
-            access_token: user.googleCredentials.accessToken,
-            refresh_token: user.googleCredentials.refreshToken,
-            expiry_date: user.googleCredentials.expiryDate.getTime(), // Convert Date to timestamp
-          });
-          console.log('Credentials set');
-        } else {
-          // No credentials found, proceed to get new tokens
-          console.log('No credentials found for the user');
-          const { tokens } = await oauth2Client.getToken(code);
-          oauth2Client.setCredentials(tokens);
-  
-          console.log('New tokens:', tokens);
-  
-          // Save the new credentials to the database
-          await saveCredentials(userId, tokens);
-        }
+      if (!code) {
+        throw new Error('Authorization code is required');
       }
+
+      console.log('Exchanging authorization code for new tokens...');
+      
+      // Always exchange the authorization code for new tokens
+      const { tokens } = await oauth2Client.getToken(code);
+      oauth2Client.setCredentials(tokens);
   
-      // Proceed with your application logic, such as listing events
-      await listEvents(oauth2Client);
+      console.log('New tokens received:', {
+        access_token: tokens.access_token ? 'present' : 'missing',
+        refresh_token: tokens.refresh_token ? 'present' : 'missing',
+        expiry_date: tokens.expiry_date
+      });
+      
+      // Save the new credentials to the database (this will update if they exist)
+      await saveCredentials(userId, tokens);
+  
+      // Try to list events as a verification step (optional - won't fail if API isn't enabled)
+      try {
+        await listEvents(oauth2Client);
+      } catch (listError) {
+        // Log the error but don't fail authorization if Calendar API isn't enabled
+        console.warn('Could not list events (API may not be enabled):', listError.message);
+        console.log('Authorization successful - tokens saved. Please enable Google Calendar API in Google Cloud Console if needed.');
+      }
       
       return 'Authorization successful!';
     } catch (error) {
@@ -231,7 +218,14 @@ async function createVideoConference(auth, eventDetails) {
         return response.data;
     } catch (error) {
         console.error('Error creating event:', error);
-        throw new Error('Error creating event');
+        
+        // Check if the error is due to Calendar API not being enabled
+        if (error.code === 403 && error.errors && error.errors[0]?.reason === 'accessNotConfigured') {
+            const errorMessage = error.errors[0]?.message || 'Google Calendar API is not enabled';
+            throw new Error(`Google Calendar API is not enabled. Please enable it in Google Cloud Console: ${errorMessage}`);
+        }
+        
+        throw new Error(`Error creating event: ${error.message || 'Unknown error'}`);
     }
 }
 
@@ -298,7 +292,21 @@ exports.book = async (req, res, next) => {
         
     } catch (error) {
         console.error('Error in booking:', error);
-        res.status(500).send('Error in booking the event.');
+        
+        // Provide more specific error messages
+        if (error.message && error.message.includes('Google Calendar API is not enabled')) {
+            return res.status(503).json({
+                success: false,
+                message: 'Google Calendar API is not enabled. Please contact the administrator to enable it in Google Cloud Console.',
+                error: error.message
+            });
+        }
+        
+        res.status(500).json({
+            success: false,
+            message: 'Error in booking the event.',
+            error: error.message || 'Unknown error'
+        });
     }
 };
 
