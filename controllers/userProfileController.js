@@ -19,7 +19,7 @@ exports.saveData = async (req, res) => {
   // if (experience && !Array.isArray(experience)) {
   //   return res.status(400).json({ message: "Invalid experience data." });
   // }
-
+ //
   // Validate education
   if (education && !Array.isArray(education)) {
     return res.status(400).json({ message: "Invalid education data." });
