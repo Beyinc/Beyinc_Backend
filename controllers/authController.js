@@ -23,7 +23,7 @@ const { generateUniqueCode } = require('../helpers/UniqueCode');
 exports.register = async (req, res, next) => {
   try {
     const { email, password, role, userName } = req.body;
-    console.log(req.body)
+    console.log("request reached register with this data",req.body)
     const freeDemoCode = {
       code: generateUniqueCode(),
       used: false
@@ -97,7 +97,7 @@ exports.register = async (req, res, next) => {
         image: userDetails.image?.url,
         verification: userDetails.verification,
         freeDemoCode: userDetails.freeDemoCode,
-        referralCode: userDetails.newReferralCode,
+        referralCode: userDetails.referralCode,
         referredTo: userDetails.referredto,
       },
       `${userDetails._id}`

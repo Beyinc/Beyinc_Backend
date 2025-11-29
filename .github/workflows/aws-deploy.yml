@@ -21,6 +21,10 @@ jobs:
           echo "👤 User: azureuser"
           echo "🌍 Host: 4.150.184.113"
           echo "🗝️ Private key length: $(echo '${{ secrets.AZURE_VM_KEY }}' | wc -c)"
+      
+      - name: Debug ENV length
+        run: |
+          echo "ENV Secret Length: $(echo '${{ secrets.ENV }}' | wc -c)"
 
       - name: Test SSH Connection
         env:
