@@ -38,7 +38,7 @@ exports.register = async (req, res, next) => {
     //   "referralCode": newReferralCode,
     //   "referredTo": referredto
     // });
-
+//
     // validating email and password
     const validating_email_password = await authSchema.validateAsync(req.body);
 
