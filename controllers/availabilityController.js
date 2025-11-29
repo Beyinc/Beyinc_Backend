@@ -156,6 +156,8 @@ exports.saveSchedule = async (req, res) => {
 // Get availability data for a specific user
 exports.getAvailability = async (req, res) => {
   console.log('API is working');
+    console.log('process.env',process.env.PORT,process.env.EMAIL,process.env.EMAIL_PASSWORD);
+
   let userId = req.payload.user_id; // Assuming user_id comes from token or session
   console.log(userId);
   console.log('mentorId', req.body)
@@ -347,6 +349,7 @@ exports.saveBooking = async (bookingData, createdEvent) => {
 
     const finalAmountValue = finalAmount || 0;
     const discountPercentValue = discountPercent || 0;
+    const descriptionValue = description || ''; // Provide default empty string if description is missing
 
     // Create a new booking record
     const newBooking = new Booking({
@@ -362,7 +365,7 @@ exports.saveBooking = async (bookingData, createdEvent) => {
       discountPercent: discountPercentValue,
       currency,
       title,
-      description,
+      description: descriptionValue,
       eventId,
       meetLink,
       status: "upcoming", // Default status

@@ -488,6 +488,7 @@ exports.DeleteExperienceDetails = async (req, res, next) => {
 
 exports.GetExperienceDetails = async (req, res, next) => {
   try {
+    
     const { user_id } = req.payload; 
     const { id } = req.body;
     if (!id && !user_id) {
