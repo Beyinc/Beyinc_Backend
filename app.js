@@ -40,10 +40,10 @@ const morgan = require("morgan");
 
 const app = express();
 // MIDDLEWARES
-<<<<<<< HEAD
+
 app.use(cors({origin:['http://localhost:3000','https://beyinc-frontend.vercel.app','https://yellow-mushroom-0aec0e610.2.azurestaticapps.net']}));
 app.use(cors());
-=======
+
 const corsOptions = {
   origin: [
     'http://localhost:3000',
@@ -59,7 +59,6 @@ const corsOptions = {
 // Handle CORS preflight requests BEFORE body parsing middleware
 app.options('*', cors(corsOptions)); // handle preflight for all routes
 app.use(cors(corsOptions));
->>>>>>> 39e21072ba52f94943ee862065d45b1a635551c7
 
 const path = require("path")
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
