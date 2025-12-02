@@ -19,6 +19,7 @@ const send_Notification_mail = require("../helpers/EmailSending");
 const jobTitles = require("../models/Roles");
 const Posts = require("../models/Posts");
 const PostComment = require("../models/PostCommentModel");
+const { ComplianceRegistrationInquiriesListInstance } = require("twilio/lib/rest/trusthub/v1/complianceRegistrationInquiries");
 
 exports.getPost = async (req, res, next) => {
   try {
@@ -941,4 +942,85 @@ exports.filterposts = async (req, res, next) => {
     console.error("Error filtering posts:", error);
     return res.status(500).json({ message: "Server error." });
   }
+};
+
+exports.reactToPost = async (req, res) => {
+    try {
+        const { postId, reactionType } = req.body;
+        const userId = req.payload.user_id;
+        const reactions = ["like", "innovative", "unique"];
+
+        if (!postId) {
+            return res
+                .status(404)
+                .json({ message: "No post found with the given id." });
+        }
+
+        if (!userId) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        if (!reactionType) {
+            return res
+                .status(400)
+                .json({ message: "Please provide a reaction." });
+        }
+
+        if (!reactions.includes(reactionType)) {
+            return res.status(400).json({ message: "Invalid reaction type." });
+        }
+
+        const post = await Posts.findById(postId);
+
+        if (!post) {
+            return res
+                .status(404)
+                .json({ message: "No post found with the given id." });
+        }
+
+        if (post.createdBy.toString() === userId) {
+            return res
+                .status(204)
+                .json({ message: "You cannot react to your own post." });
+        }
+
+        const reactionFieldMap = {
+            like: "likes",
+            innovative: "innovative",
+            unique: "unique",
+        };
+
+        const selectedReactionField = reactionFieldMap[reactionType];
+        const allReactionFields = Object.values(reactionFieldMap);
+
+        allReactionFields.forEach((field) => {
+            if (post[field]?.includes(userId)) {
+                post[field] = post[field].filter(
+                    (id) => id.toString() !== userId
+                );
+            }
+        });
+
+        if (post[selectedReactionField]?.includes(userId)) {
+            post[selectedReactionField] = post[selectedReactionField].filter(
+                (id) => id.toString() !== userId
+            );
+        } else {
+            post[selectedReactionField].push(userId);
+        }
+
+        await post.save();
+
+        return res.status(200).json({
+            message: "Reaction updated successfully.",
+            postId,
+            reactionType,
+        });
+    } catch (error) {
+        console.error("Error in reactToPost:", error);
+        return res.status(500).json({
+            message: "Something went wrong while reacting to the post.",
+            error: error.message,
+        });
+    }
 };
