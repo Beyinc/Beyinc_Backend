@@ -53,7 +53,7 @@ const userController = require("../controllers/userController");
  *       400:
  *         description: Invalid request payload
  */
-
+//
 
 
 router.route("/removeFollower").post(userController.removeFollower);
