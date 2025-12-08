@@ -399,7 +399,7 @@ exports.getBookingsMentor = async (req, res) => {
       .populate("userId", "email userName phone") // Populate userId with specific fields
       .exec();
 
-    console.log("Bookings found:", bookings); // Log the bookings retrieved
+    // console.log("Bookings found:", bookings); // Log the bookings retrieved
 
     // if (!bookings.length) {
     //   return res.status(400).json({ success: false, message: 'No bookings found for this mentor' });
@@ -431,7 +431,7 @@ exports.getBookingsUser = async (req, res) => {
       .populate("userId", "email userName phone") // Populate userId with specific fields
       .exec();
 
-    console.log("Bookings found:", bookings); // Log the bookings found
+    // console.log("Bookings found:", bookings); // Log the bookings found
 
     if (!bookings.length) {
       return res
