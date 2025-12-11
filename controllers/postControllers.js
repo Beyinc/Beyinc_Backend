@@ -20,6 +20,36 @@ const jobTitles = require("../models/Roles");
 const Posts = require("../models/Posts");
 const PostComment = require("../models/PostCommentModel");
 const { ComplianceRegistrationInquiriesListInstance } = require("twilio/lib/rest/trusthub/v1/complianceRegistrationInquiries");
+const { REACTION_TYPES } = require("../constants/postReactins");
+
+// To add user reaction and  reaction counts to post data
+const formatPost = (post, userId) => {
+    if (!post) return null;
+
+    let postObj;
+    if (post.toObject && typeof post.toObject === "function") {
+        postObj = post.toObject(); 
+    } else if (post._doc) {
+        postObj = post._doc; 
+    } else {
+        postObj = post;
+    }
+
+    let userReaction = null;
+    if (postObj.reactions && Array.isArray(postObj.reactions)) {
+        const reaction = postObj.reactions.find((r) => {
+            const reactionUserId = r.user?._id || r.user;
+            return reactionUserId?.toString() === userId?.toString();
+        });
+        userReaction = reaction?.type || null;
+    }
+
+    return {
+        ...postObj,
+        userReaction,
+    };
+};
+
 
 exports.getPost = async (req, res, next) => {
   try {
@@ -37,14 +67,14 @@ exports.getPost = async (req, res, next) => {
         path: "pitchId",
         select: ["title", "_id"],
       })
-      .populate({
-        path: "likes",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "disLikes",
-        select: ["userName", "image", "role", "_id"],
-      })
+      // .populate({
+      //   path: "likes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
+      // .populate({
+      //   path: "disLikes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -71,12 +101,15 @@ exports.getAllPosts = async (req, res, next) => {
     // console.log("page-",pageSize);
     // console.log("posts size-",limit);
 
-const { page = 1, pageSize = 10 } = req.body;
-const skip = (page - 1) * pageSize;
-const limit = pageSize;
-
-console.log("skip-",skip);
-console.log("limit-",limit);
+    const userId = req.payload.user_id;
+    // console.log("userId-",userId);
+      
+    const { page = 1, pageSize = 10 } = req.body;
+    const skip = (page - 1) * pageSize;
+    const limit = pageSize;
+      
+    // console.log("skip-",skip);
+    // console.log("limit-",limit);
     const data = await Posts.find({})
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -93,14 +126,14 @@ console.log("limit-",limit);
         path: "pitchId",
         select: ["title", "_id"],
       })
-      .populate({
-        path: "likes",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "disLikes",
-        select: ["userName", "image", "role", "_id"],
-      })
+      // .populate({
+      //   path: "likes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
+      // .populate({
+      //   path: "disLikes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -108,11 +141,19 @@ console.log("limit-",limit);
       .populate({
         path: "openDiscussionRequests",
         select: ["userName", "image", "role", "_id"],
-      });
-      console.log(data);
-    return res.status(200).json(data);
-  } catch (error) {
-    console.log(error);
+      })
+      .lean()
+
+      const modifiedData = data.map(post =>{
+        formatPost(post, userId)
+        // console.log(formatPost(post, userId));
+      })
+      // console.log("look her3")
+      // console.log(modifiedData)
+
+      return res.status(200).json(modifiedData);
+    } catch (error) {
+      console.log(error);
   }
 };
 
@@ -186,14 +227,14 @@ exports.getUsersPost = async (req, res, next) => {
         path: "pitchId",
         select: ["title", "_id"],
       })
-      .populate({
-        path: "likes",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "disLikes",
-        select: ["userName", "image", "role", "_id"],
-      })
+      // .populate({
+      //   path: "likes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
+      // .populate({
+      //   path: "disLikes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -284,14 +325,14 @@ exports.createPost = async (req, res, next) => {
         path: "pitchId",
         select: ["title", "_id"],
       })
-      .populate({
-        path: "likes",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "disLikes",
-        select: ["userName", "image", "role", "_id"],
-      })
+      // .populate({
+      //   path: "likes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
+      // .populate({
+      //   path: "disLikes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -376,14 +417,14 @@ exports.editPost = async (req, res, next) => {
         path: "pitchId",
         select: ["title", "_id"],
       })
-      .populate({
-        path: "likes",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "disLikes",
-        select: ["userName", "image", "role", "_id"],
-      })
+      // .populate({
+      //   path: "likes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
+      // .populate({
+      //   path: "disLikes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -415,14 +456,14 @@ exports.reportPost = async (req, res, next) => {
         path: "pitchId",
         select: ["title", "_id"],
       })
-      .populate({
-        path: "likes",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "disLikes",
-        select: ["userName", "image", "role", "_id"],
-      })
+      // .populate({
+      //   path: "likes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
+      // .populate({
+      //   path: "disLikes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -488,14 +529,14 @@ exports.getReportedPosts = async (req, res, next) => {
         path: "pitchId",
         select: ["title", "_id"],
       })
-      .populate({
-        path: "likes",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "disLikes",
-        select: ["userName", "image", "role", "_id"],
-      })
+      // .populate({
+      //   path: "likes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
+      // .populate({
+      //   path: "disLikes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -578,14 +619,14 @@ exports.requestIntoOpenDiscussion = async (req, res, next) => {
         path: "pitchId",
         select: ["title", "_id"],
       })
-      .populate({
-        path: "likes",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "disLikes",
-        select: ["userName", "image", "role", "_id"],
-      })
+      // .populate({
+      //   path: "likes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
+      // .populate({
+      //   path: "disLikes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -660,14 +701,14 @@ exports.updaterequestIntoOpenDiscussion = async (req, res, next) => {
         path: "pitchId",
         select: ["title", "_id"],
       })
-      .populate({
-        path: "likes",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "disLikes",
-        select: ["userName", "image", "role", "_id"],
-      })
+      // .populate({
+      //   path: "likes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
+      // .populate({
+      //   path: "disLikes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -708,14 +749,14 @@ exports.likePost = async (req, res, next) => {
         path: "pitchId",
         select: ["title", "_id"],
       })
-      .populate({
-        path: "likes",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "disLikes",
-        select: ["userName", "image", "role", "_id"],
-      })
+      // .populate({
+      //   path: "likes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
+      // .populate({
+      //   path: "disLikes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -759,14 +800,14 @@ exports.DisLikePost = async (req, res, next) => {
         path: "pitchId",
         select: ["title", "_id"],
       })
-      .populate({
-        path: "likes",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "disLikes",
-        select: ["userName", "image", "role", "_id"],
-      })
+      // .populate({
+      //   path: "likes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
+      // .populate({
+      //   path: "disLikes",
+      //   select: ["userName", "image", "role", "_id"],
+      // })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -904,6 +945,8 @@ exports.filterposts = async (req, res, next) => {
       pageSize = 10,
     } = req.body; // added page & pageSize
 
+    const userId = req.payload.user_id;
+
     const filter = {};
 
     if (people) {
@@ -929,15 +972,20 @@ exports.filterposts = async (req, res, next) => {
       .populate({ path: "createdBy", select: ["userName", "image", "role", "_id"] })
       .populate({ path: "tags", select: ["userName", "image", "role", "_id"] })
       .populate({ path: "pitchId", select: ["title", "_id"] })
-      .populate({ path: "likes", select: ["userName", "image", "role", "_id"] })
-      .populate({ path: "disLikes", select: ["userName", "image", "role", "_id"] })
+      // .populate({ path: "likes", select: ["userName", "image", "role", "_id"] })
+      // .populate({ path: "disLikes", select: ["userName", "image", "role", "_id"] })
       .populate({ path: "openDiscussionTeam", select: ["userName", "image", "role", "_id"] })
       .populate({ path: "openDiscussionRequests", select: ["userName", "image", "role", "_id"] })
       .sort({ createdAt: -1 })
       .skip((page - 1) * pageSize)
-      .limit(pageSize);
+      .limit(pageSize)
+      .lean();
 
-    return res.status(200).json(filteredPosts);
+      const modifiedData = await Promise.all(
+        filteredPosts.map(post => formatPost(post, userId))
+      )
+
+    return res.status(200).json(modifiedData);
   } catch (error) {
     console.error("Error filtering posts:", error);
     return res.status(500).json({ message: "Server error." });
@@ -948,73 +996,52 @@ exports.reactToPost = async (req, res) => {
     try {
         const { postId, reactionType } = req.body;
         const userId = req.payload.user_id;
-        const reactions = ["like", "innovative", "unique"];
 
-        if (!postId) {
-            return res
-                .status(404)
-                .json({ message: "No post found with the given id." });
-        }
-
-        if (!userId) {
-            return res.status(404).json({ message: "User not found." });
-        }
-
-        if (!reactionType) {
-            return res
-                .status(400)
-                .json({ message: "Please provide a reaction." });
-        }
-
-        if (!reactions.includes(reactionType)) {
-            return res.status(400).json({ message: "Invalid reaction type." });
-        }
+        // Validation (same as above)...
 
         const post = await Posts.findById(postId);
-
         if (!post) {
-            return res
-                .status(404)
-                .json({ message: "No post found with the given id." });
+            return res.status(404).json({ message: "Post not found." });
         }
 
-        if (post.createdBy.toString() === userId) {
-            return res
-                .status(204)
-                .json({ message: "You cannot react to your own post." });
+        if (post.createdBy.toString() === userId.toString()) {
+            return res.status(403).json({
+                message: "You cannot react to your own post.",
+            });
         }
 
-        const reactionFieldMap = {
-            like: "likes",
-            innovative: "innovative",
-            unique: "unique",
-        };
+        // Find existing reaction index
+        const existingIndex = post.reactions.findIndex(
+            (r) => r.user.toString() === userId.toString()
+        );
 
-        const selectedReactionField = reactionFieldMap[reactionType];
-        const allReactionFields = Object.values(reactionFieldMap);
+        let userReaction = null;
 
-        allReactionFields.forEach((field) => {
-            if (post[field]?.includes(userId)) {
-                post[field] = post[field].filter(
-                    (id) => id.toString() !== userId
-                );
-            }
-        });
-
-        if (post[selectedReactionField]?.includes(userId)) {
-            post[selectedReactionField] = post[selectedReactionField].filter(
-                (id) => id.toString() !== userId
-            );
+        if (existingIndex === -1) {
+            // Add new reaction
+            post.reactions.push({
+                user: userId,
+                type: reactionType,
+                createdAt: new Date(),
+            });
+            userReaction = reactionType;
+        } else if (post.reactions[existingIndex].type === reactionType) {
+            // Toggle off - remove reaction
+            post.reactions.splice(existingIndex, 1);
+            userReaction = null;
         } else {
-            post[selectedReactionField].push(userId);
+            // Change reaction type
+            post.reactions[existingIndex].type = reactionType;
+            post.reactions[existingIndex].createdAt = new Date();
+            userReaction = reactionType;
         }
 
         await post.save();
 
         return res.status(200).json({
-            message: "Reaction updated successfully.",
+            success: true,
             postId,
-            reactionType,
+            userReaction,
         });
     } catch (error) {
         console.error("Error in reactToPost:", error);

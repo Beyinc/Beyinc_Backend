@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { REACTION_TYPES } = require("../constants/postReactins");
 // category date private/public
 const postSchema = new mongoose.Schema(
   {
@@ -120,6 +121,12 @@ const postSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+
+    reactions: [{
+      user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      type: { type: String, enum: REACTION_TYPES },
+      createdAt: { type: Date, default: Date.now }
+    }],
 
     pitchId: {
       type: mongoose.Schema.Types.ObjectId,
