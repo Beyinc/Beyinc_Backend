@@ -1,0 +1,1 @@
+export const REACTION_TYPES = ['like','innovative','unique']
