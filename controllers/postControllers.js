@@ -974,13 +974,14 @@ exports.filterposts = async (req, res, next) => {
       .populate({ path: "pitchId", select: ["title", "_id"] })
       // .populate({ path: "likes", select: ["userName", "image", "role", "_id"] })
       // .populate({ path: "disLikes", select: ["userName", "image", "role", "_id"] })
+      .populate({ path: "reactions.user", select: ["userName", "image", "role", "_id"] })
       .populate({ path: "openDiscussionTeam", select: ["userName", "image", "role", "_id"] })
       .populate({ path: "openDiscussionRequests", select: ["userName", "image", "role", "_id"] })
       .sort({ createdAt: -1 })
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .lean();
-
+      
       const modifiedData = await Promise.all(
         filteredPosts.map(post => formatPost(post, userId))
       )
