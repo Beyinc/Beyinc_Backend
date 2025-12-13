@@ -75,6 +75,7 @@ exports.getPost = async (req, res, next) => {
       //   path: "disLikes",
       //   select: ["userName", "image", "role", "_id"],
       // })
+      .populate({ path: "reactions.user", select: ["userName", "image", "role", "_id"] })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -134,6 +135,7 @@ exports.getAllPosts = async (req, res, next) => {
       //   path: "disLikes",
       //   select: ["userName", "image", "role", "_id"],
       // })
+      .populate({ path: "reactions.user", select: ["userName", "image", "role", "_id"] })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -235,6 +237,7 @@ exports.getUsersPost = async (req, res, next) => {
       //   path: "disLikes",
       //   select: ["userName", "image", "role", "_id"],
       // })
+      .populate({ path: "reactions.user", select: ["userName", "image", "role", "_id"] })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -333,6 +336,7 @@ exports.createPost = async (req, res, next) => {
       //   path: "disLikes",
       //   select: ["userName", "image", "role", "_id"],
       // })
+      .populate({ path: "reactions.user", select: ["userName", "image", "role", "_id"] })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -425,6 +429,7 @@ exports.editPost = async (req, res, next) => {
       //   path: "disLikes",
       //   select: ["userName", "image", "role", "_id"],
       // })
+      .populate({ path: "reactions.user", select: ["userName", "image", "role", "_id"] })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -464,6 +469,7 @@ exports.reportPost = async (req, res, next) => {
       //   path: "disLikes",
       //   select: ["userName", "image", "role", "_id"],
       // })
+      .populate({ path: "reactions.user", select: ["userName", "image", "role", "_id"] })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -537,6 +543,7 @@ exports.getReportedPosts = async (req, res, next) => {
       //   path: "disLikes",
       //   select: ["userName", "image", "role", "_id"],
       // })
+      .populate({ path: "reactions.user", select: ["userName", "image", "role", "_id"] })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -627,6 +634,7 @@ exports.requestIntoOpenDiscussion = async (req, res, next) => {
       //   path: "disLikes",
       //   select: ["userName", "image", "role", "_id"],
       // })
+      .populate({ path: "reactions.user", select: ["userName", "image", "role", "_id"] })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -709,6 +717,7 @@ exports.updaterequestIntoOpenDiscussion = async (req, res, next) => {
       //   path: "disLikes",
       //   select: ["userName", "image", "role", "_id"],
       // })
+      .populate({ path: "reactions.user", select: ["userName", "image", "role", "_id"] })
       .populate({
         path: "openDiscussionTeam",
         select: ["userName", "image", "role", "_id"],
@@ -723,106 +732,107 @@ exports.updaterequestIntoOpenDiscussion = async (req, res, next) => {
   }
 };
 
-exports.likePost = async (req, res, next) => {
-  try {
-    const post = await Posts.findById(req.body.id);
+// exports.likePost = async (req, res, next) => {
+//   try {
+//     const post = await Posts.findById(req.body.id);
 
-    if (post.likes?.includes(req.payload.user_id)) {
-      post.likes = post.likes.filter((v) => v != req.payload.user_id);
-    } else {
-      post.likes.push(req.payload.user_id);
-    }
-    if (post.disLikes?.includes(req.payload.user_id)) {
-      post.disLikes = post.disLikes.filter((v) => v != req.payload.user_id);
-    }
-    await post.save();
-    const PostExist = await Posts.findOne({ _id: req.body.id })
-      .populate({
-        path: "createdBy",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "tags",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "pitchId",
-        select: ["title", "_id"],
-      })
-      // .populate({
-      //   path: "likes",
-      //   select: ["userName", "image", "role", "_id"],
-      // })
-      // .populate({
-      //   path: "disLikes",
-      //   select: ["userName", "image", "role", "_id"],
-      // })
-      .populate({
-        path: "openDiscussionTeam",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "openDiscussionRequests",
-        select: ["userName", "image", "role", "_id"],
-      });
+//     if (post.likes?.includes(req.payload.user_id)) {
+//       post.likes = post.likes.filter((v) => v != req.payload.user_id);
+//     } else {
+//       post.likes.push(req.payload.user_id);
+//     }
+//     if (post.disLikes?.includes(req.payload.user_id)) {
+//       post.disLikes = post.disLikes.filter((v) => v != req.payload.user_id);
+//     }
+//     await post.save();
+//     const PostExist = await Posts.findOne({ _id: req.body.id })
+//       .populate({
+//         path: "createdBy",
+//         select: ["userName", "image", "role", "_id"],
+//       })
+//       .populate({
+//         path: "tags",
+//         select: ["userName", "image", "role", "_id"],
+//       })
+//       .populate({
+//         path: "pitchId",
+//         select: ["title", "_id"],
+//       })
+//       // .populate({
+//       //   path: "likes",
+//       //   select: ["userName", "image", "role", "_id"],
+//       // })
+//       // .populate({
+//       //   path: "disLikes",
+//       //   select: ["userName", "image", "role", "_id"],
+//       // })
+//       .populate({
+//         path: "openDiscussionTeam",
+//         select: ["userName", "image", "role", "_id"],
+//       })
+//       .populate({
+//         path: "openDiscussionRequests",
+//         select: ["userName", "image", "role", "_id"],
+//       });
 
-    return res.status(200).json(PostExist);
-  } catch (err) {
-    console.log(err);
-    return res.status(400).json(err);
-  }
-};
+//     return res.status(200).json(PostExist);
+//   } catch (err) {
+//     console.log(err);
+//     return res.status(400).json(err);
+//   }
+// };
 
-exports.DisLikePost = async (req, res, next) => {
-  try {
-    const post = await Posts.findById(req.body.id);
+// exports.DisLikePost = async (req, res, next) => {
+//   try {
+//     const post = await Posts.findById(req.body.id);
 
-    if (post.disLikes?.includes(req.payload.user_id)) {
-      post.disLikes = post.disLikes.filter((v) => v != req.payload.user_id);
-    } else {
-      post.disLikes.push(req.payload.user_id);
-    }
+//     if (post.disLikes?.includes(req.payload.user_id)) {
+//       post.disLikes = post.disLikes.filter((v) => v != req.payload.user_id);
+//     } else {
+//       post.disLikes.push(req.payload.user_id);
+//     }
 
-    if (post.likes?.includes(req.payload.user_id)) {
-      post.likes = post.likes.filter((v) => v != req.payload.user_id);
-    }
-    await post.save();
-    const PostExist = await Posts.findOne({ _id: req.body.id })
-      .populate({
-        path: "createdBy",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "tags",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "pitchId",
-        select: ["title", "_id"],
-      })
-      // .populate({
-      //   path: "likes",
-      //   select: ["userName", "image", "role", "_id"],
-      // })
-      // .populate({
-      //   path: "disLikes",
-      //   select: ["userName", "image", "role", "_id"],
-      // })
-      .populate({
-        path: "openDiscussionTeam",
-        select: ["userName", "image", "role", "_id"],
-      })
-      .populate({
-        path: "openDiscussionRequests",
-        select: ["userName", "image", "role", "_id"],
-      });
+//     if (post.likes?.includes(req.payload.user_id)) {
+//       post.likes = post.likes.filter((v) => v != req.payload.user_id);
+//     }
+//     await post.save();
+//     const PostExist = await Posts.findOne({ _id: req.body.id })
+//       .populate({
+//         path: "createdBy",
+//         select: ["userName", "image", "role", "_id"],
+//       })
+//       .populate({
+//         path: "tags",
+//         select: ["userName", "image", "role", "_id"],
+//       })
+//       .populate({
+//         path: "pitchId",
+//         select: ["title", "_id"],
+//       })
+//       // .populate({
+//       //   path: "likes",
+//       //   select: ["userName", "image", "role", "_id"],
+//       // })
+//       // .populate({
+//       //   path: "disLikes",
+//       //   select: ["userName", "image", "role", "_id"],
+//       // })
+//       .populate({ path: "reactions.user", select: ["userName", "image", "role", "_id"] })
+//       .populate({
+//         path: "openDiscussionTeam",
+//         select: ["userName", "image", "role", "_id"],
+//       })
+//       .populate({
+//         path: "openDiscussionRequests",
+//         select: ["userName", "image", "role", "_id"],
+//       });
 
-    return res.status(200).json(PostExist);
-  } catch (err) {
-    console.log(err);
-    return res.status(400).json(err);
-  }
-};
+//     return res.status(200).json(PostExist);
+//   } catch (err) {
+//     console.log(err);
+//     return res.status(400).json(err);
+//   }
+// };
 
 exports.deletePost = async (req, res, next) => {
   try {

@@ -102,19 +102,6 @@ const postSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
-    innovative: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
-    unique: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
-
     disLikes: [
       {
         type: mongoose.Schema.Types.ObjectId,
