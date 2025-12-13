@@ -23,6 +23,12 @@ const requestSchema = new mongoose.Schema({
     enum: ["session", "webinar", "priority dm"],
     required: true,
   },
+  amount: {
+    type: Number,
+  },
+  duration: {
+    type: Number,
+  },
 
   requestStatus: {
     type: Boolean,
