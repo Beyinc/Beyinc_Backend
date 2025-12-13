@@ -54,6 +54,8 @@ const formatPost = (post, userId) => {
 exports.getPost = async (req, res, next) => {
   try {
     const { id } = req.body;
+    const userId = req.payload.user_id;
+
     const PostExist = await Posts.findOne({ _id: id })
       .populate({
         path: "createdBy",
@@ -86,7 +88,9 @@ exports.getPost = async (req, res, next) => {
       });
 
     if (PostExist) {
-      return res.status(200).json(PostExist);
+      const modifiedPostData = await formatPost(PostExist, userId);
+
+      return res.status(200).json(modifiedPostData);
     }
   } catch (error) {
     console.log(error);
