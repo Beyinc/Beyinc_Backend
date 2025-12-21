@@ -1,5 +1,20 @@
 const mongoose = require("mongoose");
 
+
+const MentorExpertiseSchema = new mongoose.Schema(
+  {
+    industry: {
+      type: String,
+      required: true,
+    },
+    skills: {
+      type: [String],
+      default: [],
+    },
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     isProfileComplete: {
@@ -22,12 +37,10 @@ const userSchema = new mongoose.Schema(
       type: String,
     },
     about: {
-      type: String
-    }
-    ,
+      type: String,
+    },
     headline: {
       type: String,
-
     },
     twitter: {
       type: String,
@@ -99,7 +112,6 @@ const userSchema = new mongoose.Schema(
 
     experienceDetails: [
       {
-
         startYear: { type: String, required: false },
         endYear: { type: String, required: false },
         company: { type: String, required: false },
@@ -110,21 +122,21 @@ const userSchema = new mongoose.Schema(
         Banner: {
           public_id: {
             type: String,
-            required: false
+            required: false,
           },
           secure_url: {
             type: String,
-            required: false
+            required: false,
           },
         },
         Logo: {
           public_id: {
             type: String,
-            required: false
+            required: false,
           },
           secure_url: {
             type: String,
-            required: false
+            required: false,
           },
         },
       },
@@ -176,7 +188,7 @@ const userSchema = new mongoose.Schema(
         "GovernmentBody",
         "Corporate",
         "TechPartner",
-        ""
+        "",
       ],
     },
 
@@ -199,7 +211,6 @@ const userSchema = new mongoose.Schema(
       ],
     },
 
-
     role_type: {
       type: String,
       required: false,
@@ -218,6 +229,28 @@ const userSchema = new mongoose.Schema(
       ],
     },
 
+    role_level: {
+      type: String,
+      required: false,
+      enum: [
+        "Entry Level",
+        "Intermediate",
+        "Senior / Lead",
+        "Manager",
+        "Director / Head",
+        "VP",
+        "CXO",
+        "Researcher",
+        "Senior Researcher / Research Lead",
+        "Principal Researcher",
+      ],
+    },
+
+mentorExpertise: {
+  type: [MentorExpertiseSchema],
+  default: [],
+  required: false,
+},
 
 
     documents: {

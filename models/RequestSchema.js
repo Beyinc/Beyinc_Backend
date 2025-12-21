@@ -20,8 +20,7 @@ const requestSchema = new mongoose.Schema({
 
   requestType: {
     type: String,
-    enum: ["session", "webinar", "priority dm"],
-    required: true,
+    // enum: ["session", "webinar", "priority dm"," "],
   },
   amount: {
     type: Number,
