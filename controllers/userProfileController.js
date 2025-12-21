@@ -132,37 +132,100 @@ exports.InputFormData = async (req, res) => {
   }
 };
 
+// exports.inputEntryData = async (req, res) => {
+//   console.log(req.body)
+//   const { username, headline, skills, interests, selectedCategory ,role_level,mentor_expertise } = req.body; // Added selectedCategory
+//   const { user_id } = req.payload;
+
+//   console.log("Received data:", req.body);
+
+//   console.log("Saving data for user:", user_id);
+
+//   try {
+//     const updateFields = {};
+
+//     if (username) {updateFields.userName = username}; // Changed from username to userName in the model
+//     if (headline) {updateFields.headline = headline}; // Ensure headline is mapped correctly
+//     if (skills) {updateFields.skills = skills}; // Ensure skills is mapped correctly
+//     if (interests) {updateFields.interests = interests}; // Ensure interests is mapped correctly
+//     if (selectedCategory) {updateFields.role = selectedCategory}; // Map selectedCategory to role_type
+
+//      // Set isProfileComplete to true if any updates are made
+//     updateFields.isProfileComplete = true;
+    
+//     const user = await User.findByIdAndUpdate(user_id, updateFields, { new: true });
+
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     res.status(200).json({ message: "Data updated successfully", user });
+//   } catch (error) {
+//     console.error("Error updating data:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+
 exports.inputEntryData = async (req, res) => {
-  console.log(req.body)
-  const { username, headline, skills, interests, selectedCategory } = req.body; // Added selectedCategory
-  const { user_id } = req.payload;
-
-  console.log("Saving data for user:", user_id);
-
   try {
+    const {
+      username,
+      headline,
+      skills,
+      interests,
+      selectedCategory,
+      role_level,
+      mentorExpertise, // ✅ coming as OBJECT
+    } = req.body;
+
+    const { user_id } = req.payload;
+
+    console.log("Received data:", req.body);
+    console.log("Saving data for user:", user_id);
+
     const updateFields = {};
 
-    if (username) {updateFields.userName = username}; // Changed from username to userName in the model
-    if (headline) {updateFields.headline = headline}; // Ensure headline is mapped correctly
-    if (skills) {updateFields.skills = skills}; // Ensure skills is mapped correctly
-    if (interests) {updateFields.interests = interests}; // Ensure interests is mapped correctly
-    if (selectedCategory) {updateFields.role = selectedCategory}; // Map selectedCategory to role_type
+    if (username) updateFields.userName = username;
+    if (headline) updateFields.headline = headline;
+    if (skills?.length) updateFields.skills = skills;
+    if (interests?.length) updateFields.interests = interests;
+    if (selectedCategory) updateFields.role = selectedCategory;
+    if (role_level) updateFields.role_level = role_level;
 
-     // Set isProfileComplete to true if any updates are made
+    // ✅ TRANSFORM mentorExpertise OBJECT → ARRAY
+    if (mentorExpertise && typeof mentorExpertise === "object") {
+      updateFields.mentorExpertise = Object.entries(mentorExpertise)
+        .map(([industry, skills]) => ({
+          industry,
+          skills,
+        }))
+        .filter(item => item.skills.length > 0);
+    }
+
     updateFields.isProfileComplete = true;
-    
-    const user = await User.findByIdAndUpdate(user_id, updateFields, { new: true });
+
+    const user = await User.findByIdAndUpdate(
+      user_id,
+      { $set: updateFields },
+      { new: true }
+    );
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json({ message: "Data updated successfully", user });
+    return res.status(200).json({
+      message: "Profile updated successfully",
+      user,
+    });
+
   } catch (error) {
-    console.error("Error updating data:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error updating entry data:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };
+
 
 exports.SaveDocuments = async (req, res, next) => {
   try {
