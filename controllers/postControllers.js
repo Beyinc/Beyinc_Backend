@@ -1012,8 +1012,6 @@ exports.reactToPost = async (req, res) => {
         const { postId, reactionType } = req.body;
         const userId = req.payload.user_id;
 
-        // Validation (same as above)...
-
         const post = await Posts.findById(postId);
         if (!post) {
             return res.status(404).json({ message: "Post not found." });
@@ -1051,12 +1049,13 @@ exports.reactToPost = async (req, res) => {
             userReaction = reactionType;
         }
 
-        await post.save();
+        const newPostData = await post.save();
 
         return res.status(200).json({
             success: true,
             postId,
             userReaction,
+            reactions: newPostData.reactions
         });
     } catch (error) {
         console.error("Error in reactToPost:", error);
