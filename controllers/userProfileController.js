@@ -176,13 +176,14 @@ exports.inputEntryData = async (req, res) => {
       interests,
       selectedCategory,
       role_level,
+      companyStage,
       mentorExpertise, // ✅ coming as OBJECT
     } = req.body;
 
     const { user_id } = req.payload;
 
-    console.log("Received data:", req.body);
-    console.log("Saving data for user:", user_id);
+    // console.log("Received data:", req.body);
+    // console.log("Saving data for user:", user_id);
 
     const updateFields = {};
 
@@ -192,8 +193,8 @@ exports.inputEntryData = async (req, res) => {
     if (interests?.length) updateFields.interests = interests;
     if (selectedCategory) updateFields.role = selectedCategory;
     if (role_level) updateFields.role_level = role_level;
+    if (companyStage) updateFields.companyStage = companyStage;
 
-    // ✅ TRANSFORM mentorExpertise OBJECT → ARRAY
     if (mentorExpertise && typeof mentorExpertise === "object") {
       updateFields.mentorExpertise = Object.entries(mentorExpertise)
         .map(([industry, skills]) => ({

@@ -22,7 +22,7 @@ const { generateUniqueCode } = require('../helpers/UniqueCode');
 
 exports.register = async (req, res, next) => {
   try {
-    const { email, password, role, userName } = req.body;
+    const { email, password, role ,userName} = req.body;
     console.log("request reached register with this data",req.body)
     const freeDemoCode = {
       code: generateUniqueCode(),

@@ -35,6 +35,7 @@ const userSchema = new mongoose.Schema(
     ],
     userName: {
       type: String,
+      unique:false
     },
     about: {
       type: String,
@@ -243,6 +244,19 @@ const userSchema = new mongoose.Schema(
         "Researcher",
         "Senior Researcher / Research Lead",
         "Principal Researcher",
+      ],
+    },
+
+    companyStage: {
+      type: String,
+      required: false,
+      enum: [
+        "Early Stage Startup",
+        "Funded Startup",
+        "Revenue Stage",
+        "Established Company",
+        "Enterprise",
+        "",
       ],
     },
 
