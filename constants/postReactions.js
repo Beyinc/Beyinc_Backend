@@ -1,4 +1,4 @@
-export const REACTION_TYPES = [
+const REACTION_TYPES = [
     "like",
     "insightful",
     "helpful",
@@ -9,3 +9,7 @@ export const REACTION_TYPES = [
     "needs_refinement",
     "common",
 ];
+
+module.exports = {
+    REACTION_TYPES,
+};

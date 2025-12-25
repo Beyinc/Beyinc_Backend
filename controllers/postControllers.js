@@ -20,7 +20,7 @@ const jobTitles = require("../models/Roles");
 const Posts = require("../models/Posts");
 const PostComment = require("../models/PostCommentModel");
 const { ComplianceRegistrationInquiriesListInstance } = require("twilio/lib/rest/trusthub/v1/complianceRegistrationInquiries");
-const { REACTION_TYPES } = require("../constants/postReactins");
+const { REACTION_TYPES } = require("../constants/postReactions");
 
 // To add user reaction and  reaction counts to post data
 const formatPost = (post, userId) => {
