@@ -4,7 +4,9 @@ const { default: mongoose } = require("mongoose");
 
 // Save User Data Function
 exports.saveData = async (req, res) => {
-  const { bio, experience, education, skills, user_id } = req.body;
+  // const { bio, experience, education, skills, user_id } = req.body; // Unsecure code commented out
+  const { bio, experience, education, skills } = req.body; // Keep data
+  const { user_id } = req.payload; // Get ID from Token (Secure)
   console.log("data recieved"+ bio, experience, education, skills);
   console.log("Received experience data:", experience);
 
