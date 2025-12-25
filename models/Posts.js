@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { REACTION_TYPES } = require("../constants/postReactins");
+const { REACTION_TYPES } = require("../constants/postReactions");
 // category date private/public
 const postSchema = new mongoose.Schema(
   {
@@ -96,18 +96,18 @@ const postSchema = new mongoose.Schema(
     ],
 
     // reactions
-    likes: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
-    disLikes: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
+    // likes: [
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "User",
+    //   },
+    // ],
+    // disLikes: [
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "User",
+    //   },
+    // ],
 
     reactions: [{
       user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
