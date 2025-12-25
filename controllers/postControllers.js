@@ -1017,11 +1017,11 @@ exports.reactToPost = async (req, res) => {
             return res.status(404).json({ message: "Post not found." });
         }
 
-        if (post.createdBy.toString() === userId.toString()) {
-            return res.status(403).json({
-                message: "You cannot react to your own post.",
-            });
-        }
+        // if (post.createdBy.toString() === userId.toString()) {
+        //     return res.status(403).json({
+        //         message: "You cannot react to your own post.",
+        //     });
+        // }
 
         // Find existing reaction index
         const existingIndex = post.reactions.findIndex(
