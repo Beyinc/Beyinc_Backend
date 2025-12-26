@@ -1489,7 +1489,10 @@ exports.verifyUserPassword = async (req, res, next) => {
 
 exports.updateProfileImage = async (req, res, next) => {
   try {
+    // const { userId } = req.payload;
+    console.log(req.payload)
     const { image, userId, email } = req.body;
+    console.log(userId);
     const userDoesExist = await User.findOne({ _id: userId });
     if (!userDoesExist) {
       return res.status(400).send("User not found");

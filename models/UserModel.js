@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-
 const MentorExpertiseSchema = new mongoose.Schema(
   {
     industry: {
@@ -35,7 +34,7 @@ const userSchema = new mongoose.Schema(
     ],
     userName: {
       type: String,
-      unique:false
+      unique: false,
     },
     about: {
       type: String,
@@ -260,12 +259,11 @@ const userSchema = new mongoose.Schema(
       ],
     },
 
-mentorExpertise: {
-  type: [MentorExpertiseSchema],
-  default: [],
-  required: false,
-},
-
+    mentorExpertise: {
+      type: [MentorExpertiseSchema],
+      default: [],
+      required: false,
+    },
 
     documents: {
       resume: {
@@ -327,8 +325,11 @@ mentorExpertise: {
         },
       },
     ],
-    skills: { type: Array },
     languagesKnown: { type: Array },
+    skills: {
+        type: [String],
+        default: [],
+    },
     chatBlock: [
       {
         userInfo: {
