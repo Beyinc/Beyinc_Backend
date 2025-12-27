@@ -78,12 +78,12 @@ app.use("/api/chat", verifyAccessToken, chatRouter);
 app.use("/api/dashboard", verifyAccessToken, dashboardRouter);
 
 app.use("/api/userDetails", verifyAccessToken, userRouter);
-app.get("/api/newProfiles", verifyAccessToken, userProfileController.getNewProfiles);
+app.get("/api/newProfiles", userProfileController.getNewProfiles);
 app.use("/api/test", testingRouter);
 
 
 app.use("/api/pitch", verifyAccessToken, pitchCommentRouter);
-app.use("/api/post", verifyAccessToken, postCommentRouter);
+app.use("/api/post", postCommentRouter);
 
 
 

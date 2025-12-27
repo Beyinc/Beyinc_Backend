@@ -5,7 +5,7 @@ const { default: mongoose } = require("mongoose");
 // Save User Data Function
 exports.saveData = async (req, res) => {
   const { bio, experience, education, skills, user_id } = req.body;
-  console.log("data recieved"+ bio, experience, education, skills);
+  console.log("data recieved" + bio, experience, education, skills);
   console.log("Received experience data:", experience);
 
   console.log("Saving data for user:", user_id);
@@ -19,7 +19,7 @@ exports.saveData = async (req, res) => {
   // if (experience && !Array.isArray(experience)) {
   //   return res.status(400).json({ message: "Invalid experience data." });
   // }
- //
+  //
   // Validate education
   if (education && !Array.isArray(education)) {
     return res.status(400).json({ message: "Invalid education data." });
@@ -37,7 +37,7 @@ exports.saveData = async (req, res) => {
 
   try {
     const updateFields = {};
-    
+
     if (bio) updateFields.bio = bio;
     if (experience) updateFields.experienceDetails = experience;
     if (education) updateFields.educationDetails = education;
@@ -58,7 +58,7 @@ exports.saveData = async (req, res) => {
 
 // Function to handle input form data
 exports.InputFormData = async (req, res) => {
-  console.log("formdata",req.body);
+  console.log("formdata", req.body);
   const {
     fullName,
     headline,
@@ -71,12 +71,12 @@ exports.InputFormData = async (req, res) => {
     languages,
     user_id
   } = req.body; // Destructure the formState from req.body
- // Assuming you're getting user_id from the request payload
+  // Assuming you're getting user_id from the request payload
 
   if (typeof fullName !== "string" || fullName.length > 100) {
     return res.status(400).json({ message: "Invalid full name." });
   }
- 
+
   if (mobileNumber && typeof mobileNumber !== "string") {
     return res.status(400).json({ message: "Invalid mobile number." });
   }
@@ -116,7 +116,7 @@ exports.InputFormData = async (req, res) => {
       country,
       state,
       town,
-      languagesKnown:languages,
+      languagesKnown: languages,
     };
 
     const user = await User.findByIdAndUpdate(user_id, updateFields, { new: true });
@@ -142,15 +142,15 @@ exports.inputEntryData = async (req, res) => {
   try {
     const updateFields = {};
 
-    if (username) {updateFields.userName = username}; // Changed from username to userName in the model
-    if (headline) {updateFields.headline = headline}; // Ensure headline is mapped correctly
-    if (skills) {updateFields.skills = skills}; // Ensure skills is mapped correctly
-    if (interests) {updateFields.interests = interests}; // Ensure interests is mapped correctly
-    if (selectedCategory) {updateFields.role = selectedCategory}; // Map selectedCategory to role_type
+    if (username) { updateFields.userName = username }; // Changed from username to userName in the model
+    if (headline) { updateFields.headline = headline }; // Ensure headline is mapped correctly
+    if (skills) { updateFields.skills = skills }; // Ensure skills is mapped correctly
+    if (interests) { updateFields.interests = interests }; // Ensure interests is mapped correctly
+    if (selectedCategory) { updateFields.role = selectedCategory }; // Map selectedCategory to role_type
 
-     // Set isProfileComplete to true if any updates are made
+    // Set isProfileComplete to true if any updates are made
     updateFields.isProfileComplete = true;
-    
+
     const user = await User.findByIdAndUpdate(user_id, updateFields, { new: true });
 
     if (!user) {
@@ -268,7 +268,7 @@ exports.SaveEducationDetails = async (req, res, next) => {
     const { education } = req.body;
     const { user_id } = req.payload;
 
-    if(!user_id) return res.status(400).send("userId must be provided");
+    if (!user_id) return res.status(400).send("userId must be provided");
 
     // Ensure education details are provided
     if (!education || !Array.isArray(education) || education.length === 0) {
@@ -431,7 +431,7 @@ exports.SaveExperienceDetails = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       message: "Experience details saved successfully.",
-      experienceDetails: user.experienceDetails, 
+      experienceDetails: user.experienceDetails,
     });
 
   } catch (err) {
@@ -450,7 +450,7 @@ exports.DeleteExperienceDetails = async (req, res, next) => {
     const { _id } = req.body;
     const { user_id } = req.payload;
 
-    if (!_id ) {
+    if (!_id) {
       return res.status(400).send({ message: "experience _id must be provided." });
     }
 
@@ -472,7 +472,7 @@ exports.DeleteExperienceDetails = async (req, res, next) => {
     return res.status(200).send({
       success: true,
       message: "Experience details deleted successfully.",
-      experienceDetails: user.experienceDetails, 
+      experienceDetails: user.experienceDetails,
     });
 
   } catch (err) {
@@ -488,8 +488,8 @@ exports.DeleteExperienceDetails = async (req, res, next) => {
 
 exports.GetExperienceDetails = async (req, res, next) => {
   try {
-    
-    const { user_id } = req.payload; 
+
+    const { user_id } = req.payload;
     const { id } = req.body;
     if (!id && !user_id) {
       return res.status(400).send({ message: "User ID is required." });
@@ -509,7 +509,7 @@ exports.GetExperienceDetails = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      experienceDetails: user.experienceDetails || [], 
+      experienceDetails: user.experienceDetails || [],
     });
 
   } catch (err) {
@@ -641,8 +641,8 @@ exports.UpdateExperienceDetails = async (req, res, next) => {
     }
 
     user.experienceDetails[experienceIndex] = {
-      ...user.experienceDetails[experienceIndex], 
-      ...experience 
+      ...user.experienceDetails[experienceIndex],
+      ...experience
     };
 
     await user.save();
@@ -669,41 +669,41 @@ exports.uploadResume = async (req, res, next) => {
     const { resume, user_id } = req.body;
     console.log("Request Body:", req.body);
 
-  //   const user = await User.findById(user_id);
-  //   if (!user) return res.status(400).send("User not found");
+    //   const user = await User.findById(user_id);
+    //   if (!user) return res.status(400).send("User not found");
 
-  //   let uploadedDocuments = {};
+    //   let uploadedDocuments = {};
 
-  //   // Handle document uploads with condition checks
-  //   const uploadDocument = async (document, key) => {
-  //     if (document) {
-  //       // Delete existing document if it exists
-  //       if (user.documents[key]?.public_id) {
-  //         await cloudinary.uploader.destroy(user.documents[key].public_id);
-  //       }
-  //       // Upload new document and store the result
-  //       const uploadedDoc = await cloudinary.uploader.upload(document, {
-  //         folder: `${user.email}/documents`,
-  //       });
-  //       uploadedDocuments[key] = {
-  //         public_id: uploadedDoc.public_id,
-  //         secure_url: uploadedDoc.secure_url,
-  //       };
-  //     }
-  //   };
+    //   // Handle document uploads with condition checks
+    //   const uploadDocument = async (document, key) => {
+    //     if (document) {
+    //       // Delete existing document if it exists
+    //       if (user.documents[key]?.public_id) {
+    //         await cloudinary.uploader.destroy(user.documents[key].public_id);
+    //       }
+    //       // Upload new document and store the result
+    //       const uploadedDoc = await cloudinary.uploader.upload(document, {
+    //         folder: `${user.email}/documents`,
+    //       });
+    //       uploadedDocuments[key] = {
+    //         public_id: uploadedDoc.public_id,
+    //         secure_url: uploadedDoc.secure_url,
+    //       };
+    //     }
+    //   };
 
-  //   // Execute uploads
-  //   await uploadDocument(resume, "resume");
+    //   // Execute uploads
+    //   await uploadDocument(resume, "resume");
 
-  //   // Update user with uploaded document details
-  //   await User.updateOne(
-  //     { _id: user_id },
-  //     {
-  //       $set: { documents: { ...user.documents, ...uploadedDocuments } },
-  //     }
-  //   );
+    //   // Update user with uploaded document details
+    //   await User.updateOne(
+    //     { _id: user_id },
+    //     {
+    //       $set: { documents: { ...user.documents, ...uploadedDocuments } },
+    //     }
+    //   );
 
-  //   return res.send({ message: "Documents uploaded successfully" });
+    //   return res.send({ message: "Documents uploaded successfully" });
   } catch (err) {
     console.error("Error details:", err.message);
     console.error("Error stack:", err.stack);
@@ -751,11 +751,11 @@ exports.CreateAbout = async (req, res, next) => {
 // Controller to read about
 
 exports.ReadAbout = async (req, res, next) => {
- 
+
 
   try {
-    const { id} = req.body;
-     const { user_id } = req.payload;
+    const { id } = req.body;
+    const { user_id } = req.payload;
 
     // console.log("Extracted payload:", req.payload);
     // console.log("Extracted user_id:", user_id);
@@ -791,20 +791,20 @@ exports.ReadAbout = async (req, res, next) => {
 
 // Controller to Add skills
 
-exports.AddSkills = async(req, res, next) => {
-  try{
+exports.AddSkills = async (req, res, next) => {
+  try {
     const { skills } = req.body;
     const { user_id } = req.payload;
 
-    if(!user_id) {
-      return res.status(400).send({ message: "UserId required"})
+    if (!user_id) {
+      return res.status(400).send({ message: "UserId required" })
     }
-    if(!skills || skills.length === 0){
-      return res.status(400).send({ message: "Skills Array is empty"})
+    if (!skills || skills.length === 0) {
+      return res.status(400).send({ message: "Skills Array is empty" })
     }
     const user = await User.findById(user_id);
-    if(!user){
-      return res.status(404).send({ message: "User not found"})
+    if (!user) {
+      return res.status(404).send({ message: "User not found" })
     }
     user.skills = [...new Set([...user.skills, ...skills])]; // This ensures that there are no duplicates
     await user.save();
@@ -814,7 +814,7 @@ exports.AddSkills = async(req, res, next) => {
       skills: user.skills
     })
 
-  }catch(error){
+  } catch (error) {
     console.log("Error Adding Skills: ", error);
     res.status(500).json({
       message: "Internal Server Error"
@@ -824,28 +824,28 @@ exports.AddSkills = async(req, res, next) => {
 
 // Controller to Delete skills
 
-exports.DeleteSkill = async(req, res, next) => {
-  try{
+exports.DeleteSkill = async (req, res, next) => {
+  try {
     const { skillsToDelete } = req.body;
     const { user_id } = req.payload;
-    if(!user_id) {
-      return res.status(400).send({ message: "UserId required"})
+    if (!user_id) {
+      return res.status(400).send({ message: "UserId required" })
     }
-    if(!skillsToDelete || skillsToDelete.length === 0){
-      return res.status(400).send({ message: "Skills Array is empty"})
+    if (!skillsToDelete || skillsToDelete.length === 0) {
+      return res.status(400).send({ message: "Skills Array is empty" })
     }
     const user = await User.findById(user_id);
-    if(!user){
-      return res.status(404).send({ message: "User not found"})
+    if (!user) {
+      return res.status(404).send({ message: "User not found" })
     }
 
     user.skills = user.skills.filter(skill => !skillsToDelete.includes(skill))
-    
+
     await user.save();
 
     return res.status(200).send({ message: "Skills deleted successfully", skills: user.skills });
 
-  }catch(error){
+  } catch (error) {
     console.log("There was an error while deleting skills", error);
     res.status(500).send({ message: "Internal Server Error" })
   }
@@ -853,42 +853,49 @@ exports.DeleteSkill = async(req, res, next) => {
 }
 // Controller to get Skills
 
-exports.ReadSkills = async(req, res, next) => {
-  try{
-    console.log('read skills',req.body)
-    const { id} = req.body;
-    const { user_id } =req.payload;
-    
+exports.ReadSkills = async (req, res, next) => {
+  try {
+    console.log('read skills', req.body)
+    const { id } = req.body;
+    const { user_id } = req.payload;
+
     const user = await User.findById(id ? id : user_id);
-    if(!user){
-      return res.status(404).send({ message: "User not found"})
+    if (!user) {
+      return res.status(404).send({ message: "User not found" })
     }
-    
+
     return res.status(200).json({
       message: "Skills fetched successfully",
       skills: user.skills
     })
-  }catch(error){
+  } catch (error) {
     console.log("There was an error while fetchind skills: ", error);
-    res.status(500).send({ message: "Internal Server Error"})
+    res.status(500).send({ message: "Internal Server Error" })
   }
-    
+
 }
 
 exports.getNewProfiles = async (req, res, next) => {
   try {
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-    const loggedInUserId = new mongoose.Types.ObjectId(req.payload.user_id);
+    let query = { isProfileComplete: true };
+    if (req.payload && req.payload.user_id) {
+      const loggedInUserId = new mongoose.Types.ObjectId(req.payload.user_id);
+      query = {
+        email: { $ne: req.payload.email },
+        isProfileComplete: true,
+        followers: { $nin: [loggedInUserId] },
+        _id: { $ne: loggedInUserId }
+      };
+    }
 
     const users = await User.aggregate([
       {
-        $match: {
-          email: { $ne: req.payload.email },
-          isProfileComplete: true,
-          followers: { $nin: [loggedInUserId] },
-          _id: { $ne: loggedInUserId }
-        }
+        $match: query
+      },
+      {
+        $limit: 10 // Limiting to 10 for performance
       }
     ]);
 
