@@ -303,6 +303,40 @@ exports.startupEntryData = async (req, res) => {
   }
 };
 
+//fetch startup data
+
+exports.getStartupProfileData = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId).select(
+      "startupProfile.industries startupProfile.targetMarket startupProfile.stage",
+    );
+
+    if (!user || !user.startupProfile) {
+      return res.status(404).json({
+        success: false,
+        message: "Startup profile not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        industries: (user.startupProfile.industries || []).filter(Boolean),
+        targetMarket: user.startupProfile.targetMarket || "",
+        stage: user.startupProfile.stage || "",
+      },
+    });
+  } catch (error) {
+    console.error("getStartupProfileData error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
 exports.SaveDocuments = async (req, res, next) => {
   try {
     const { resume, achievements, degree, expertise, working, userId } =

@@ -13,6 +13,13 @@ router.post("/saveDocuments", userProfileController.SaveDocuments);
 router.post("/saveDocument", userProfileController.SaveDocument);
 // router.post('/saveEducationDetails', userProfileController.SaveEducationDetails);
 
+//fetch startup data
+
+router.get(
+  "/startupProfileData/:userId",
+  userProfileController.getStartupProfileData,
+);
+
 // Routes with verifyAccessToken
 router.post("/getabout", userProfileController.ReadAbout);
 router.post("/createAbout", userProfileController.CreateAbout);
