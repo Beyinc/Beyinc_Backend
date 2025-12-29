@@ -50,6 +50,8 @@ router.put("/update-request", requestController.updateRequestStatusByMentor);
 
 router.delete("/deleteRequestByMentor",requestController.deleteRequestByMentor);
 
+router.put("/decline-request", requestController.declineRequestByMentor);
+
 module.exports = router;
 
 

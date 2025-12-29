@@ -92,6 +92,30 @@ exports.updateRequestStatusByMentor = async (req, res) => {
   }
 };
 
+exports.declineRequestByMentor = async (req, res) => {
+  try {
+    const { requestId, declineReason } = req.body;
+
+    const updatedRequest = await Request.findByIdAndUpdate(
+      requestId,
+      { requestDeclined: true, requestStatus: false ,declineReason: declineReason},
+      { new: true }
+    );
+
+    if (!updatedRequest) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    res.status(200).json({
+      message: "Request declined",
+      request: updatedRequest,
+    });
+  } catch (error) {
+    console.error("Error declining request:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 exports.deleteRequestByMentor = async (req, res) => {
   try {
     const { requestId } = req.body;
@@ -106,3 +130,4 @@ exports.deleteRequestByMentor = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
