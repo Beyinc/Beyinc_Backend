@@ -20,7 +20,7 @@ const jobTitles = require("../models/Roles");
 const Posts = require("../models/Posts");
 const PostComment = require("../models/PostCommentModel");
 const { ComplianceRegistrationInquiriesListInstance } = require("twilio/lib/rest/trusthub/v1/complianceRegistrationInquiries");
-const { REACTION_TYPES } = require("../constants/postReactins");
+const { REACTION_TYPES } = require("../constants/postReactions");
 
 // To add user reaction and  reaction counts to post data
 const formatPost = (post, userId) => {
@@ -1017,11 +1017,11 @@ exports.reactToPost = async (req, res) => {
             return res.status(404).json({ message: "Post not found." });
         }
 
-        if (post.createdBy.toString() === userId.toString()) {
-            return res.status(403).json({
-                message: "You cannot react to your own post.",
-            });
-        }
+        // if (post.createdBy.toString() === userId.toString()) {
+        //     return res.status(403).json({
+        //         message: "You cannot react to your own post.",
+        //     });
+        // }
 
         // Find existing reaction index
         const existingIndex = post.reactions.findIndex(
