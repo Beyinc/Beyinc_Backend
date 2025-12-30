@@ -183,34 +183,64 @@ exports.inputEntryData = async (req, res) => {
     const {
       username,
       headline,
-      skills,
       interests,
       selectedCategory,
       role_level,
-      mentorExpertise, // ✅ coming as OBJECT
+      companyStage,
+      mentorExpertise, // object
     } = req.body;
 
     const { user_id } = req.payload;
-
-    console.log("Received data:", req.body);
-    console.log("Saving data for user:", user_id);
 
     const updateFields = {};
 
     if (username) updateFields.userName = username;
     if (headline) updateFields.headline = headline;
-    if (skills?.length) updateFields.skills = skills;
     if (interests?.length) updateFields.interests = interests;
     if (selectedCategory) updateFields.role = selectedCategory;
     if (role_level) updateFields.role_level = role_level;
+    if (companyStage) updateFields.companyStage = companyStage;
 
-    // ✅ TRANSFORM mentorExpertise OBJECT → ARRAY
-    if (mentorExpertise && typeof mentorExpertise === "object") {
+    /* ---------------- INDIVIDUAL / ENTREPRENEUR ---------------- */
+    if (
+      selectedCategory === "Individual/Entrepreneur" &&
+      mentorExpertise &&
+      typeof mentorExpertise === "object"
+    ) {
+      // ✅ Store FLAT skills array
+      updateFields.skills = [
+        ...new Set(
+          Object.values(mentorExpertise)
+            .flat()
+            .filter(Boolean)
+        ),
+      ];
+
+      // ✅ Store mentor expertise as structured object
       updateFields.mentorExpertise = Object.entries(mentorExpertise)
         .map(([industry, skills]) => ({
           industry,
           skills,
         }))
+        .filter(item => item.skills.length > 0);
+    }
+
+    /* ---------------- MENTOR ONLY ---------------- */
+    if (
+      selectedCategory === "Mentor" &&
+      mentorExpertise &&
+      typeof mentorExpertise === "object"
+    ) {
+      // ❌ Do NOT store flat skills
+      updateFields.mentorExpertise = Object.entries(mentorExpertise)
+        .map(([industry, skills]) => ({
+          industry,
+          skills,
+        }))
+        .filter(item => item.skills.length > 0);
+
+      // Safety: remove skills if role changed
+      updateFields.skills = [];
         .filter((item) => item.skills.length > 0);
     }
 
@@ -526,6 +556,7 @@ exports.DeleteEducationDetails = async (req, res, next) => {
     }
 
     const educationIndex = user.educationDetails.findIndex(
+      (entry) => entry._id.toString() === _id
       (entry) => entry._id.toString() === _id,
     );
 
@@ -664,6 +695,7 @@ exports.DeleteExperienceDetails = async (req, res, next) => {
     }
 
     const experienceIndex = user.experienceDetails.findIndex(
+      (entry) => entry._id.toString() === _id
       (entry) => entry._id.toString() === _id,
     );
 
@@ -789,6 +821,7 @@ exports.UpdateEducationDetails = async (req, res, next) => {
     }
 
     const educationIndex = user.educationDetails.findIndex(
+      (entry) => entry._id.toString() === education._id
       (entry) => entry._id.toString() === education._id,
     );
     if (educationIndex === -1) {
@@ -797,6 +830,7 @@ exports.UpdateEducationDetails = async (req, res, next) => {
 
     console.log(
       "Updated Education Object: ",
+      user.educationDetails[educationIndex]
       user.educationDetails[educationIndex],
     );
 
@@ -843,6 +877,7 @@ exports.UpdateExperienceDetails = async (req, res, next) => {
     }
 
     const experienceIndex = user.experienceDetails.findIndex(
+      (entry) => entry._id.toString() === experience._id
       (entry) => entry._id.toString() === experience._id,
     );
 
@@ -1048,6 +1083,7 @@ exports.DeleteSkill = async (req, res, next) => {
     }
 
     user.skills = user.skills.filter(
+      (skill) => !skillsToDelete.includes(skill)
       (skill) => !skillsToDelete.includes(skill),
     );
 

@@ -33,6 +33,13 @@ const requestSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  requestDeclined:{
+    type: Boolean,
+    default: false,
+  },
+  declineReason:{
+    type: String,
+  }
 });
 
 const RequestData = mongoose.model("RequestData", requestSchema);

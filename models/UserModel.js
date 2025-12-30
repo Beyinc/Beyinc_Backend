@@ -80,6 +80,7 @@ const userSchema = new mongoose.Schema(
     ],
     userName: {
       type: String,
+      unique: false,
     },
     about: {
       type: String,
@@ -291,6 +292,22 @@ const userSchema = new mongoose.Schema(
       ],
     },
 
+    companyStage: {
+      type: String,
+      required: false,
+      enum: [
+        "Early Stage Startup",
+        "Funded Startup",
+        "Revenue Stage",
+        "Established Company",
+        "Enterprise",
+        "",
+      ],
+    },
+
+    mentorExpertise: {
+      type: [MentorExpertiseSchema],
+      default: [],
     mentorExpertise: {
       type: [MentorExpertiseSchema],
       default: [],
@@ -362,8 +379,11 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
-    skills: { type: Array },
     languagesKnown: { type: Array },
+    skills: {
+        type: [String],
+        default: [],
+    },
     chatBlock: [
       {
         userInfo: {
