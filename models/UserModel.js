@@ -305,14 +305,20 @@ const userSchema = new mongoose.Schema(
       ],
     },
 
+    // mentorExpertise: {
+    //   type: [MentorExpertiseSchema],
+    //   default: [],
+    // mentorExpertise: {
+    //   type: [MentorExpertiseSchema],
+    //   default: [],
+    //   required: false,
+    // },
     mentorExpertise: {
-      type: [MentorExpertiseSchema],
-      default: [],
-    mentorExpertise: {
-      type: [MentorExpertiseSchema],
-      default: [],
-      required: false,
-    },
+  type: [MentorExpertiseSchema],
+  default: [],
+  required: false,
+},
+
 
     startupProfile: {
       type: StartupProfileSchema,
