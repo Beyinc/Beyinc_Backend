@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-
 const MentorExpertiseSchema = new mongoose.Schema(
   {
     industry: {
@@ -12,7 +11,53 @@ const MentorExpertiseSchema = new mongoose.Schema(
       default: [],
     },
   },
-  { _id: false }
+  { _id: false },
+);
+
+const StartupProfileSchema = new mongoose.Schema(
+  {
+    startupName: {
+      type: String,
+      required: true,
+    },
+
+    startupTagline: {
+      type: String,
+    },
+
+    founderName: {
+      type: String,
+    },
+
+    startupEmail: {
+      type: String,
+    },
+
+    visibilityMode: {
+      type: String,
+      enum: ["public", "private", "invite-only"],
+      default: "public",
+    },
+
+    stage: {
+      type: String,
+      required: true,
+    },
+
+    teamSize: {
+      type: String,
+    },
+
+    industries: {
+      type: [String],
+      default: [],
+    },
+
+    targetMarket: {
+      type: String,
+    },
+  },
+  { _id: false },
 );
 
 const userSchema = new mongoose.Schema(
@@ -246,12 +291,16 @@ const userSchema = new mongoose.Schema(
       ],
     },
 
-mentorExpertise: {
-  type: [MentorExpertiseSchema],
-  default: [],
-  required: false,
-},
+    mentorExpertise: {
+      type: [MentorExpertiseSchema],
+      default: [],
+      required: false,
+    },
 
+    startupProfile: {
+      type: StartupProfileSchema,
+      required: false,
+    },
 
     documents: {
       resume: {
@@ -350,7 +399,7 @@ mentorExpertise: {
   },
   {
     timestamps: true, // This adds 'createdAt' and 'updatedAt' fields
-  }
+  },
 );
 
 const User = new mongoose.model("User", userSchema);
