@@ -209,11 +209,7 @@ exports.inputEntryData = async (req, res) => {
     ) {
       // ✅ Store FLAT skills array
       updateFields.skills = [
-        ...new Set(
-          Object.values(mentorExpertise)
-            .flat()
-            .filter(Boolean)
-        ),
+        ...new Set(Object.values(mentorExpertise).flat().filter(Boolean)),
       ];
 
       // ✅ Store mentor expertise as structured object
@@ -222,26 +218,25 @@ exports.inputEntryData = async (req, res) => {
           industry,
           skills,
         }))
-        .filter(item => item.skills.length > 0);
+        .filter((item) => item.skills.length > 0);
     }
 
+    /* ---------------- MENTOR ONLY ---------------- */
     /* ---------------- MENTOR ONLY ---------------- */
     if (
       selectedCategory === "Mentor" &&
       mentorExpertise &&
       typeof mentorExpertise === "object"
     ) {
-      // ❌ Do NOT store flat skills
       updateFields.mentorExpertise = Object.entries(mentorExpertise)
         .map(([industry, skills]) => ({
           industry,
           skills,
         }))
-        .filter(item => item.skills.length > 0);
-
-      // Safety: remove skills if role changed
-      updateFields.skills = [];
         .filter((item) => item.skills.length > 0);
+
+      // Safety: remove flat skills
+      updateFields.skills = [];
     }
 
     updateFields.isProfileComplete = true;
@@ -288,7 +283,7 @@ exports.startupEntryData = async (req, res) => {
     const updateFields = {};
 
     // 🔹 Role enforcement
-    updateFields.role_type = "Startup";
+    updateFields.role = "Startup";
     updateFields.categoryUserRole = "Startup";
     updateFields.interests = ["Startup"];
 
@@ -556,8 +551,8 @@ exports.DeleteEducationDetails = async (req, res, next) => {
     }
 
     const educationIndex = user.educationDetails.findIndex(
-      (entry) => entry._id.toString() === _id
       (entry) => entry._id.toString() === _id,
+      // (entry) => entry._id.toString() === _id,
     );
 
     if (educationIndex === -1) {
@@ -695,8 +690,8 @@ exports.DeleteExperienceDetails = async (req, res, next) => {
     }
 
     const experienceIndex = user.experienceDetails.findIndex(
-      (entry) => entry._id.toString() === _id
       (entry) => entry._id.toString() === _id,
+      // (entry) => entry._id.toString() === _id,
     );
 
     if (experienceIndex === -1) {
@@ -821,8 +816,8 @@ exports.UpdateEducationDetails = async (req, res, next) => {
     }
 
     const educationIndex = user.educationDetails.findIndex(
-      (entry) => entry._id.toString() === education._id
       (entry) => entry._id.toString() === education._id,
+      // (entry) => entry._id.toString() === education._id,
     );
     if (educationIndex === -1) {
       return res.status(400).send({ message: "Education entry not found" });
@@ -830,8 +825,8 @@ exports.UpdateEducationDetails = async (req, res, next) => {
 
     console.log(
       "Updated Education Object: ",
-      user.educationDetails[educationIndex]
       user.educationDetails[educationIndex],
+      // user.educationDetails[educationIndex],
     );
 
     // Explicitly update fields to ensure they are saved
@@ -877,8 +872,8 @@ exports.UpdateExperienceDetails = async (req, res, next) => {
     }
 
     const experienceIndex = user.experienceDetails.findIndex(
-      (entry) => entry._id.toString() === experience._id
       (entry) => entry._id.toString() === experience._id,
+      // (entry) => entry._id.toString() === experience._id,
     );
 
     if (experienceIndex === -1) {
@@ -1083,8 +1078,8 @@ exports.DeleteSkill = async (req, res, next) => {
     }
 
     user.skills = user.skills.filter(
-      (skill) => !skillsToDelete.includes(skill)
       (skill) => !skillsToDelete.includes(skill),
+      // (skill) => !skillsToDelete.includes(skill),
     );
 
     await user.save();
