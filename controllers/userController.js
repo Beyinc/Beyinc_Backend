@@ -25,35 +25,34 @@ exports.userDetails = async (req, res, next) => {
   // console.log(req)
   try {
     // const { id } = req.body;  // Extract the id from the request body
-    const { user_id } = req.payload;  // Extract the user_id from the payload (e.g., JWT token)
+    const { user_id } = req.payload; // Extract the user_id from the payload (e.g., JWT token)
 
     // Find the user by ID (either from body or from the authenticated user)
     const userDoesExist = await User.findOne(
-      { _id: id ? id : user_id },  // If id is provided in the body, use that, else use authenticated user's id
-      { password: 0, chatBlockedBy: 0 }  // Exclude the password and chatBlockedBy fields
+      { _id: id ? id : user_id }, // If id is provided in the body, use that, else use authenticated user's id
+      { password: 0, chatBlockedBy: 0 }, // Exclude the password and chatBlockedBy fields
     )
       .populate({
-        path: "followers",  // Populate followers field
-        select: ["userName", "image", "role", "_id"],  // Select specific fields for followers
+        path: "followers", // Populate followers field
+        select: ["userName", "image", "role", "_id"], // Select specific fields for followers
       })
       .populate({
-        path: "following",  // Populate following field
-        select: ["userName", "image", "role", "_id"],  // Select specific fields for following
+        path: "following", // Populate following field
+        select: ["userName", "image", "role", "_id"], // Select specific fields for following
       })
-      .populate("role_details");  // Populate role_details
+      .populate("role_details"); // Populate role_details
 
     // If the user exists, return their profile data
     if (userDoesExist) {
-      return res.status(200).json(userDoesExist);  // Respond with status 200 and the user's profile data
+      return res.status(200).json(userDoesExist); // Respond with status 200 and the user's profile data
     } else {
-      return res.status(404).json({ message: "User not found" });  // If no user found, respond with 404
+      return res.status(404).json({ message: "User not found" }); // If no user found, respond with 404
     }
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: "Server error", error });  // Handle any errors
+    return res.status(500).json({ message: "Server error", error }); // Handle any errors
   }
 };
-
 
 exports.getProfile = async (req, res, next) => {
   // console.log('getProfile')
@@ -62,9 +61,9 @@ exports.getProfile = async (req, res, next) => {
     const { user_id } = req.payload;
     const userDoesExist = await User.findOne(
       { _id: id ? id : user_id },
-      { password: 0, chatBlockedBy: 0 }
+      { password: 0, chatBlockedBy: 0 },
     )
-      .populate('followers')
+      .populate("followers")
       .populate("following")
       .populate("role_details");
 
@@ -89,7 +88,7 @@ exports.recommendedUsers = async (req, res, next) => {
         $match: {
           followers: { $nin: [loggedInUserId] },
           _id: { $ne: loggedInUserId },
-          isProfileComplete: true
+          isProfileComplete: true,
         },
       },
       {
@@ -113,7 +112,6 @@ exports.recommendedUsers = async (req, res, next) => {
   }
 };
 
-
 exports.removeFollower = async (req, res, next) => {
   try {
     const { userId } = req.body;
@@ -123,7 +121,7 @@ exports.removeFollower = async (req, res, next) => {
     }
     await User.updateMany(
       { followers: userId },
-      { $pull: { followers: userId } }
+      { $pull: { followers: userId } },
     );
     await User.updateOne({ _id: userId }, { $set: { following: [] } });
 
@@ -136,50 +134,53 @@ exports.removeFollower = async (req, res, next) => {
   }
 };
 
-
-
-
 exports.followerController = async (req, res, next) => {
   try {
     const { followerReqBy, followerReqTo } = req.body;
-    console.log('followerReqBy', followerReqBy)
-    console.log('follow to', followerReqTo)
+    console.log("followerReqBy", followerReqBy);
+    console.log("follow to", followerReqTo);
 
     const requestBy = await User.findOne({ _id: followerReqBy });
     const requestTo = await User.findOne({ _id: followerReqTo });
 
-    console.log('RequestBy user found:', requestBy ? 'Yes' : 'No');
-    console.log('RequestTo user found:', requestTo ? 'Yes' : 'No');
+    console.log("RequestBy user found:", requestBy ? "Yes" : "No");
+    console.log("RequestTo user found:", requestTo ? "Yes" : "No");
 
     if (!requestBy || !requestTo) {
       return res.status(404).json({ message: "User not found" });
     }
 
     if (!requestTo.followers.includes(followerReqBy)) {
-      console.log('Before adding - RequestTo followers:', requestTo.followers);
-      console.log('Before adding - RequestBy following:', requestBy.following);
+      console.log("Before adding - RequestTo followers:", requestTo.followers);
+      console.log("Before adding - RequestBy following:", requestBy.following);
 
       requestTo.followers.push(followerReqBy);
       try {
         const savedRequestTo = await requestTo.save();
-        console.log('RequestTo user saved successfully - followers:', savedRequestTo.followers);
+        console.log(
+          "RequestTo user saved successfully - followers:",
+          savedRequestTo.followers,
+        );
       } catch (saveError) {
-        console.error('Error saving RequestTo user:', saveError);
+        console.error("Error saving RequestTo user:", saveError);
         throw saveError;
       }
 
       requestBy.following.push(followerReqTo);
       try {
         const savedRequestBy = await requestBy.save();
-        console.log('RequestBy user saved successfully - following:', savedRequestBy.following);
+        console.log(
+          "RequestBy user saved successfully - following:",
+          savedRequestBy.following,
+        );
       } catch (saveError) {
-        console.error('Error saving RequestBy user:', saveError);
+        console.error("Error saving RequestBy user:", saveError);
         throw saveError;
       }
 
       const userDoesExist = await User.findOne(
         { _id: requestTo._id },
-        { password: 0, chatBlockedBy: 0 }
+        { password: 0, chatBlockedBy: 0 },
       )
         .populate({
           path: "followers",
@@ -196,7 +197,7 @@ exports.followerController = async (req, res, next) => {
         "Follower added!",
         `${requestBy.userName} is following you`,
         requestTo.userName,
-        `/user/${followerReqBy}`
+        `/user/${followerReqBy}`,
       );
       await Notification.create({
         senderInfo: requestBy._id,
@@ -208,30 +209,42 @@ exports.followerController = async (req, res, next) => {
 
       return res.status(200).json(userDoesExist);
     } else {
-      console.log('Before removing - RequestTo followers:', requestTo.followers);
-      console.log('Before removing - RequestBy following:', requestBy.following);
+      console.log(
+        "Before removing - RequestTo followers:",
+        requestTo.followers,
+      );
+      console.log(
+        "Before removing - RequestBy following:",
+        requestBy.following,
+      );
 
       requestTo.followers.splice(requestTo.followers.indexOf(followerReqBy), 1);
       try {
         const savedRequestTo = await requestTo.save();
-        console.log('RequestTo user unfollowed successfully - followers:', savedRequestTo.followers);
+        console.log(
+          "RequestTo user unfollowed successfully - followers:",
+          savedRequestTo.followers,
+        );
       } catch (saveError) {
-        console.error('Error saving RequestTo user (unfollow):', saveError);
+        console.error("Error saving RequestTo user (unfollow):", saveError);
         throw saveError;
       }
 
       requestBy.following.splice(requestBy.following.indexOf(followerReqTo), 1);
       try {
         const savedRequestBy = await requestBy.save();
-        console.log('RequestBy user unfollowed successfully - following:', savedRequestBy.following);
+        console.log(
+          "RequestBy user unfollowed successfully - following:",
+          savedRequestBy.following,
+        );
       } catch (saveError) {
-        console.error('Error saving RequestBy user (unfollow):', saveError);
+        console.error("Error saving RequestBy user (unfollow):", saveError);
         throw saveError;
       }
 
       const userDoesExist = await User.findOne(
         { _id: requestTo._id },
-        { password: 0, chatBlockedBy: 0 }
+        { password: 0, chatBlockedBy: 0 },
       )
         .populate({
           path: "followers",
@@ -245,14 +258,15 @@ exports.followerController = async (req, res, next) => {
       return res.status(200).json(userDoesExist);
     }
   } catch (error) {
-    console.error('Error in followerController:', error);
-    return res.status(500).json({ message: 'Internal server error', error: error.message });
+    console.error("Error in followerController:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 
-
 exports.unfollowController = async (req, res, next) => {
-  console.log('body', req.body);
+  console.log("body", req.body);
   const { unfollowReqBy, unfollowReqTo } = req.body;
 
   console.log("Unfollow request received:", { unfollowReqBy, unfollowReqTo });
@@ -265,7 +279,10 @@ exports.unfollowController = async (req, res, next) => {
     console.log("RequestTo User:", requestTo);
 
     if (!requestBy || !requestTo) {
-      console.error("One or both users not found:", { unfollowReqBy, unfollowReqTo });
+      console.error("One or both users not found:", {
+        unfollowReqBy,
+        unfollowReqTo,
+      });
       return res.status(404).json({ message: "User not found." });
     }
 
@@ -275,7 +292,7 @@ exports.unfollowController = async (req, res, next) => {
 
       // Remove follower
       requestTo.followers = requestTo.followers.filter(
-        (followerId) => followerId.toString() !== unfollowReqBy
+        (followerId) => followerId.toString() !== unfollowReqBy,
       );
       await requestTo.save();
 
@@ -283,7 +300,7 @@ exports.unfollowController = async (req, res, next) => {
 
       // Remove following
       requestBy.following = requestBy.following.filter(
-        (followingId) => followingId.toString() !== unfollowReqTo
+        (followingId) => followingId.toString() !== unfollowReqTo,
       );
       await requestBy.save();
 
@@ -292,7 +309,7 @@ exports.unfollowController = async (req, res, next) => {
       // Refetch and populate data
       const userDoesExist = await User.findOne(
         { _id: requestTo._id },
-        { password: 0, chatBlockedBy: 0 }
+        { password: 0, chatBlockedBy: 0 },
       )
         .populate({
           path: "followers",
@@ -309,14 +326,15 @@ exports.unfollowController = async (req, res, next) => {
       return res.status(200).json(userDoesExist);
     } else {
       console.warn(`User ${unfollowReqBy} is not following ${unfollowReqTo}`);
-      return res.status(400).json({ message: "You are not following this user." });
+      return res
+        .status(400)
+        .json({ message: "You are not following this user." });
     }
   } catch (error) {
     console.error("Error in unfollowController:", error);
     return res.status(500).json({ message: "Internal server error." });
   }
 };
-
 
 exports.getApprovalRequestProfile = async (req, res, next) => {
   try {
@@ -383,14 +401,14 @@ exports.updateProfileWithoutVerification = async (req, res, next) => {
     const { role, isDraft } = req.body;
     const roleModel = {};
     const step3Keys = Object.keys(
-      req.body.step3Data ? req.body.step3Data : {}
+      req.body.step3Data ? req.body.step3Data : {},
     ).filter((v) => !["_id", "__v", "createdAt", "updatedAt"].includes(v));
     for (let i = 0; i < fileKeys.length; i++) {
       const key = fileKeys[i];
       if (key == "profile" && req.body.step3Data[key]) {
         const uploadedFIle = await uploadFileWithBuffer(
           req.body.step3Data[key].data,
-          user_id
+          user_id,
         );
         user.image = {
           url: uploadedFIle.url,
@@ -401,7 +419,7 @@ exports.updateProfileWithoutVerification = async (req, res, next) => {
       if (req.body.step3Data[key]) {
         const uploadedFIle = await uploadFileWithBuffer(
           req.body.step3Data[key].data,
-          user_id
+          user_id,
         );
         user[key] = {
           url: uploadedFIle.url,
@@ -472,7 +490,7 @@ exports.editProfile = async (req, res, next) => {
               } else {
                 console.log("Image deleted successfully:", result);
               }
-            }
+            },
           );
         }
         resume = await cloudinary.uploader.upload(documents.resume, {
@@ -491,7 +509,7 @@ exports.editProfile = async (req, res, next) => {
             } else {
               console.log("Image deleted successfully:", result);
             }
-          }
+          },
         );
       }
     }
@@ -510,7 +528,7 @@ exports.editProfile = async (req, res, next) => {
               } else {
                 console.log("Image deleted successfully:", result);
               }
-            }
+            },
           );
         }
         expertise = await cloudinary.uploader.upload(documents.expertise, {
@@ -529,7 +547,7 @@ exports.editProfile = async (req, res, next) => {
             } else {
               console.log("Image deleted successfully:", result);
             }
-          }
+          },
         );
       }
     }
@@ -548,14 +566,14 @@ exports.editProfile = async (req, res, next) => {
               } else {
                 console.log("Image deleted successfully:", result);
               }
-            }
+            },
           );
         }
         acheivements = await cloudinary.uploader.upload(
           documents.acheivements,
           {
             folder: `${email}/documents`,
-          }
+          },
         );
       } else {
         acheivements = documents.acheivements;
@@ -570,7 +588,7 @@ exports.editProfile = async (req, res, next) => {
             } else {
               console.log("Image deleted successfully:", result);
             }
-          }
+          },
         );
       }
     }
@@ -586,7 +604,7 @@ exports.editProfile = async (req, res, next) => {
               } else {
                 console.log("Image deleted successfully:", result);
               }
-            }
+            },
           );
         }
         degree = await cloudinary.uploader.upload(documents.degree, {
@@ -605,7 +623,7 @@ exports.editProfile = async (req, res, next) => {
             } else {
               console.log("Image deleted successfully:", result);
             }
-          }
+          },
         );
       }
     }
@@ -624,7 +642,7 @@ exports.editProfile = async (req, res, next) => {
               } else {
                 console.log("Image deleted successfully:", result);
               }
-            }
+            },
           );
         }
         working = await cloudinary.uploader.upload(documents.working, {
@@ -644,7 +662,7 @@ exports.editProfile = async (req, res, next) => {
               } else {
                 console.log("Image deleted successfully:", result);
               }
-            }
+            },
           );
         }
       }
@@ -663,12 +681,12 @@ exports.editProfile = async (req, res, next) => {
             if (
               prevB &&
               prevB.experienceDetails.find(
-                (f) => f._id == experienceDetails[i]._id
+                (f) => f._id == experienceDetails[i]._id,
               )?.Banner?.public_id !== undefined
             ) {
               await cloudinary.uploader.destroy(
                 prevB.experienceDetails.find(
-                  (f) => f._id == experienceDetails[i]._id
+                  (f) => f._id == experienceDetails[i]._id,
                 )?.Banner.public_id,
                 (error, result) => {
                   if (error) {
@@ -676,7 +694,7 @@ exports.editProfile = async (req, res, next) => {
                   } else {
                     console.log("Image deleted successfully:", result);
                   }
-                }
+                },
               );
             }
           }
@@ -685,7 +703,7 @@ exports.editProfile = async (req, res, next) => {
               experienceDetails[i]?.Banner,
               {
                 folder: `${email}/editProfile/experience/Banner`,
-              }
+              },
             );
           }
         } else {
@@ -700,12 +718,12 @@ exports.editProfile = async (req, res, next) => {
             if (
               prevL &&
               prevL.experienceDetails.find(
-                (f) => f._id == experienceDetails[i]._id
+                (f) => f._id == experienceDetails[i]._id,
               )?.Logo?.public_id !== undefined
             ) {
               await cloudinary.uploader.destroy(
                 prevL.experienceDetails.find(
-                  (f) => f._id == experienceDetails[i]._id
+                  (f) => f._id == experienceDetails[i]._id,
                 )?.Logo.public_id,
                 (error, result) => {
                   if (error) {
@@ -713,7 +731,7 @@ exports.editProfile = async (req, res, next) => {
                   } else {
                     console.log("Image deleted successfully:", result);
                   }
-                }
+                },
               );
             }
           }
@@ -722,7 +740,7 @@ exports.editProfile = async (req, res, next) => {
               experienceDetails[i]?.Logo,
               {
                 folder: `${email}/editProfile/experience/Logo`,
-              }
+              },
             );
           }
         } else {
@@ -785,11 +803,11 @@ exports.editProfile = async (req, res, next) => {
               },
             },
           },
-        }
+        },
       );
       await User.updateOne(
         { email: email },
-        { $set: { verification: "pending" } }
+        { $set: { verification: "pending" } },
       );
       const accessToken = await signAccessToken(
         {
@@ -803,11 +821,11 @@ exports.editProfile = async (req, res, next) => {
           image: userExist.image?.url,
           verification: "pending",
         },
-        `${userExist._id}`
+        `${userExist._id}`,
       );
       const refreshToken = await signRefreshToken(
         { email: userExist.email, _id: userExist._id },
-        `${userExist._id}`
+        `${userExist._id}`,
       );
 
       return res.send({ accessToken: accessToken, refreshToken: refreshToken });
@@ -858,7 +876,7 @@ exports.editProfile = async (req, res, next) => {
     });
     await User.updateOne(
       { email: email },
-      { $set: { verification: "pending" } }
+      { $set: { verification: "pending" } },
     );
 
     const accessToken = await signAccessToken(
@@ -872,11 +890,11 @@ exports.editProfile = async (req, res, next) => {
         image: userExist.image?.url,
         verification: "pending",
       },
-      `${userExist._id}`
+      `${userExist._id}`,
     );
     const refreshToken = await signRefreshToken(
       { email: userExist.email, _id: userExist._id },
-      `${userExist._id}`
+      `${userExist._id}`,
     );
 
     return res.send({ accessToken: accessToken, refreshToken: refreshToken });
@@ -914,8 +932,6 @@ exports.directeditprofile = async (req, res, next) => {
 
     // validating email and password
 
-
-
     const userDoesExist = await User.findOne({ email: email });
 
     let resume = "";
@@ -930,7 +946,7 @@ exports.directeditprofile = async (req, res, next) => {
               } else {
                 console.log("Image deleted successfully:", result);
               }
-            }
+            },
           );
         }
         resume = await cloudinary.uploader.upload(documents.resume, {
@@ -949,7 +965,7 @@ exports.directeditprofile = async (req, res, next) => {
             } else {
               console.log("Image deleted successfully:", result);
             }
-          }
+          },
         );
       }
     }
@@ -968,7 +984,7 @@ exports.directeditprofile = async (req, res, next) => {
               } else {
                 console.log("Image deleted successfully:", result);
               }
-            }
+            },
           );
         }
         expertise = await cloudinary.uploader.upload(documents.expertise, {
@@ -987,7 +1003,7 @@ exports.directeditprofile = async (req, res, next) => {
             } else {
               console.log("Image deleted successfully:", result);
             }
-          }
+          },
         );
       }
     }
@@ -1006,14 +1022,14 @@ exports.directeditprofile = async (req, res, next) => {
               } else {
                 console.log("Image deleted successfully:", result);
               }
-            }
+            },
           );
         }
         acheivements = await cloudinary.uploader.upload(
           documents.acheivements,
           {
             folder: `${email}/documents`,
-          }
+          },
         );
       } else {
         acheivements = documents.acheivements;
@@ -1028,7 +1044,7 @@ exports.directeditprofile = async (req, res, next) => {
             } else {
               console.log("Image deleted successfully:", result);
             }
-          }
+          },
         );
       }
     }
@@ -1044,7 +1060,7 @@ exports.directeditprofile = async (req, res, next) => {
               } else {
                 console.log("Image deleted successfully:", result);
               }
-            }
+            },
           );
         }
         degree = await cloudinary.uploader.upload(documents.degree, {
@@ -1063,7 +1079,7 @@ exports.directeditprofile = async (req, res, next) => {
             } else {
               console.log("Image deleted successfully:", result);
             }
-          }
+          },
         );
       }
     }
@@ -1082,7 +1098,7 @@ exports.directeditprofile = async (req, res, next) => {
               } else {
                 console.log("Image deleted successfully:", result);
               }
-            }
+            },
           );
         }
         working = await cloudinary.uploader.upload(documents.working, {
@@ -1102,7 +1118,7 @@ exports.directeditprofile = async (req, res, next) => {
               } else {
                 console.log("Image deleted successfully:", result);
               }
-            }
+            },
           );
         }
       }
@@ -1121,12 +1137,12 @@ exports.directeditprofile = async (req, res, next) => {
             if (
               prevB &&
               prevB.experienceDetails.find(
-                (f) => f._id == experienceDetails[i]._id
+                (f) => f._id == experienceDetails[i]._id,
               )?.Banner?.public_id !== undefined
             ) {
               await cloudinary.uploader.destroy(
                 prevB.experienceDetails.find(
-                  (f) => f._id == experienceDetails[i]._id
+                  (f) => f._id == experienceDetails[i]._id,
                 )?.Banner.public_id,
                 (error, result) => {
                   if (error) {
@@ -1134,7 +1150,7 @@ exports.directeditprofile = async (req, res, next) => {
                   } else {
                     console.log("Image deleted successfully:", result);
                   }
-                }
+                },
               );
             }
           }
@@ -1143,7 +1159,7 @@ exports.directeditprofile = async (req, res, next) => {
               experienceDetails[i]?.Banner,
               {
                 folder: `${email}/editProfile/experience/Banner`,
-              }
+              },
             );
           }
         } else {
@@ -1158,12 +1174,12 @@ exports.directeditprofile = async (req, res, next) => {
             if (
               prevL &&
               prevL.experienceDetails.find(
-                (f) => f._id == experienceDetails[i]._id
+                (f) => f._id == experienceDetails[i]._id,
               )?.Logo?.public_id !== undefined
             ) {
               await cloudinary.uploader.destroy(
                 prevL.experienceDetails.find(
-                  (f) => f._id == experienceDetails[i]._id
+                  (f) => f._id == experienceDetails[i]._id,
                 )?.Logo.public_id,
                 (error, result) => {
                   if (error) {
@@ -1171,7 +1187,7 @@ exports.directeditprofile = async (req, res, next) => {
                   } else {
                     console.log("Image deleted successfully:", result);
                   }
-                }
+                },
               );
             }
           }
@@ -1180,7 +1196,7 @@ exports.directeditprofile = async (req, res, next) => {
               experienceDetails[i]?.Logo,
               {
                 folder: `${email}/editProfile/experience/Logo`,
-              }
+              },
             );
           }
         } else {
@@ -1243,7 +1259,7 @@ exports.directeditprofile = async (req, res, next) => {
               },
             },
           },
-        }
+        },
       );
       const updatedUser = await User.findOne({ email: email });
       const accessToken = await signAccessToken(
@@ -1258,11 +1274,11 @@ exports.directeditprofile = async (req, res, next) => {
           image: updatedUser.image?.url,
           verification: "",
         },
-        `${updatedUser._id}`
+        `${updatedUser._id}`,
       );
       const refreshToken = await signRefreshToken(
         { email: updatedUser.email, _id: updatedUser._id },
-        `${updatedUser._id}`
+        `${updatedUser._id}`,
       );
 
       return res.send({ accessToken: accessToken, refreshToken: refreshToken });
@@ -1286,7 +1302,7 @@ exports.updateVerification = async (req, res, next) => {
     }
     await UserUpdate.updateOne(
       { email: email },
-      { $set: { verification: status } }
+      { $set: { verification: status } },
     );
     const adminDetails = await User.findOne({ email: process.env.ADMIN_EMAIL });
     if (status == "approved") {
@@ -1312,7 +1328,7 @@ exports.updateVerification = async (req, res, next) => {
             skills: userDoesExist.skills,
             languagesKnown: userDoesExist.languagesKnown,
           },
-        }
+        },
       );
 
       await send_Notification_mail(
@@ -1320,7 +1336,7 @@ exports.updateVerification = async (req, res, next) => {
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin`,
         userDoesExist.userName,
-        "/editProfile"
+        "/editProfile",
       );
       await Notification.create({
         senderInfo: adminDetails._id,
@@ -1332,14 +1348,14 @@ exports.updateVerification = async (req, res, next) => {
     } else {
       await User.updateOne(
         { email: email },
-        { $set: { verification: status } }
+        { $set: { verification: status } },
       );
       await send_Notification_mail(
         email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin and added comment: "<b>${req.body.reason}</b>"`,
         userDoesExist.userName,
-        "/editProfile"
+        "/editProfile",
       );
       await Notification.create({
         senderInfo: adminDetails._id,
@@ -1376,7 +1392,7 @@ exports.updateVerificationByAdmin = async (req, res, next) => {
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin`,
         userDoesExist.userName,
-        "/editProfile"
+        "/editProfile",
       );
       await Notification.create({
         senderInfo: adminDetails._id,
@@ -1388,14 +1404,14 @@ exports.updateVerificationByAdmin = async (req, res, next) => {
     } else {
       await User.updateOne(
         { email: email },
-        { $set: { verification: status } }
+        { $set: { verification: status } },
       );
       await send_Notification_mail(
         email,
         `Profile Update`,
         `Your profile update request has been <b>${req.body.status}</b> by the admin and added comment: "<b>${req.body.reason}</b>"`,
         userDoesExist.userName,
-        "/editProfile"
+        "/editProfile",
       );
       await Notification.create({
         senderInfo: adminDetails._id,
@@ -1448,7 +1464,7 @@ exports.updateVerificationStatusDirectly = async (req, res, next) => {
     if (userDoesExist) {
       await User.updateOne(
         { _id: userId },
-        { verification: verificationStatus }
+        { verification: verificationStatus },
       );
       return res.status(200).json({ message: "User verification updated" });
     }
@@ -1474,7 +1490,7 @@ exports.verifyUserPassword = async (req, res, next) => {
     if (
       !(await bcrypt.compare(
         validating_email_password.password,
-        userDoesExist.password
+        userDoesExist.password,
       ))
     ) {
       return res.status(404).json({ message: "Entered password is wrong" });
@@ -1487,61 +1503,55 @@ exports.verifyUserPassword = async (req, res, next) => {
   }
 };
 
-exports.updateProfileImage = async (req, res, next) => {
+// userController.js
+exports.updateProfileImage = async (req, res) => {
   try {
-    // const { userId } = req.payload;
-    console.log(req.payload)
-    const { image, userId, email } = req.body;
-    console.log(userId);
-    const userDoesExist = await User.findOne({ _id: userId });
-    if (!userDoesExist) {
-      return res.status(400).send("User not found");
+    const { image, userId } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(400).send("User not found");
+
+    // Delete old image if exists
+    if (user.image?.public_id) {
+      await cloudinary.uploader.destroy(user.image.public_id);
     }
-    if (userDoesExist.image.public_id !== undefined) {
-      await cloudinary.uploader.destroy(
-        userDoesExist.image.public_id,
-        (error, result) => {
-          if (error) {
-            console.error("Error deleting image:", error);
-          } else {
-            console.log("Image deleted successfully:", result);
-          }
-        }
-      );
-    }
+
+    // Upload new image
     const result = await cloudinary.uploader.upload(image, {
-      folder: `${email}`,
+      folder: `${user.email}`,
     });
+
+    // Update user
     await User.updateOne(
       { _id: userId },
       {
         $set: {
-          image: {
-            public_id: result.public_id,
-            url: result.secure_url,
-          },
+          image: { public_id: result.public_id, url: result.secure_url },
         },
-      }
-    );
-    const accessToken = await signAccessToken(
-      {
-        email: userDoesExist.email,
-        coins: userDoesExist.coins,
-        documents: userDoesExist.documents,
-        user_id: userDoesExist._id,
-        role: userDoesExist.role,
-        userName: userDoesExist.userName,
-        image: result.secure_url,
-        verification: userDoesExist.verification,
       },
-      `${userDoesExist._id}`
-    );
-    const refreshToken = await signRefreshToken(
-      { email: userDoesExist.email, _id: userDoesExist._id },
-      `${userDoesExist._id}`
     );
 
-    return res.send({ accessToken: accessToken, refreshToken: refreshToken });
+    // Generate tokens
+    const accessToken = await signAccessToken(
+      {
+        email: user.email,
+        coins: user.coins,
+        documents: user.documents,
+        user_id: user._id,
+        role: user.role,
+        userName: user.userName,
+        image: result.secure_url,
+        verification: user.verification,
+      },
+      `${user._id}`,
+    );
+
+    const refreshToken = await signRefreshToken(
+      { email: user.email, _id: user._id },
+      `${user._id}`,
+    );
+
+    return res.send({ accessToken, refreshToken });
   } catch (err) {
     console.log(err);
     return res.status(400).json("Error while updating profile");
@@ -1564,7 +1574,7 @@ exports.deleteProfileImage = async (req, res, next) => {
           } else {
             console.log("Image deleted successfully:", result);
           }
-        }
+        },
       );
     }
     await User.updateOne(
@@ -1574,7 +1584,7 @@ exports.deleteProfileImage = async (req, res, next) => {
           image: "",
           verification: "rejected",
         },
-      }
+      },
     );
     const accessToken = await signAccessToken(
       {
@@ -1587,11 +1597,11 @@ exports.deleteProfileImage = async (req, res, next) => {
         verification: userDoesExist.verification,
         image: "",
       },
-      `${userDoesExist._id}`
+      `${userDoesExist._id}`,
     );
     const refreshToken = await signRefreshToken(
       { email: userDoesExist.email, _id: userDoesExist._id },
-      `${userDoesExist._id}`
+      `${userDoesExist._id}`,
     );
 
     return res.send({ accessToken: accessToken, refreshToken: refreshToken });
@@ -1607,7 +1617,7 @@ exports.getUsers = async (req, res, next) => {
     if (type !== "") {
       let result = await User.find(
         { role: type, isProfileComplete: true },
-        { projection: { password: 0 } }
+        { projection: { password: 0 } },
       )
         .populate({
           path: "followers",
@@ -1635,20 +1645,17 @@ exports.getUsers = async (req, res, next) => {
   }
 };
 
-
-
 exports.getFollowers = async (req, res, next) => {
   try {
     const userId = req.payload.user_id;
     const result = await User.find({
       _id: { $ne: userId }, // exclude self
       following: { $in: [new mongoose.Types.ObjectId(userId)] },
-      isProfileComplete: true
+      isProfileComplete: true,
     });
 
     return res.status(200).json(result);
   } catch (err) {
-
     return res.status(400).json("Error while fetching");
   }
 };
@@ -1656,10 +1663,13 @@ exports.getFollowers = async (req, res, next) => {
 exports.getFollowings = async (req, res, next) => {
   try {
     const userId = req.payload.user_id;
-    const result = await User.find({ _id: { $ne: userId }, followers: { $in: [new mongoose.Types.ObjectId(userId)] }, isProfileComplete: true });
+    const result = await User.find({
+      _id: { $ne: userId },
+      followers: { $in: [new mongoose.Types.ObjectId(userId)] },
+      isProfileComplete: true,
+    });
     return res.status(200).json(result);
   } catch (err) {
-
     return res.status(400).json("Error while fetching");
   }
 };
@@ -1687,14 +1697,14 @@ exports.addUserReviewStars = async (req, res, next) => {
       if (userExists) {
         await User.updateOne(
           { _id: req.body.userId, "review.reviewBy": req.body.review.reviewBy },
-          { "review.$.review": req.body.review.review }
+          { "review.$.review": req.body.review.review },
         );
         await send_Notification_mail(
           user.email,
           `Added Stars to the pitch!`,
           `${reviewSentUser.userName} has added ${req.body.review.review} stars to your profile. Check notification for more info.`,
           user.userName,
-          "/editProfile"
+          "/editProfile",
         );
         await Notification.create({
           senderInfo: reviewSentUser._id,
@@ -1708,14 +1718,14 @@ exports.addUserReviewStars = async (req, res, next) => {
       const reviewUser = await User.findOne({ _id: req.body.review.reviewBy });
       await User.updateOne(
         { _id: req.body.userId },
-        { $push: { review: req.body.review, reviewBy: reviewUser._id } }
+        { $push: { review: req.body.review, reviewBy: reviewUser._id } },
       );
       await send_Notification_mail(
         user.email,
         `Added Stars to the pitch!`,
         `${user.userName} has added ${req.body.review.review} . Check notification for more info.`,
         user.userName,
-        "/editProfile"
+        "/editProfile",
       );
       await Notification.create({
         senderInfo: user._id,
@@ -1737,7 +1747,7 @@ exports.getUserReviewStars = async (req, res, next) => {
   try {
     const user = await User.findOne(
       { _id: req.body.userId, "review.reviewBy": req.body.reviewBy },
-      { "review.$": 1 }
+      { "review.$": 1 },
     ).populate({
       path: "review.reviewBy",
       select: ["userName", "image", "role"],
@@ -1768,7 +1778,7 @@ exports.addUserComment = async (req, res, next) => {
               createdAt: new Date(),
             },
           },
-        }
+        },
       );
       return res.status(200).json("Comment added");
     }
@@ -1787,7 +1797,7 @@ exports.removeUserComment = async (req, res, next) => {
       });
       await User.updateOne(
         { email: req.body.email },
-        { $pull: { comments: { _id: req.body.commentId } } }
+        { $pull: { comments: { _id: req.body.commentId } } },
       );
       return res.status(200).json("Comment Deleted");
     }
@@ -1811,7 +1821,7 @@ exports.addPayment = async (req, res, next) => {
             "payment.$.moneyPaid": +req.body.money,
             "payment.$.noOfTimes": 1,
           },
-        }
+        },
       );
       return res.status(200).json("Payment Added");
     }
@@ -1829,7 +1839,7 @@ exports.addPayment = async (req, res, next) => {
             createdAt: new Date(),
           },
         },
-      }
+      },
     );
     return res.status(200).json("Payment added");
   } catch (err) {
@@ -1837,7 +1847,3 @@ exports.addPayment = async (req, res, next) => {
     return res.status(400).json(err);
   }
 };
-
-
-
-

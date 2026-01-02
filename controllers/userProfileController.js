@@ -283,6 +283,7 @@ exports.startupEntryData = async (req, res) => {
     const updateFields = {};
 
     // 🔹 Role enforcement
+    updateFields.beyincProfile = "Startup"; // Default role is Startup, but can be changed to BebeyincProfile
     updateFields.role = "Startup";
     updateFields.categoryUserRole = "Startup";
     updateFields.interests = ["Startup"];
