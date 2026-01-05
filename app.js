@@ -55,7 +55,7 @@ const corsOptions = {
 };
 
 // Handle CORS preflight requests BEFORE body parsing middleware
-app.options('*', cors(corsOptions)); // handle preflight for all routes
+app.options('*', cors(corsOptions)); // handle preflight for all routes and manage something
 app.use(cors(corsOptions));
 
 const path = require("path")
