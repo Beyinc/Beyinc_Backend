@@ -1,32 +1,28 @@
 const express = require("express");
-// const postControllers = require("../controllers/postControllers");
 const postControllers = require('../controllers/postControllers');
+const { verifyAccessToken } = require("../helpers/jwt_helpers");
+
 const router = express.Router();
 
-router.route("/createPost").post(postControllers.createPost);
-router.route("/deletePost").post(postControllers.deletePost);
-router.route("/editPost").post(postControllers.editPost);
-// router.route("/likePost").post(postControllers.likePost);
-// router.route("/disLikePost").post(postControllers.DisLikePost);
-router.route("/reactToPost").post(postControllers.reactToPost);
+// ============ PUBLIC ROUTES (No Auth Required) ============
+// Guests can view posts without logging in
 router.route("/getPost").post(postControllers.getPost);
 router.route("/getAllPosts").post(postControllers.getAllPosts);
 router.route("/getTopTrendingPosts").post(postControllers.getTopTrendingPosts);
-
 router.route("/getUsersPost").post(postControllers.getUsersPost);
-router.route("/requestIntoOpenDiscussion").post(postControllers.requestIntoOpenDiscussion);
-router.route("/getPostRequestDiscussion").post(postControllers.getPostRequestDiscussion);
-
-router.route("/updaterequestIntoOpenDiscussion").post(postControllers.updaterequestIntoOpenDiscussion);
-
-
-router.route("/addReport").post(postControllers.reportPost);
+router.route('/filterPosts').post(postControllers.filterposts);
 router.route("/getReportedPosts").get(postControllers.getReportedPosts);
 
-router.route("/updateReport").post(postControllers.updatereportPost);
-
-router.route('/filterPosts').post(postControllers.filterposts);
-
-
+// ============ PROTECTED ROUTES (Auth Required) ============
+// Only logged-in users can perform these actions
+router.route("/createPost").post(verifyAccessToken, postControllers.createPost);
+router.route("/deletePost").post(verifyAccessToken, postControllers.deletePost);
+router.route("/editPost").post(verifyAccessToken, postControllers.editPost);
+router.route("/reactToPost").post(verifyAccessToken, postControllers.reactToPost);
+router.route("/requestIntoOpenDiscussion").post(verifyAccessToken, postControllers.requestIntoOpenDiscussion);
+router.route("/getPostRequestDiscussion").post(verifyAccessToken, postControllers.getPostRequestDiscussion);
+router.route("/updaterequestIntoOpenDiscussion").post(verifyAccessToken, postControllers.updaterequestIntoOpenDiscussion);
+router.route("/addReport").post(verifyAccessToken, postControllers.reportPost);
+router.route("/updateReport").post(verifyAccessToken, postControllers.updatereportPost);
 
 module.exports = router;

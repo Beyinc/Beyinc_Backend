@@ -12,7 +12,7 @@ const pitchRouter = require("./routes/pitchRouter");
 const pitchCommentRouter = require("./routes/PitchCommentRouter");
 const postCommentRouter = require("./routes/postCommentRouter");
 const paymentRouter = require("./routes/paymentRouter");
-const referralRouter = require("./routes/referralRouter"); 
+const referralRouter = require("./routes/referralRouter");
 const calenderRouter = require("./routes/CalenderRouter");
 const professionalProfileRouter = require("./routes/professionalProfileRouter")
 const calendarController = require("./controllers/calendarController")
@@ -40,7 +40,7 @@ const morgan = require("morgan");
 
 const app = express();
 
-app.use(cors({origin:['http://localhost:3000','https://beyinc-frontend.vercel.app','https://yellow-mushroom-0aec0e610.2.azurestaticapps.net','https://www.bloomr.world']}));
+app.use(cors({ origin: ['http://localhost:3000', 'https://beyinc-frontend.vercel.app', 'https://yellow-mushroom-0aec0e610.2.azurestaticapps.net', 'https://www.bloomr.world'] }));
 app.use(cors());
 const corsOptions = {
   origin: [
@@ -55,7 +55,7 @@ const corsOptions = {
 };
 
 // Handle CORS preflight requests BEFORE body parsing middleware
-app.options('*', cors(corsOptions)); // handle preflight for all routes
+app.options('*', cors(corsOptions)); // handle preflight for all routes and manage something
 app.use(cors(corsOptions));
 
 const path = require("path")
@@ -83,7 +83,7 @@ app.use("/api/test", testingRouter);
 
 
 app.use("/api/pitch", verifyAccessToken, pitchCommentRouter);
-app.use("/api/post", verifyAccessToken, postCommentRouter);
+app.use("/api/post", postCommentRouter);
 
 
 
@@ -92,7 +92,7 @@ app.use("/api/notification", verifyAccessToken, NotificationRouter);
 app.use("/api/pitch", verifyAccessToken, pitchRouter);
 
 
-app.use("/api/posts", verifyAccessToken, PostRouter);
+app.use("/api/posts", PostRouter);
 
 
 app.use("/api/role", rolerouter);
@@ -104,7 +104,7 @@ app.use("/api/referral", verifyAccessToken, referralRouter);
 
 app.use("/api/calendar", verifyAccessToken, calenderRouter);
 
-app.get("/api/calendarRedirect",calendarController.Redirect );
+app.get("/api/calendarRedirect", calendarController.Redirect);
 
 // app.post("/api/saveBeyincProfessional", verifyAccessToken, beyincProfileController.saveBeyincProfile );
 
@@ -115,9 +115,9 @@ app.use("/api/professionalProfile", verifyAccessToken, professionalProfileRouter
 
 
 
-app.use('/api',verifyAccessToken, userProfileRoutes);
+app.use('/api', verifyAccessToken, userProfileRoutes);
 
-app.use('/api',verifyAccessToken,filterRoutes);
+app.use('/api', verifyAccessToken, filterRoutes);
 
 app.use('/api/postLiveChat', verifyAccessToken, postLiveChatRouter);
 
