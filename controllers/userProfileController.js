@@ -1119,17 +1119,24 @@ exports.getNewProfiles = async (req, res, next) => {
   try {
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-    const loggedInUserId = new mongoose.Types.ObjectId(req.payload.user_id);
+    let query = { isProfileComplete: true };
+    if (req.payload && req.payload.user_id) {
+      const loggedInUserId = new mongoose.Types.ObjectId(req.payload.user_id);
+      query = {
+        email: { $ne: req.payload.email },
+        isProfileComplete: true,
+        followers: { $nin: [loggedInUserId] },
+        _id: { $ne: loggedInUserId }
+      };
+    }
 
     const users = await User.aggregate([
       {
-        $match: {
-          email: { $ne: req.payload.email },
-          isProfileComplete: true,
-          followers: { $nin: [loggedInUserId] },
-          _id: { $ne: loggedInUserId },
-        },
+        $match: query
       },
+      {
+        $limit: 10 // Limiting to 10 for performance
+      }
     ]);
 
     return res.status(200).json(users);
