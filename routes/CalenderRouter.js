@@ -4,7 +4,7 @@ const availabilityController = require("../controllers/availabilityController");
 const calendarController = require("../controllers/calendarController")
 const calenderAuth = require("../helpers/calenderAuth");
 const router = express.Router();
-
+const requestController=require("../controllers/requestController");
 
 const { google } = require('googleapis');
 const dotenv = require("dotenv");
@@ -39,6 +39,18 @@ router.route("/addFeedback").post(availabilityController.addFeedback);
 router.route("/deleteSingleService").post(availabilityController.deleteSessionById);
 
 
+// request routes
+router.post("/create-request", requestController.createNewRequest);
+
+router.get("/user/pending",requestController.getUserPendingRequests);
+
+router.get("/mentor/pending", requestController.getMentorPendingRequests);
+
+router.put("/update-request", requestController.updateRequestStatusByMentor);
+
+router.delete("/deleteRequestByMentor",requestController.deleteRequestByMentor);
+
+router.put("/decline-request", requestController.declineRequestByMentor);
 
 module.exports = router;
 

@@ -1,5 +1,65 @@
 const mongoose = require("mongoose");
 
+const MentorExpertiseSchema = new mongoose.Schema(
+  {
+    industry: {
+      type: String,
+      required: true,
+    },
+    skills: {
+      type: [String],
+      default: [],
+    },
+  },
+  { _id: false },
+);
+
+const StartupProfileSchema = new mongoose.Schema(
+  {
+    startupName: {
+      type: String,
+      required: true,
+    },
+
+    startupTagline: {
+      type: String,
+    },
+
+    founderName: {
+      type: String,
+    },
+
+    startupEmail: {
+      type: String,
+    },
+
+    visibilityMode: {
+      type: String,
+      enum: ["public", "private", "invite-only"],
+      default: "public",
+    },
+
+    stage: {
+      type: String,
+      required: true,
+    },
+
+    teamSize: {
+      type: String,
+    },
+
+    industries: {
+      type: [String],
+      default: [],
+    },
+
+    targetMarket: {
+      type: String,
+    },
+  },
+  { _id: false },
+);
+
 const userSchema = new mongoose.Schema(
   {
     isProfileComplete: {
@@ -20,14 +80,13 @@ const userSchema = new mongoose.Schema(
     ],
     userName: {
       type: String,
+      unique: false,
     },
     about: {
-      type: String
-    }
-    ,
+      type: String,
+    },
     headline: {
       type: String,
-
     },
     twitter: {
       type: String,
@@ -99,7 +158,6 @@ const userSchema = new mongoose.Schema(
 
     experienceDetails: [
       {
-
         startYear: { type: String, required: false },
         endYear: { type: String, required: false },
         company: { type: String, required: false },
@@ -110,21 +168,21 @@ const userSchema = new mongoose.Schema(
         Banner: {
           public_id: {
             type: String,
-            required: false
+            required: false,
           },
           secure_url: {
             type: String,
-            required: false
+            required: false,
           },
         },
         Logo: {
           public_id: {
             type: String,
-            required: false
+            required: false,
           },
           secure_url: {
             type: String,
-            required: false
+            required: false,
           },
         },
       },
@@ -176,7 +234,7 @@ const userSchema = new mongoose.Schema(
         "GovernmentBody",
         "Corporate",
         "TechPartner",
-        ""
+        "",
       ],
     },
 
@@ -199,7 +257,6 @@ const userSchema = new mongoose.Schema(
       ],
     },
 
-
     role_type: {
       type: String,
       required: false,
@@ -218,7 +275,55 @@ const userSchema = new mongoose.Schema(
       ],
     },
 
+    role_level: {
+      type: String,
+      required: false,
+      enum: [
+        "Entry Level",
+        "Intermediate",
+        "Senior / Lead",
+        "Manager",
+        "Director / Head",
+        "VP",
+        "CXO",
+        "Researcher",
+        "Senior Researcher / Research Lead",
+        "Principal Researcher",
+      ],
+    },
 
+    companyStage: {
+      type: String,
+      required: false,
+      enum: [
+        "Early Stage Startup",
+        "Funded Startup",
+        "Revenue Stage",
+        "Established Company",
+        "Enterprise",
+        "",
+      ],
+    },
+
+    // mentorExpertise: {
+    //   type: [MentorExpertiseSchema],
+    //   default: [],
+    // mentorExpertise: {
+    //   type: [MentorExpertiseSchema],
+    //   default: [],
+    //   required: false,
+    // },
+    mentorExpertise: {
+  type: [MentorExpertiseSchema],
+  default: [],
+  required: false,
+},
+
+
+    startupProfile: {
+      type: StartupProfileSchema,
+      required: false,
+    },
 
     documents: {
       resume: {
@@ -280,8 +385,11 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
-    skills: { type: Array },
     languagesKnown: { type: Array },
+    skills: {
+        type: [String],
+        default: [],
+    },
     chatBlock: [
       {
         userInfo: {
@@ -317,7 +425,7 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true, // This adds 'createdAt' and 'updatedAt' fields
-  }
+  },
 );
 
 const User = new mongoose.model("User", userSchema);

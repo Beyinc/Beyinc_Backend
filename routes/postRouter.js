@@ -10,6 +10,8 @@ router.route("/deletePost").post(verifyAccessToken, postControllers.deletePost);
 router.route("/editPost").post(verifyAccessToken, postControllers.editPost);
 router.route("/likePost").post(verifyAccessToken, postControllers.likePost);
 router.route("/disLikePost").post(verifyAccessToken, postControllers.DisLikePost);
+
+router.route("/reactToPost").post(postControllers.reactToPost);
 router.route("/getPost").post(postControllers.getPost);
 router.route("/getAllPosts").post(postControllers.getAllPosts);
 router.route("/getTopTrendingPosts").post(postControllers.getTopTrendingPosts);
