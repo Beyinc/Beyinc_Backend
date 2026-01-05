@@ -3,7 +3,7 @@ const User = require("../models/UserModel");
 
 // Filter Data Function
 exports.filterData = async (req, res) => {
-  const { userName, stages, industries, expertise, categories } = req.body; // Destructure categories from the request body
+  const { userName, stages, industries, expertise, categories,role } = req.body; // Destructure categories from the request body
 
   console.log("Filtering data with:", { userName, stages, industries, expertise, categories });
 
@@ -15,6 +15,9 @@ exports.filterData = async (req, res) => {
     
     if (expertise && expertise.length > 0) {
       query.expertise = { $in: expertise }; // Match any of the expertise
+    }
+    if (role && role !== "") {
+      query.role_level = role; 
     }
     if (userName && userName.length > 1) { // Change to > 1 for better matches
       query.userName = { $regex: new RegExp(userName, 'i') }; 
