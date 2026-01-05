@@ -194,48 +194,72 @@ exports.getAvailability = async (req, res) => {
 };
 
 
+
+
 exports.saveSingleService = async (req, res) => {
-  console.log(req.body);
   try {
-    const { title, description, duration, amount, hostingLink } = req.body;
+    const {
+      sessionId, 
+      title,
+      description,
+      duration,
+      amount,
+      hostingLink
+    } = req.body;
+
     const userId = req.payload.user_id;
 
-    // Create a new session object based on the updated schema
-    const newSession = {
-      duration,
-      title,
-      amount,
-      description,
-      hostingLink, // Added hostingLink to align with the updated sessionSchema
-    };
-
-    // Find the availability record for the user
     let availability = await Availability.findOne({ userId });
 
-    if (availability) {
-      // If the availability record exists, add the new session to the sessions array
-      availability.sessions.push(newSession);
+    if (!availability) {
+      availability = new Availability({ userId, sessions: [] });
+    }
+
+    if (sessionId) {
+      const session = availability.sessions.id(sessionId);
+
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      session.title = title;
+      session.description = description;
+      session.duration = duration;
+      session.amount = amount;
+      session.hostingLink = hostingLink;
+
     } else {
-      // If no availability record exists for the user, create a new one
-      availability = new Availability({
-        userId,
-        sessions: [newSession], // Store the new session in the sessions array
+      availability.sessions.push({
+        title,
+        description,
+        duration,
+        amount,
+        hostingLink
       });
     }
 
-    // Save the availability record
     await availability.save();
 
-    res
-      .status(200)
-      .json({ message: "Session data saved successfully", availability });
+    res.status(200).json({
+      message: sessionId
+        ? "Session updated successfully"
+        : "Session created successfully",
+      availability
+    });
+
   } catch (error) {
     console.error("Error saving session data:", error);
-    res
-      .status(500)
-      .json({ message: "Error saving session data", error: error.message });
+    res.status(500).json({
+      message: "Error saving session data",
+      error: error.message
+    });
   }
 };
+
+
+
+
+
 
 // Controller to save webinar
 exports.saveWebinar = async (req, res) => {
@@ -399,7 +423,7 @@ exports.getBookingsMentor = async (req, res) => {
       .populate("userId", "email userName phone") // Populate userId with specific fields
       .exec();
 
-    console.log("Bookings found:", bookings); // Log the bookings retrieved
+    // console.log("Bookings found:", bookings); // Log the bookings retrieved
 
     // if (!bookings.length) {
     //   return res.status(400).json({ success: false, message: 'No bookings found for this mentor' });
@@ -431,7 +455,7 @@ exports.getBookingsUser = async (req, res) => {
       .populate("userId", "email userName phone") // Populate userId with specific fields
       .exec();
 
-    console.log("Bookings found:", bookings); // Log the bookings found
+    // console.log("Bookings found:", bookings); // Log the bookings found
 
     if (!bookings.length) {
       return res
@@ -607,3 +631,5 @@ exports.deleteSessionById = async (req, res) => {
     return res.status(500).json({ message: "Server error", error });
   }
 };
+
+

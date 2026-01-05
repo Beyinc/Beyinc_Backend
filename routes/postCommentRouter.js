@@ -2,8 +2,6 @@ const express = require("express");
 const router = express.Router();
 const postCommentsController = require("../controllers/postCommentsController");
 
-const { verifyAccessToken } = require("../helpers/jwt_helpers");
-
 // Add comment with optional file upload
 // router
 //   .route("/addPostComment")
@@ -11,7 +9,7 @@ const { verifyAccessToken } = require("../helpers/jwt_helpers");
 
 router
   .route("/addPostComment")
-  .post(verifyAccessToken, postCommentsController.addPostComment);
+  .post(postCommentsController.addPostComment); 
 
 
 // Fetch comments for a post
@@ -22,10 +20,10 @@ router
 // Like/Dislike comments
 router
   .route("/likePostComment")
-  .patch(verifyAccessToken, postCommentsController.likePostComment);
+  .patch(postCommentsController.likePostComment);
 
 router
   .route("/DislikePostComment")
-  .patch(verifyAccessToken, postCommentsController.DislikePostComment);
+  .patch(postCommentsController.DislikePostComment);
 
 module.exports = router;
