@@ -244,7 +244,7 @@ exports.inputEntryData = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       user_id,
       { $set: updateFields },
-      { new: true },
+      { new: true }
     );
 
     if (!user) {
@@ -283,6 +283,7 @@ exports.startupEntryData = async (req, res) => {
     const updateFields = {};
 
     // 🔹 Role enforcement
+    updateFields.beyincProfile = "Startup"; // Default role is Startup, but can be changed to BebeyincProfile
     updateFields.role = "Startup";
     updateFields.categoryUserRole = "Startup";
     updateFields.interests = ["Startup"];
@@ -311,7 +312,7 @@ exports.startupEntryData = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       user_id,
       { $set: updateFields },
-      { new: true },
+      { new: true }
     );
 
     if (!user) {
@@ -335,7 +336,7 @@ exports.getStartupProfileData = async (req, res) => {
     const { userId } = req.params;
 
     const user = await User.findById(userId).select(
-      "startupProfile.industries startupProfile.targetMarket startupProfile.stage",
+      "startupProfile.industries startupProfile.targetMarket startupProfile.stage"
     );
 
     if (!user || !user.startupProfile) {
@@ -403,7 +404,7 @@ exports.SaveDocuments = async (req, res, next) => {
       { _id: userId },
       {
         $set: { documents: { ...user.documents, ...uploadedDocuments } },
-      },
+      }
     );
 
     return res.send({ message: "Documents uploaded successfully" });
@@ -451,7 +452,7 @@ exports.SaveDocument = async (req, res, next) => {
       { _id: userId },
       {
         $set: { documents: { ...user.documents, ...uploadedDocuments } },
-      },
+      }
     );
 
     return res.send({ message: "Documents uploaded successfully" });
@@ -551,7 +552,7 @@ exports.DeleteEducationDetails = async (req, res, next) => {
     }
 
     const educationIndex = user.educationDetails.findIndex(
-      (entry) => entry._id.toString() === _id,
+      (entry) => entry._id.toString() === _id
       // (entry) => entry._id.toString() === _id,
     );
 
@@ -690,7 +691,7 @@ exports.DeleteExperienceDetails = async (req, res, next) => {
     }
 
     const experienceIndex = user.experienceDetails.findIndex(
-      (entry) => entry._id.toString() === _id,
+      (entry) => entry._id.toString() === _id
       // (entry) => entry._id.toString() === _id,
     );
 
@@ -816,7 +817,7 @@ exports.UpdateEducationDetails = async (req, res, next) => {
     }
 
     const educationIndex = user.educationDetails.findIndex(
-      (entry) => entry._id.toString() === education._id,
+      (entry) => entry._id.toString() === education._id
       // (entry) => entry._id.toString() === education._id,
     );
     if (educationIndex === -1) {
@@ -825,7 +826,7 @@ exports.UpdateEducationDetails = async (req, res, next) => {
 
     console.log(
       "Updated Education Object: ",
-      user.educationDetails[educationIndex],
+      user.educationDetails[educationIndex]
       // user.educationDetails[educationIndex],
     );
 
@@ -872,7 +873,7 @@ exports.UpdateExperienceDetails = async (req, res, next) => {
     }
 
     const experienceIndex = user.experienceDetails.findIndex(
-      (entry) => entry._id.toString() === experience._id,
+      (entry) => entry._id.toString() === experience._id
       // (entry) => entry._id.toString() === experience._id,
     );
 
@@ -955,12 +956,12 @@ exports.uploadResume = async (req, res, next) => {
 exports.CreateAbout = async (req, res, next) => {
   try {
     const { about } = req.body;
-    console.log("This is the payload: ", req.payload);
     const { user_id } = req.payload;
 
     if (!user_id) {
       return res.status(400).send({ message: "User ID is required." });
     }
+
     if (typeof about !== "string" || about.trim() === "") {
       return res.status(400).send({
         message: "About field is required and must be a non-empty string.",
@@ -973,7 +974,6 @@ exports.CreateAbout = async (req, res, next) => {
     }
 
     user.about = about;
-
     await user.save();
 
     return res.status(200).json({
@@ -982,10 +982,22 @@ exports.CreateAbout = async (req, res, next) => {
       about: user.about,
     });
   } catch (err) {
-    console.error("Error in CreateAbout: ", err);
+    // Better error logging
+    console.error("Error message:", err.message);
+    if (err.errors) {
+      console.error("Validation errors:", err.errors);
+    }
+
     return res.status(500).send({
       success: false,
-      message: "Internal Server Error",
+      message: err.message || "Internal Server Error",
+      // Include validation errors if they exist
+      errors: err.errors
+        ? Object.keys(err.errors).map((key) => ({
+            field: key,
+            message: err.errors[key].message,
+          }))
+        : undefined,
     });
   }
 };
@@ -1078,7 +1090,7 @@ exports.DeleteSkill = async (req, res, next) => {
     }
 
     user.skills = user.skills.filter(
-      (skill) => !skillsToDelete.includes(skill),
+      (skill) => !skillsToDelete.includes(skill)
       // (skill) => !skillsToDelete.includes(skill),
     );
 

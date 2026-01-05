@@ -20,39 +20,31 @@ const StartupProfileSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-
     startupTagline: {
       type: String,
     },
-
     founderName: {
       type: String,
     },
-
     startupEmail: {
       type: String,
     },
-
     visibilityMode: {
       type: String,
-      enum: ["public", "private", "invite-only"],
+      enum: ["public", "stealth", "idea-stage"], // Updated to match frontend
       default: "public",
     },
-
     stage: {
       type: String,
       required: true,
     },
-
     teamSize: {
       type: String,
     },
-
     industries: {
       type: [String],
       default: [],
     },
-
     targetMarket: {
       type: String,
     },
@@ -314,11 +306,10 @@ const userSchema = new mongoose.Schema(
     //   required: false,
     // },
     mentorExpertise: {
-  type: [MentorExpertiseSchema],
-  default: [],
-  required: false,
-},
-
+      type: [MentorExpertiseSchema],
+      default: [],
+      required: false,
+    },
 
     startupProfile: {
       type: StartupProfileSchema,
@@ -387,8 +378,8 @@ const userSchema = new mongoose.Schema(
     ],
     languagesKnown: { type: Array },
     skills: {
-        type: [String],
-        default: [],
+      type: [String],
+      default: [],
     },
     chatBlock: [
       {
