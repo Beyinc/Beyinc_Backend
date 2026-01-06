@@ -244,7 +244,7 @@ exports.inputEntryData = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       user_id,
       { $set: updateFields },
-      { new: true }
+      { new: true },
     );
 
     if (!user) {
@@ -280,39 +280,52 @@ exports.startupEntryData = async (req, res) => {
     console.log("Received startup data:", req.body);
     console.log("Saving startup data for user:", user_id);
 
-    const updateFields = {};
+    // 🔹 Base update fields (role enforcement)
+    const updateFields = {
+      beyincProfile: "Startup",
+      role: "Startup",
+      categoryUserRole: "Startup",
+      interests: ["Startup"],
+      isProfileComplete: true,
+    };
 
-    // 🔹 Role enforcement
-    updateFields.beyincProfile = "Startup"; // Default role is Startup, but can be changed to BebeyincProfile
-    updateFields.role = "Startup";
-    updateFields.categoryUserRole = "Startup";
-    updateFields.interests = ["Startup"];
+    // 🔹 PATCH-style nested updates (🔥 THIS IS THE FIX)
+    if (startupName) updateFields["startupProfile.startupName"] = startupName;
 
-    // 🔹 Build startupProfile object conditionally
-    const startupProfile = {};
+    if (startupTagline)
+      updateFields["startupProfile.startupTagline"] = startupTagline;
 
-    if (startupName) startupProfile.startupName = startupName;
-    if (startupTagline) startupProfile.startupTagline = startupTagline;
-    if (founderName) startupProfile.founderName = founderName;
-    if (startupEmail) startupProfile.startupEmail = startupEmail;
-    if (visibilityMode) startupProfile.visibilityMode = visibilityMode;
-    if (startupStage) startupProfile.stage = startupStage;
-    if (startupTeamSize) startupProfile.teamSize = startupTeamSize;
-    if (industries?.length) startupProfile.industries = industries;
-    if (targetMarket) startupProfile.targetMarket = targetMarket;
+    if (founderName) updateFields["startupProfile.founderName"] = founderName;
 
-    // ❌ block empty startupProfile writes
-    if (Object.keys(startupProfile).length === 0) {
-      return res.status(400).json({ message: "No startup data provided" });
+    if (startupEmail)
+      updateFields["startupProfile.startupEmail"] = startupEmail;
+
+    if (visibilityMode)
+      updateFields["startupProfile.visibilityMode"] = visibilityMode;
+
+    if (startupStage) updateFields["startupProfile.stage"] = startupStage;
+
+    if (startupTeamSize)
+      updateFields["startupProfile.teamSize"] = startupTeamSize;
+
+    if (industries && Array.isArray(industries) && industries.length > 0)
+      updateFields["startupProfile.industries"] = industries;
+
+    if (targetMarket)
+      updateFields["startupProfile.targetMarket"] = targetMarket;
+
+    // 🔹 Guard: prevent empty startup updates
+    if (Object.keys(updateFields).length === 5) {
+      // only role-related fields exist
+      return res.status(400).json({
+        message: "No startup data provided to update",
+      });
     }
-
-    updateFields.startupProfile = startupProfile;
-    updateFields.isProfileComplete = true;
 
     const user = await User.findByIdAndUpdate(
       user_id,
       { $set: updateFields },
-      { new: true }
+      { new: true },
     );
 
     if (!user) {
@@ -336,7 +349,7 @@ exports.getStartupProfileData = async (req, res) => {
     const { userId } = req.params;
 
     const user = await User.findById(userId).select(
-      "startupProfile.industries startupProfile.targetMarket startupProfile.stage"
+      "startupProfile.industries startupProfile.targetMarket startupProfile.stage",
     );
 
     if (!user || !user.startupProfile) {
@@ -404,7 +417,7 @@ exports.SaveDocuments = async (req, res, next) => {
       { _id: userId },
       {
         $set: { documents: { ...user.documents, ...uploadedDocuments } },
-      }
+      },
     );
 
     return res.send({ message: "Documents uploaded successfully" });
@@ -452,7 +465,7 @@ exports.SaveDocument = async (req, res, next) => {
       { _id: userId },
       {
         $set: { documents: { ...user.documents, ...uploadedDocuments } },
-      }
+      },
     );
 
     return res.send({ message: "Documents uploaded successfully" });
@@ -552,7 +565,7 @@ exports.DeleteEducationDetails = async (req, res, next) => {
     }
 
     const educationIndex = user.educationDetails.findIndex(
-      (entry) => entry._id.toString() === _id
+      (entry) => entry._id.toString() === _id,
       // (entry) => entry._id.toString() === _id,
     );
 
@@ -691,7 +704,7 @@ exports.DeleteExperienceDetails = async (req, res, next) => {
     }
 
     const experienceIndex = user.experienceDetails.findIndex(
-      (entry) => entry._id.toString() === _id
+      (entry) => entry._id.toString() === _id,
       // (entry) => entry._id.toString() === _id,
     );
 
@@ -817,7 +830,7 @@ exports.UpdateEducationDetails = async (req, res, next) => {
     }
 
     const educationIndex = user.educationDetails.findIndex(
-      (entry) => entry._id.toString() === education._id
+      (entry) => entry._id.toString() === education._id,
       // (entry) => entry._id.toString() === education._id,
     );
     if (educationIndex === -1) {
@@ -826,7 +839,7 @@ exports.UpdateEducationDetails = async (req, res, next) => {
 
     console.log(
       "Updated Education Object: ",
-      user.educationDetails[educationIndex]
+      user.educationDetails[educationIndex],
       // user.educationDetails[educationIndex],
     );
 
@@ -873,7 +886,7 @@ exports.UpdateExperienceDetails = async (req, res, next) => {
     }
 
     const experienceIndex = user.experienceDetails.findIndex(
-      (entry) => entry._id.toString() === experience._id
+      (entry) => entry._id.toString() === experience._id,
       // (entry) => entry._id.toString() === experience._id,
     );
 
@@ -1090,7 +1103,7 @@ exports.DeleteSkill = async (req, res, next) => {
     }
 
     user.skills = user.skills.filter(
-      (skill) => !skillsToDelete.includes(skill)
+      (skill) => !skillsToDelete.includes(skill),
       // (skill) => !skillsToDelete.includes(skill),
     );
 
