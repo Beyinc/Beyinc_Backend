@@ -17,20 +17,19 @@ dotenv.config({ path: "../config.env" });
 const twilio = require("twilio");
 const { exist } = require("@hapi/joi");
 const send_Notification_mail = require("../helpers/EmailSending");
-const { generateUniqueCode } = require('../helpers/UniqueCode');
-
+const { generateUniqueCode } = require("../helpers/UniqueCode");
 
 exports.register = async (req, res, next) => {
   try {
-    const { email, password, role ,userName} = req.body;
-    console.log("request reached register with this data",req.body)
+    const { email, password, role, userName } = req.body;
+    console.log("request reached register with this data", req.body);
     const freeDemoCode = {
       code: generateUniqueCode(),
-      used: false
+      used: false,
     };
     const newReferralCode = {
-        code: generateUniqueCode(),
-        used: false
+      code: generateUniqueCode(),
+      used: false,
     };
     referredto = [];
 
@@ -46,7 +45,7 @@ exports.register = async (req, res, next) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHashing = await bcrypt.hash(
       validating_email_password.password,
-      salt
+      salt,
     );
 
     // Checking user already exist or not
@@ -100,14 +99,14 @@ exports.register = async (req, res, next) => {
         referralCode: userDetails.referralCode,
         referredTo: userDetails.referredto,
       },
-      `${userDetails._id}`
+      `${userDetails._id}`,
     );
     const refreshToken = await signRefreshToken(
       { email: userDetails.email, _id: userDetails._id },
-      `${userDetails._id}`
+      `${userDetails._id}`,
     );
 
-    console.log("created account", userDetails)
+    console.log("created account", userDetails);
 
     return res.send({ accessToken: accessToken, refreshToken: refreshToken });
   } catch (err) {
@@ -119,14 +118,14 @@ exports.register = async (req, res, next) => {
 exports.googleSSORegister = async (req, res, next) => {
   try {
     const { email, userName, role } = req.body;
-    console.log(req.body)
+    console.log(req.body);
     const freeDemoCode = {
       code: generateUniqueCode(),
-      used: false
+      used: false,
     };
     const newReferralCode = {
-        code: generateUniqueCode(),
-        used: false
+      code: generateUniqueCode(),
+      used: false,
     };
     referredto = [];
 
@@ -151,34 +150,36 @@ exports.googleSSORegister = async (req, res, next) => {
         freeDemoCode: freeDemoCode,
         referralCode: newReferralCode,
         referredTo: referredto,
-        
       });
       const accessToken = await signAccessToken(
         {
-          email: email, user_id: newUser._id, freeMoney: newUser.freeMoney,
-          realMoney: newUser.realMoney, 
+          email: email,
+          user_id: newUser._id,
+          freeMoney: newUser.freeMoney,
+          realMoney: newUser.realMoney,
           freeDemoCode: newUser.freeDemoCode,
           referralCode: newUser.newReferralCode,
-          referredTo: newUser.referredto, },
-        `${newUser._id}`
+          referredTo: newUser.referredto,
+        },
+        `${newUser._id}`,
       );
       const refreshToken = await signRefreshToken(
         { email: email, user_id: newUser._id },
-        `${newUser._id}`
+        `${newUser._id}`,
       );
       await send_Notification_mail(
         email,
         "Beyinc System generated password for you",
         `Your temporary password is <b>${userName}@Beyinc1</b>. If you want to change password please logout and change that in forgot password page`,
         userName,
-        ""
+        "",
       );
       await send_Notification_mail(
         process.env.ADMIN_EMAIL,
         "New User joined!",
         `A new user <b>${userName}</b> is joined into our app.`,
         process.env.ADMIN_EMAIL,
-        ""
+        "",
       );
 
       return res.send({ accessToken: accessToken, refreshToken: refreshToken });
@@ -186,11 +187,11 @@ exports.googleSSORegister = async (req, res, next) => {
 
     const accessToken = await signAccessToken(
       { email: email, user_id: userDoesExist._id },
-      `${userDoesExist._id}`
+      `${userDoesExist._id}`,
     );
     const refreshToken = await signRefreshToken(
       { email: email, user_id: userDoesExist._id },
-      `${userDoesExist._id}`
+      `${userDoesExist._id}`,
     );
 
     return res.send({ accessToken: accessToken, refreshToken: refreshToken });
@@ -216,7 +217,7 @@ exports.login = async (req, res, next) => {
     if (
       !(await bcrypt.compare(
         validating_email_password.password,
-        userDoesExist.password
+        userDoesExist.password,
       ))
     ) {
       return res.status(404).json({ message: "Email/password is wrong" });
@@ -234,13 +235,13 @@ exports.login = async (req, res, next) => {
           verification: userDoesExist.verification,
           freeDemoCode: userDoesExist.freeDemoCode,
           referralCode: userDoesExist.referralCode,
-          referredTo:userDoesExist.referredTo
+          referredTo: userDoesExist.referredTo,
         },
-        `${userDoesExist._id}`
+        `${userDoesExist._id}`,
       );
       const refreshToken = await signRefreshToken(
         { email: userDoesExist.email, _id: userDoesExist._id },
-        `${userDoesExist._id}`
+        `${userDoesExist._id}`,
       );
 
       return res.send({ accessToken: accessToken, refreshToken: refreshToken });
@@ -286,13 +287,13 @@ exports.mobile_login = async (req, res, next) => {
         verification: userDoesExist.verification,
         freeDemoCode: userDoesExist.freeDemoCode,
         referralCode: userDoesExist.referralCode,
-        referredTo:userDoesExist.referredTo
+        referredTo: userDoesExist.referredTo,
       },
-      `${userDoesExist._id}`
+      `${userDoesExist._id}`,
     );
     const refreshToken = await signRefreshToken(
       { email: userDoesExist.email, _id: userDoesExist._id },
-      `${userDoesExist._id}`
+      `${userDoesExist._id}`,
     );
 
     return res
@@ -304,8 +305,6 @@ exports.mobile_login = async (req, res, next) => {
     next(err);
   }
 };
-
-
 
 exports.refreshToken = async (req, res, next) => {
   try {
@@ -328,13 +327,13 @@ exports.refreshToken = async (req, res, next) => {
         verification: userDoesExist.verification,
         freeDemoCode: userDoesExist.freeDemoCode,
         referralCode: userDoesExist.referralCode,
-        referredTo:userDoesExist.referredTo
+        referredTo: userDoesExist.referredTo,
       },
-      `${user_id}`
+      `${user_id}`,
     );
     const refreshtoken = await signRefreshToken(
       { email: email, user_id: user_id },
-      `${user_id}`
+      `${user_id}`,
     );
 
     return res.send({ accessToken: accessToken, refreshToken: refreshtoken });
@@ -364,13 +363,13 @@ exports.verifyMainAccessToken = async (req, res, next) => {
         verification: userDoesExist.verification,
         freeDemoCode: userDoesExist.freeDemoCode,
         referralCode: userDoesExist.referralCode,
-        referredTo:userDoesExist.referredTo
+        referredTo: userDoesExist.referredTo,
       },
-      `${userDoesExist._id}`
+      `${userDoesExist._id}`,
     );
     const refreshToken = await signRefreshToken(
       { email: userDoesExist.email, _id: userDoesExist._id },
-      `${userDoesExist._id}`
+      `${userDoesExist._id}`,
     );
     return res.send({
       accessToken: currentaccessToken,
@@ -406,7 +405,7 @@ exports.mobile_otp = async (req, res, next) => {
         if (userFind) {
           await Userverify.updateOne(
             { email: phone },
-            { $set: { verifyToken: otpToken } }
+            { $set: { verifyToken: otpToken } },
           );
         } else {
           await Userverify.create({ email: phone, verifyToken: otpToken });
@@ -438,7 +437,7 @@ exports.forgot_password = async (req, res, next) => {
       }
       await User.updateOne(
         { email: email },
-        { $set: { password: passwordHashing } }
+        { $set: { password: passwordHashing } },
       );
       // await User.save()
       return res.status(200).json({ message: "Password changed successfully" });
@@ -449,7 +448,7 @@ exports.forgot_password = async (req, res, next) => {
       }
       await User.updateOne(
         { phone: phone },
-        { $set: { password: passwordHashing } }
+        { $set: { password: passwordHashing } },
       );
       // await User.save()
       return res.status(200).json({ message: "Password changed successfully" });
@@ -469,7 +468,7 @@ exports.send_otp_mail = async (req, res) => {
       `Your one-time password for <b>Frontend ${type}</b> is <b>${otp.toString()}</b> valid for the next 2 minutes. For safety reasons, <b>PLEASE DO NOT SHARE YOUR OTP</b> with anyone.`,
       to,
       "",
-      { otp: otp }
+      { otp: otp },
     );
     return res.status(200).send("Email sent successfully");
   } catch (err) {

@@ -280,33 +280,47 @@ exports.startupEntryData = async (req, res) => {
     console.log("Received startup data:", req.body);
     console.log("Saving startup data for user:", user_id);
 
-    const updateFields = {};
+    // 🔹 Base update fields (role enforcement)
+    const updateFields = {
+      beyincProfile: "Startup",
+      role: "Startup",
+      categoryUserRole: "Startup",
+      interests: ["Startup"],
+      isProfileComplete: true,
+    };
 
-    // 🔹 Role enforcement
-    updateFields.role = "Startup";
-    updateFields.categoryUserRole = "Startup";
-    updateFields.interests = ["Startup"];
+    // 🔹 PATCH-style nested updates (🔥 THIS IS THE FIX)
+    if (startupName) updateFields["startupProfile.startupName"] = startupName;
 
-    // 🔹 Build startupProfile object conditionally
-    const startupProfile = {};
+    if (startupTagline)
+      updateFields["startupProfile.startupTagline"] = startupTagline;
 
-    if (startupName) startupProfile.startupName = startupName;
-    if (startupTagline) startupProfile.startupTagline = startupTagline;
-    if (founderName) startupProfile.founderName = founderName;
-    if (startupEmail) startupProfile.startupEmail = startupEmail;
-    if (visibilityMode) startupProfile.visibilityMode = visibilityMode;
-    if (startupStage) startupProfile.stage = startupStage;
-    if (startupTeamSize) startupProfile.teamSize = startupTeamSize;
-    if (industries?.length) startupProfile.industries = industries;
-    if (targetMarket) startupProfile.targetMarket = targetMarket;
+    if (founderName) updateFields["startupProfile.founderName"] = founderName;
 
-    // ❌ block empty startupProfile writes
-    if (Object.keys(startupProfile).length === 0) {
-      return res.status(400).json({ message: "No startup data provided" });
+    if (startupEmail)
+      updateFields["startupProfile.startupEmail"] = startupEmail;
+
+    if (visibilityMode)
+      updateFields["startupProfile.visibilityMode"] = visibilityMode;
+
+    if (startupStage) updateFields["startupProfile.stage"] = startupStage;
+
+    if (startupTeamSize)
+      updateFields["startupProfile.teamSize"] = startupTeamSize;
+
+    if (industries && Array.isArray(industries) && industries.length > 0)
+      updateFields["startupProfile.industries"] = industries;
+
+    if (targetMarket)
+      updateFields["startupProfile.targetMarket"] = targetMarket;
+
+    // 🔹 Guard: prevent empty startup updates
+    if (Object.keys(updateFields).length === 5) {
+      // only role-related fields exist
+      return res.status(400).json({
+        message: "No startup data provided to update",
+      });
     }
-
-    updateFields.startupProfile = startupProfile;
-    updateFields.isProfileComplete = true;
 
     const user = await User.findByIdAndUpdate(
       user_id,
@@ -955,12 +969,12 @@ exports.uploadResume = async (req, res, next) => {
 exports.CreateAbout = async (req, res, next) => {
   try {
     const { about } = req.body;
-    console.log("This is the payload: ", req.payload);
     const { user_id } = req.payload;
 
     if (!user_id) {
       return res.status(400).send({ message: "User ID is required." });
     }
+
     if (typeof about !== "string" || about.trim() === "") {
       return res.status(400).send({
         message: "About field is required and must be a non-empty string.",
@@ -973,7 +987,6 @@ exports.CreateAbout = async (req, res, next) => {
     }
 
     user.about = about;
-
     await user.save();
 
     return res.status(200).json({
@@ -982,10 +995,22 @@ exports.CreateAbout = async (req, res, next) => {
       about: user.about,
     });
   } catch (err) {
-    console.error("Error in CreateAbout: ", err);
+    // Better error logging
+    console.error("Error message:", err.message);
+    if (err.errors) {
+      console.error("Validation errors:", err.errors);
+    }
+
     return res.status(500).send({
       success: false,
-      message: "Internal Server Error",
+      message: err.message || "Internal Server Error",
+      // Include validation errors if they exist
+      errors: err.errors
+        ? Object.keys(err.errors).map((key) => ({
+            field: key,
+            message: err.errors[key].message,
+          }))
+        : undefined,
     });
   }
 };

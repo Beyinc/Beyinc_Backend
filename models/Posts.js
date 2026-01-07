@@ -95,19 +95,6 @@ const postSchema = new mongoose.Schema(
       },
     ],
 
-    // reactions
-    // likes: [
-    //   {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "User",
-    //   },
-    // ],
-    // disLikes: [
-    //   {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "User",
-    //   },
-    // ],
 
     reactions: [{
       user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },

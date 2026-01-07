@@ -24,37 +24,38 @@ const { REACTION_TYPES } = require("../constants/postReactions");
 
 // To add user reaction and  reaction counts to post data
 const formatPost = (post, userId) => {
-    if (!post) return null;
+  if (!post) return null;
 
-    let postObj;
-    if (post.toObject && typeof post.toObject === "function") {
-        postObj = post.toObject(); 
-    } else if (post._doc) {
-        postObj = post._doc; 
-    } else {
-        postObj = post;
-    }
+  let postObj;
+  if (post.toObject && typeof post.toObject === "function") {
+    postObj = post.toObject();
+  } else if (post._doc) {
+    postObj = post._doc;
+  } else {
+    postObj = post;
+  }
 
-    let userReaction = null;
-    if (postObj.reactions && Array.isArray(postObj.reactions)) {
-        const reaction = postObj.reactions.find((r) => {
-            const reactionUserId = r.user?._id || r.user;
-            return reactionUserId?.toString() === userId?.toString();
-        });
-        userReaction = reaction?.type || null;
-    }
+  let userReaction = null;
+  if (postObj.reactions && Array.isArray(postObj.reactions)) {
+    const reaction = postObj.reactions.find((r) => {
+      if (!r) return false;
+      const reactionUserId = r.user?._id || r.user;
+      return reactionUserId && userId && reactionUserId.toString() === userId.toString();
+    });
+    userReaction = reaction?.type || null;
+  }
 
-    return {
-        ...postObj,
-        userReaction,
-    };
+  return {
+    ...postObj,
+    userReaction,
+  };
 };
 
 
 exports.getPost = async (req, res, next) => {
   try {
     const { id } = req.body;
-    const userId = req.payload.user_id;
+    const userId = req.payload ? req.payload.user_id : undefined;
 
     const PostExist = await Posts.findOne({ _id: id })
       .populate({
@@ -88,7 +89,7 @@ exports.getPost = async (req, res, next) => {
       });
 
     if (PostExist) {
-      const modifiedPostData = await formatPost(PostExist, userId);
+      const modifiedPostData = formatPost(PostExist, userId);
 
       return res.status(200).json(modifiedPostData);
     }
@@ -106,13 +107,13 @@ exports.getAllPosts = async (req, res, next) => {
     // console.log("page-",pageSize);
     // console.log("posts size-",limit);
 
-    const userId = req.payload.user_id;
+    const userId = req.payload ? req.payload.user_id : undefined;
     // console.log("userId-",userId);
-      
+
     const { page = 1, pageSize = 10 } = req.body;
     const skip = (page - 1) * pageSize;
     const limit = pageSize;
-      
+
     // console.log("skip-",skip);
     // console.log("limit-",limit);
     const data = await Posts.find({})
@@ -150,16 +151,11 @@ exports.getAllPosts = async (req, res, next) => {
       })
       .lean()
 
-      const modifiedData = data.map(post =>{
-        formatPost(post, userId)
-        // console.log(formatPost(post, userId));
-      })
-      // console.log("look her3")
-      // console.log(modifiedData)
+    const modifiedData = data.map(post => formatPost(post, userId));
 
-      return res.status(200).json(modifiedData);
-    } catch (error) {
-      console.log(error);
+    return res.status(200).json(modifiedData);
+  } catch (error) {
+    console.log(error);
   }
 };
 
@@ -168,18 +164,12 @@ exports.getTopTrendingPosts = async (req, res, next) => {
     const data = await Posts.aggregate([
       {
         $addFields: {
-          likesCount: { $size: { $ifNull: ["$likes", []] } },
-          dislikesCount: { $size: { $ifNull: ["$disLikes", []] } },
+          reactionsCount: { $size: { $ifNull: ["$reactions", []] } },
         },
       },
       {
         $addFields: {
-          score: {
-            $add: [
-              { $multiply: ["$likesCount", 2] },
-              { $multiply: ["$dislikesCount", -1] },
-            ],
-          },
+          score: "$reactionsCount",
         },
       },
       {
@@ -451,7 +441,8 @@ exports.editPost = async (req, res, next) => {
 
 exports.reportPost = async (req, res, next) => {
   try {
-    const { id, reportBy, reason,reportType} = req.body;
+    const { id, reportBy, reportby, reason, reportType } = req.body;
+    const finalReportBy = reportBy || reportby;
     const PostExist = await Posts.findOne({ _id: id })
       .populate({
         path: "createdBy",
@@ -491,10 +482,10 @@ exports.reportPost = async (req, res, next) => {
       {
         $push: {
           reportBy: {
-            user: reportBy,
+            user: finalReportBy,
             reportedTime: new Date(),
             reason: reason,
-            reportType:reportType
+            reportType: reportType
           },
         },
       }
@@ -507,7 +498,7 @@ exports.reportPost = async (req, res, next) => {
       `/posts/${id}`
     );
     await Notification.create({
-      senderInfo: reportBy,
+      senderInfo: finalReportBy,
       receiver: PostExist.createdBy._id,
       message: `Report created to the post. Admin will verify it`,
       type: "report",
@@ -525,7 +516,7 @@ exports.getReportedPosts = async (req, res, next) => {
   try {
     const reportedposts = await Posts.find({
       reported: true,
-      $expr: { $gt: [{ $size: "$reportBy" }, 1] },
+      $expr: { $gt: [{ $size: "$reportBy" }, 0] },
     })
       .populate({
         path: "createdBy",
@@ -736,113 +727,13 @@ exports.updaterequestIntoOpenDiscussion = async (req, res, next) => {
   }
 };
 
-// exports.likePost = async (req, res, next) => {
-//   try {
-//     const post = await Posts.findById(req.body.id);
-
-//     if (post.likes?.includes(req.payload.user_id)) {
-//       post.likes = post.likes.filter((v) => v != req.payload.user_id);
-//     } else {
-//       post.likes.push(req.payload.user_id);
-//     }
-//     if (post.disLikes?.includes(req.payload.user_id)) {
-//       post.disLikes = post.disLikes.filter((v) => v != req.payload.user_id);
-//     }
-//     await post.save();
-//     const PostExist = await Posts.findOne({ _id: req.body.id })
-//       .populate({
-//         path: "createdBy",
-//         select: ["userName", "image", "role", "_id"],
-//       })
-//       .populate({
-//         path: "tags",
-//         select: ["userName", "image", "role", "_id"],
-//       })
-//       .populate({
-//         path: "pitchId",
-//         select: ["title", "_id"],
-//       })
-//       // .populate({
-//       //   path: "likes",
-//       //   select: ["userName", "image", "role", "_id"],
-//       // })
-//       // .populate({
-//       //   path: "disLikes",
-//       //   select: ["userName", "image", "role", "_id"],
-//       // })
-//       .populate({
-//         path: "openDiscussionTeam",
-//         select: ["userName", "image", "role", "_id"],
-//       })
-//       .populate({
-//         path: "openDiscussionRequests",
-//         select: ["userName", "image", "role", "_id"],
-//       });
-
-//     return res.status(200).json(PostExist);
-//   } catch (err) {
-//     console.log(err);
-//     return res.status(400).json(err);
-//   }
-// };
-
-// exports.DisLikePost = async (req, res, next) => {
-//   try {
-//     const post = await Posts.findById(req.body.id);
-
-//     if (post.disLikes?.includes(req.payload.user_id)) {
-//       post.disLikes = post.disLikes.filter((v) => v != req.payload.user_id);
-//     } else {
-//       post.disLikes.push(req.payload.user_id);
-//     }
-
-//     if (post.likes?.includes(req.payload.user_id)) {
-//       post.likes = post.likes.filter((v) => v != req.payload.user_id);
-//     }
-//     await post.save();
-//     const PostExist = await Posts.findOne({ _id: req.body.id })
-//       .populate({
-//         path: "createdBy",
-//         select: ["userName", "image", "role", "_id"],
-//       })
-//       .populate({
-//         path: "tags",
-//         select: ["userName", "image", "role", "_id"],
-//       })
-//       .populate({
-//         path: "pitchId",
-//         select: ["title", "_id"],
-//       })
-//       // .populate({
-//       //   path: "likes",
-//       //   select: ["userName", "image", "role", "_id"],
-//       // })
-//       // .populate({
-//       //   path: "disLikes",
-//       //   select: ["userName", "image", "role", "_id"],
-//       // })
-//       .populate({ path: "reactions.user", select: ["userName", "image", "role", "_id"] })
-//       .populate({
-//         path: "openDiscussionTeam",
-//         select: ["userName", "image", "role", "_id"],
-//       })
-//       .populate({
-//         path: "openDiscussionRequests",
-//         select: ["userName", "image", "role", "_id"],
-//       });
-
-//     return res.status(200).json(PostExist);
-//   } catch (err) {
-//     console.log(err);
-//     return res.status(400).json(err);
-//   }
-// };
+// React system logic handled by reactToPost
 
 exports.deletePost = async (req, res, next) => {
   try {
     const { id } = req.body;
     const result = await Posts.findOne({ _id: id });
-    if(result.image.public_id){
+    if (result.image.public_id) {
 
       await cloudinary.uploader.destroy(
         result.image.public_id,
@@ -857,7 +748,7 @@ exports.deletePost = async (req, res, next) => {
     }
     await PostComment.deleteMany({ postId: id });
     await Posts.deleteOne({ _id: id });
-    
+
     return res.status(200).json("Post deleted");
   } catch (error) {
     console.log('error deleting post:', error);
@@ -959,7 +850,7 @@ exports.filterposts = async (req, res, next) => {
       pageSize = 10,
     } = req.body; // added page & pageSize
 
-    const userId = req.payload.user_id;
+    const userId = req.payload ? req.payload.user_id : undefined;
 
     const filter = {};
 
@@ -995,73 +886,73 @@ exports.filterposts = async (req, res, next) => {
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .lean();
-      
-      const modifiedData = await Promise.all(
-        filteredPosts.map(post => formatPost(post, userId))
-      )
+
+    const modifiedData = filteredPosts.map(post => formatPost(post, userId));
+
+    console.log("filterposts controller - modifiedData length:", modifiedData.length);
 
     return res.status(200).json(modifiedData);
   } catch (error) {
-    console.error("Error filtering posts:", error);
-    return res.status(500).json({ message: "Server error." });
+    console.error("Critical Error in filterposts:", error);
+    return res.status(500).json({ message: "Server error.", error: error.message, stack: error.stack });
   }
 };
 
 exports.reactToPost = async (req, res) => {
-    try {
-        const { postId, reactionType } = req.body;
-        const userId = req.payload.user_id;
+  try {
+    const { postId, reactionType } = req.body;
+    const userId = req.payload.user_id;
 
-        const post = await Posts.findById(postId);
-        if (!post) {
-            return res.status(404).json({ message: "Post not found." });
-        }
-
-        // if (post.createdBy.toString() === userId.toString()) {
-        //     return res.status(403).json({
-        //         message: "You cannot react to your own post.",
-        //     });
-        // }
-
-        // Find existing reaction index
-        const existingIndex = post.reactions.findIndex(
-            (r) => r.user.toString() === userId.toString()
-        );
-
-        let userReaction = null;
-
-        if (existingIndex === -1) {
-            // Add new reaction
-            post.reactions.push({
-                user: userId,
-                type: reactionType,
-                createdAt: new Date(),
-            });
-            userReaction = reactionType;
-        } else if (post.reactions[existingIndex].type === reactionType) {
-            // Toggle off - remove reaction
-            post.reactions.splice(existingIndex, 1);
-            userReaction = null;
-        } else {
-            // Change reaction type
-            post.reactions[existingIndex].type = reactionType;
-            post.reactions[existingIndex].createdAt = new Date();
-            userReaction = reactionType;
-        }
-
-        const newPostData = await post.save();
-
-        return res.status(200).json({
-            success: true,
-            postId,
-            userReaction,
-            reactions: newPostData.reactions
-        });
-    } catch (error) {
-        console.error("Error in reactToPost:", error);
-        return res.status(500).json({
-            message: "Something went wrong while reacting to the post.",
-            error: error.message,
-        });
+    const post = await Posts.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found." });
     }
+
+    // if (post.createdBy.toString() === userId.toString()) {
+    //     return res.status(403).json({
+    //         message: "You cannot react to your own post.",
+    //     });
+    // }
+
+    // Find existing reaction index
+    const existingIndex = post.reactions.findIndex(
+      (r) => r.user.toString() === userId.toString()
+    );
+
+    let userReaction = null;
+
+    if (existingIndex === -1) {
+      // Add new reaction
+      post.reactions.push({
+        user: userId,
+        type: reactionType,
+        createdAt: new Date(),
+      });
+      userReaction = reactionType;
+    } else if (post.reactions[existingIndex].type === reactionType) {
+      // Toggle off - remove reaction
+      post.reactions.splice(existingIndex, 1);
+      userReaction = null;
+    } else {
+      // Change reaction type
+      post.reactions[existingIndex].type = reactionType;
+      post.reactions[existingIndex].createdAt = new Date();
+      userReaction = reactionType;
+    }
+
+    const newPostData = await post.save();
+
+    return res.status(200).json({
+      success: true,
+      postId,
+      userReaction,
+      reactions: newPostData.reactions
+    });
+  } catch (error) {
+    console.error("Error in reactToPost:", error);
+    return res.status(500).json({
+      message: "Something went wrong while reacting to the post.",
+      error: error.message,
+    });
+  }
 };
