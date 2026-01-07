@@ -342,6 +342,72 @@ exports.startupEntryData = async (req, res) => {
   }
 };
 
+// Add BOTH functions to your userProfileController.js
+
+// GET seeking options
+exports.getSeekingOptions = async (req, res) => {
+  try {
+    const { id, user_id } = req.body;
+    const targetUserId = id || user_id;
+
+    console.log("Fetching seeking options for user:", targetUserId);
+
+    const user = await User.findById(targetUserId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      seekingOptions: user.seekingOptions || [],
+    });
+  } catch (error) {
+    console.error("Error fetching seeking options:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// SAVE seeking options
+exports.saveSeekingOptions = async (req, res) => {
+  try {
+    const { seekingOptions } = req.body;
+    const { user_id } = req.payload;
+
+    console.log("Received seeking options:", seekingOptions);
+    console.log("Saving seeking options for user:", user_id);
+
+    // Validate that seekingOptions is an array
+    if (!Array.isArray(seekingOptions)) {
+      return res.status(400).json({
+        message: "seekingOptions must be an array",
+      });
+    }
+
+    // Update fields
+    const updateFields = {
+      seekingOptions: seekingOptions,
+    };
+
+    const user = await User.findByIdAndUpdate(
+      user_id,
+      { $set: updateFields },
+      { new: true },
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "Seeking options updated successfully",
+      seekingOptions: user.seekingOptions,
+    });
+  } catch (error) {
+    console.error("Error updating seeking options:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 //fetch startup data
 
 exports.getStartupProfileData = async (req, res) => {
