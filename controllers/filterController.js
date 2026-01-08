@@ -14,7 +14,9 @@ exports.filterData = async (req, res) => {
     // Add filters only if they are provided
     
     if (expertise && expertise.length > 0) {
-      query.expertise = { $in: expertise }; // Match any of the expertise
+      // Match any of the requested expertise against mentorExpertise.skills
+      // mentorExpertise is expected to be an array of { industry, skills: [] }
+      query['mentorExpertise.skills'] = { $in: expertise };
     }
     if (role && role !== "") {
       query.role_level = role; 
@@ -26,7 +28,8 @@ exports.filterData = async (req, res) => {
       query.stages = { $in: stages }; // Match any of the stages
     }
     if (industries && industries.length > 0) {
-      query.industries = { $in: industries }; // Match any of the industries
+      // Match requested industries against mentorExpertise.industry
+      query['mentorExpertise.industry'] = { $in: industries };
     }
     if (categories && categories.length > 0) { // Check if categories are provided
       query.beyincProfile = { $regex: new RegExp(categories.join('|'), 'i') }; // Match any of the categories, case-insensitive
