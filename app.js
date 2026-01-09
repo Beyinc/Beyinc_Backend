@@ -40,14 +40,15 @@ const morgan = require("morgan");
 
 const app = express();
 
-app.use(cors({ origin: ['http://localhost:3000', 'https://beyinc-frontend.vercel.app', 'https://yellow-mushroom-0aec0e610.2.azurestaticapps.net', 'https://www.bloomr.world'] }));
+app.use(cors({ origin: ['http://localhost:3000', 'https://beyinc-frontend.vercel.app', 'https://yellow-mushroom-0aec0e610.2.azurestaticapps.net', 'https://www.bloomr.world','https://beyinc-backend-1.onrender.com'] }));
 app.use(cors());
 const corsOptions = {
   origin: [
     'http://localhost:3000',
     'https://beyinc-frontend.vercel.app',
     'https://yellow-mushroom-0aec0e610.2.azurestaticapps.net',
-    'https://www.bloomr.world'
+    'https://www.bloomr.world',
+    'https://beyinc-backend-1.onrender.com'
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

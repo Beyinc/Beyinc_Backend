@@ -21,6 +21,9 @@ exports.createNewRequest = async (requestData, res) => {
       duration
     });
 
+
+    
+
     res.status(201).json({
       message: "Request created successfully",
       request: newRequest,
