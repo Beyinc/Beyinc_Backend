@@ -13,6 +13,9 @@ router.post("/saveDocuments", userProfileController.SaveDocuments);
 router.post("/saveDocument", userProfileController.SaveDocument);
 // router.post('/saveEducationDetails', userProfileController.SaveEducationDetails);
 
+//  ROUTES - for updating seeking options for startup
+router.post("/getSeekingOptions", userProfileController.getSeekingOptions);
+router.post("/saveSeekingOptions", userProfileController.saveSeekingOptions);
 //fetch startup data
 
 router.get(
