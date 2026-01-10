@@ -316,6 +316,13 @@ const userSchema = new mongoose.Schema(
       required: false,
     },
 
+    //  NEW FIELD - for funding seekingOptions
+    seekingOptions: {
+      type: [String],
+      default: [],
+      required: false,
+    },
+
     documents: {
       resume: {
         public_id: {
