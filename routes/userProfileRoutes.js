@@ -9,6 +9,7 @@ router.post("/savedata", userProfileController.saveData);
 router.post("/inputFormData", userProfileController.InputFormData);
 router.post("/inputEntryData", userProfileController.inputEntryData);
 router.post("/startupEntryData", userProfileController.startupEntryData);
+router.patch("/updateBeyincProfile", userProfileController.updateBeyincProfile); //update beyincProfile
 router.post("/saveDocuments", userProfileController.SaveDocuments);
 router.post("/saveDocument", userProfileController.SaveDocument);
 // router.post('/saveEducationDetails', userProfileController.SaveEducationDetails);

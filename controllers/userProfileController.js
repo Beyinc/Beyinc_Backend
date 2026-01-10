@@ -282,7 +282,7 @@ exports.startupEntryData = async (req, res) => {
 
     // 🔹 Base update fields (role enforcement)
     const updateFields = {
-      beyincProfile: "Startup",
+      beyincProfile: "",
       role: "Startup",
       categoryUserRole: "Startup",
       interests: ["Startup"],
@@ -338,6 +338,42 @@ exports.startupEntryData = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating startup profile:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+exports.updateBeyincProfile = async (req, res) => {
+  try {
+    const { beyincProfile } = req.body;
+    const { user_id } = req.payload;
+
+    // Validate input - check if beyincProfile exists in body (even if empty string)
+    if (beyincProfile === undefined) {
+      return res.status(400).json({
+        message: "beyincProfile value is required",
+      });
+    }
+
+    console.log(
+      `Updating beyincProfile for user ${user_id} to: ${beyincProfile}`,
+    );
+
+    // Update only the beyincProfile field
+    const user = await User.findByIdAndUpdate(
+      user_id,
+      { $set: { beyincProfile } },
+      { new: true },
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "beyincProfile updated successfully",
+      beyincProfile: user.beyincProfile,
+    });
+  } catch (error) {
+    console.error("Error updating beyincProfile:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };
