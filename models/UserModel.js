@@ -310,6 +310,21 @@ const userSchema = new mongoose.Schema(
       default: [],
       required: false,
     },
+    experienceYears: {
+      type: Number,
+      required: false,
+    },
+
+    linkedinProfile: {
+      type: String,
+      required: false,
+    },
+
+    verified: {
+      type: Boolean,
+      default: false,
+      required: false,
+    },
 
     startupProfile: {
       type: StartupProfileSchema,
