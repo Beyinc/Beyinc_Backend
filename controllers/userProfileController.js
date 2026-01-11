@@ -261,6 +261,58 @@ exports.inputEntryData = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+// GET users based on verified status
+exports.getUsersByVerifiedStatusByAdmin = async (req, res) => {
+  try {
+    const { status } = req.params;
+
+    // Convert string to boolean
+    const isVerified = status === "true";
+
+    const users = await User.find({ verified: isVerified });
+
+    return res.status(200).json({
+      message: "Users retrieved successfully",
+      count: users.length,
+      users,
+    });
+  } catch (error) {
+    console.error("Error fetching users by verified status:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// UPDATE user's verified status
+exports.updateVerifiedStatusByAdmin = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { verified } = req.body;
+
+    if (typeof verified !== "boolean") {
+      return res
+        .status(400)
+        .json({ message: "Verified must be a boolean value" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $set: { verified } },
+      { new: true },
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "Verified status updated successfully",
+      user,
+    });
+  } catch (error) {
+    console.error("Error updating verified status:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
 
 exports.startupEntryData = async (req, res) => {
   try {
