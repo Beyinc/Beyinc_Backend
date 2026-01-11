@@ -236,8 +236,12 @@ async function createVideoConference(auth, eventDetails) {
 exports.book = async (req, res, next) => {
     // const userId = req.user._id; // Assuming user ID is available in req.user._id
     console.log('Book created')
-    const { eventDetails, mentorId, bookingData  } = req.body;
-    console.log(eventDetails, mentorId);
+    const { eventDetails, mentorId, bookingData   } = req.body;
+    console.log('booking data received', bookingData)
+    // console.log(eventDetails, mentorId);
+    bookingData.userId = bookingData.user_id;
+
+    console.log('booking data', bookingData)
 
     try {
         // Check if the user has stored credentials
@@ -309,6 +313,7 @@ exports.book = async (req, res, next) => {
         });
     }
 };
+
 
 
 

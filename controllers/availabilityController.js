@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const { book } = require("./calendarController");
 const Availability = require("../models/Availability");
 const Booking = require("../models/Booking");
+const Request = require("../models/RequestSchema.js");
+
 // Helper function to convert duration to days
 const convertDurationToDays = (duration) => {
   const [value, unit] = duration.split(" ");
@@ -370,13 +372,14 @@ exports.saveBooking = async (bookingData, createdEvent) => {
 
     const mentorObjectId = new ObjectId(mentorId);
     const userObjectId = new ObjectId(user_id);
-
+    const requestId = bookingData.requestId ? new ObjectId(bookingData.requestId) : null;
     const finalAmountValue = finalAmount || 0;
     const discountPercentValue = discountPercent || 0;
     const descriptionValue = description || ''; // Provide default empty string if description is missing
 
     // Create a new booking record
     const newBooking = new Booking({
+      requestId,
       mentorId: mentorObjectId,
       userId: userObjectId,
       mentorTz: mentorTimezone,
@@ -397,6 +400,12 @@ exports.saveBooking = async (bookingData, createdEvent) => {
 
     // Save the booking to the database
     const savedBooking = await newBooking.save();
+   await Request.findByIdAndUpdate(
+      requestId,
+      { booked: true },
+      { new: true }
+    );
+
 
     return savedBooking;
   } catch (error) {
