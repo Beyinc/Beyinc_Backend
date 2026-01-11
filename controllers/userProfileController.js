@@ -187,11 +187,13 @@ exports.inputEntryData = async (req, res) => {
       selectedCategory,
       role_level,
       companyStage,
-      mentorExpertise, // object
+      mentorExpertise,
+      experienceYears, // ✅ Add this
+      linkedinProfile, // ✅ Add this
+      verified, // ✅ Add this
     } = req.body;
 
     const { user_id } = req.payload;
-
     const updateFields = {};
 
     if (username) updateFields.userName = username;
@@ -201,18 +203,20 @@ exports.inputEntryData = async (req, res) => {
     if (role_level) updateFields.role_level = role_level;
     if (companyStage) updateFields.companyStage = companyStage;
 
+    if (experienceYears !== undefined)
+      updateFields.experienceYears = experienceYears;
+    if (linkedinProfile) updateFields.linkedinProfile = linkedinProfile;
+    if (verified !== undefined) updateFields.verified = verified;
+
     /* ---------------- INDIVIDUAL / ENTREPRENEUR ---------------- */
     if (
       selectedCategory === "Individual/Entrepreneur" &&
       mentorExpertise &&
       typeof mentorExpertise === "object"
     ) {
-      // ✅ Store FLAT skills array
       updateFields.skills = [
         ...new Set(Object.values(mentorExpertise).flat().filter(Boolean)),
       ];
-
-      // ✅ Store mentor expertise as structured object
       updateFields.mentorExpertise = Object.entries(mentorExpertise)
         .map(([industry, skills]) => ({
           industry,
@@ -221,7 +225,6 @@ exports.inputEntryData = async (req, res) => {
         .filter((item) => item.skills.length > 0);
     }
 
-    /* ---------------- MENTOR ONLY ---------------- */
     /* ---------------- MENTOR ONLY ---------------- */
     if (
       selectedCategory === "Mentor" &&
@@ -234,8 +237,6 @@ exports.inputEntryData = async (req, res) => {
           skills,
         }))
         .filter((item) => item.skills.length > 0);
-
-      // Safety: remove flat skills
       updateFields.skills = [];
     }
 
@@ -257,6 +258,58 @@ exports.inputEntryData = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating entry data:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+// GET users based on verified status
+exports.getUsersByVerifiedStatusByAdmin = async (req, res) => {
+  try {
+    const { status } = req.params;
+
+    // Convert string to boolean
+    const isVerified = status === "true";
+
+    const users = await User.find({ verified: isVerified });
+
+    return res.status(200).json({
+      message: "Users retrieved successfully",
+      count: users.length,
+      users,
+    });
+  } catch (error) {
+    console.error("Error fetching users by verified status:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// UPDATE user's verified status
+exports.updateVerifiedStatusByAdmin = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { verified } = req.body;
+
+    if (typeof verified !== "boolean") {
+      return res
+        .status(400)
+        .json({ message: "Verified must be a boolean value" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $set: { verified } },
+      { new: true },
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "Verified status updated successfully",
+      user,
+    });
+  } catch (error) {
+    console.error("Error updating verified status:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };

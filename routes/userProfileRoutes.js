@@ -8,6 +8,17 @@ const { verifyAccessToken } = require("../helpers/jwt_helpers");
 router.post("/savedata", userProfileController.saveData);
 router.post("/inputFormData", userProfileController.InputFormData);
 router.post("/inputEntryData", userProfileController.inputEntryData);
+// GET users by verified status
+router.get(
+  "/users/verified/:status",
+  userProfileController.getUsersByVerifiedStatusByAdmin,
+);
+
+// UPDATE user's verified status
+router.patch(
+  "/users/:userId/verify",
+  userProfileController.updateVerifiedStatusByAdmin,
+);
 router.post("/startupEntryData", userProfileController.startupEntryData);
 router.patch("/updateBeyincProfile", userProfileController.updateBeyincProfile); //update beyincProfile
 router.post("/saveDocuments", userProfileController.SaveDocuments);
