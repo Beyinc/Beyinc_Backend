@@ -5,12 +5,12 @@ const Request = require("../models/RequestSchema.js");
 exports.createNewRequest = async (requestData, res) => {
   try {
     // await console.log("data in backend",requestData.body)
-    const { userId, mentorId, requestMessage, requestType,amount,duration } = requestData.body;
+    const { userId, mentorId, requestMessage, requestType,amount,duration,title } = requestData.body;
 
-    const alreadyExists = await Request.findOne({ userId, mentorId });
-    if (alreadyExists) {
-      return res.status(400).json({ message: "Request already exists." });
-    }
+    // const alreadyExists = await Request.findOne({ userId, mentorId });
+    // if (alreadyExists) {
+    //   return res.status(400).json({ message: "Request already exists." });
+    // }
 
     const newRequest = await Request.create({
       userId,
@@ -18,7 +18,8 @@ exports.createNewRequest = async (requestData, res) => {
       requestMessage,
       requestType,
       amount,
-      duration
+      duration,
+      title
     });
 
 

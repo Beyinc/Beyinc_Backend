@@ -335,7 +335,6 @@ exports.startupEntryData = async (req, res) => {
 
     // 🔹 Base update fields (role enforcement)
     const updateFields = {
-      beyincProfile: "",
       role: "Startup",
       categoryUserRole: "Startup",
       interests: ["Startup"],

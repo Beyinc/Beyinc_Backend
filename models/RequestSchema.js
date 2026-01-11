@@ -39,8 +39,19 @@ const requestSchema = new mongoose.Schema({
   },
   declineReason:{
     type: String,
+  },
+  booked:{
+    type: Boolean,
+    default: false,
+  },
+  title:{
+    type: String,
   }
-});
+
+},{ timestamps: true });
+
+
+
 
 const RequestData = mongoose.model("RequestData", requestSchema);
 module.exports = RequestData;
