@@ -187,11 +187,13 @@ exports.inputEntryData = async (req, res) => {
       selectedCategory,
       role_level,
       companyStage,
-      mentorExpertise, // object
+      mentorExpertise,
+      experienceYears, // ✅ Add this
+      linkedinProfile, // ✅ Add this
+      verified, // ✅ Add this
     } = req.body;
 
     const { user_id } = req.payload;
-
     const updateFields = {};
 
     if (username) updateFields.userName = username;
@@ -201,18 +203,20 @@ exports.inputEntryData = async (req, res) => {
     if (role_level) updateFields.role_level = role_level;
     if (companyStage) updateFields.companyStage = companyStage;
 
+    if (experienceYears !== undefined)
+      updateFields.experienceYears = experienceYears;
+    if (linkedinProfile) updateFields.linkedinProfile = linkedinProfile;
+    if (verified !== undefined) updateFields.verified = verified;
+
     /* ---------------- INDIVIDUAL / ENTREPRENEUR ---------------- */
     if (
       selectedCategory === "Individual/Entrepreneur" &&
       mentorExpertise &&
       typeof mentorExpertise === "object"
     ) {
-      // ✅ Store FLAT skills array
       updateFields.skills = [
         ...new Set(Object.values(mentorExpertise).flat().filter(Boolean)),
       ];
-
-      // ✅ Store mentor expertise as structured object
       updateFields.mentorExpertise = Object.entries(mentorExpertise)
         .map(([industry, skills]) => ({
           industry,
@@ -221,7 +225,6 @@ exports.inputEntryData = async (req, res) => {
         .filter((item) => item.skills.length > 0);
     }
 
-    /* ---------------- MENTOR ONLY ---------------- */
     /* ---------------- MENTOR ONLY ---------------- */
     if (
       selectedCategory === "Mentor" &&
@@ -234,8 +237,6 @@ exports.inputEntryData = async (req, res) => {
           skills,
         }))
         .filter((item) => item.skills.length > 0);
-
-      // Safety: remove flat skills
       updateFields.skills = [];
     }
 
