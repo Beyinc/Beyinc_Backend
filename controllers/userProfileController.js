@@ -265,11 +265,13 @@ exports.inputEntryData = async (req, res) => {
 exports.getUsersByVerifiedStatusByAdmin = async (req, res) => {
   try {
     const { status } = req.params;
-
     // Convert string to boolean
     const isVerified = status === "true";
 
-    const users = await User.find({ verified: isVerified });
+    const users = await User.find({
+      verified: isVerified,
+      beyincProfile: { $ne: "" }, // Only get users where beyincProfile is not empty
+    });
 
     return res.status(200).json({
       message: "Users retrieved successfully",
