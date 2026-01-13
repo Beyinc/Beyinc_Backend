@@ -3,6 +3,80 @@ const mongoose = require("mongoose");
 const { book } = require("./calendarController");
 const Availability = require("../models/Availability");
 const Booking = require("../models/Booking");
+const User = require("../models/UserModel.js");
+const send_Notification_mail = require("../helpers/EmailSending");
+
+const getBookingConfirmationTemplate = (studentName, mentorName, topic, date, link) => {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+      <h2 style="color: #4CAF50;">Booking Confirmed! ✅</h2>
+      <p>Hello <strong>${studentName}</strong>,</p>
+      <p>Your session with <strong>${mentorName}</strong> has been successfully booked.</p>
+      
+      <div style="background-color: #f0fdf4; padding: 15px; border-left: 4px solid #4CAF50; margin: 20px 0;">
+        <p><strong>Topic:</strong> ${topic}</p>
+        <p><strong>Date & Time:</strong> ${new Date(date).toUTCString()}</p>
+        <p><strong>Meeting Link:</strong> <a href="${link}">${link}</a></p>
+      </div>
+      <p>Please join the link 5 minutes before the scheduled time.</p>
+    </div>
+  `;
+};
+
+// 2. New Booking Alert (Sent to Mentor)
+const getNewBookingAlertTemplate = (mentorName, studentName, topic, date, link) => {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+      <h2 style="color: #2196F3;">New Session Booked! 📅</h2>
+      <p>Hello <strong>${mentorName}</strong>,</p>
+      <p><strong>${studentName}</strong> has booked a session with you.</p>
+      
+      <div style="background-color: #e3f2fd; padding: 15px; border-left: 4px solid #2196F3; margin: 20px 0;">
+        <p><strong>Topic:</strong> ${topic}</p>
+        <p><strong>Date & Time:</strong> ${new Date(date).toUTCString()}</p>
+        <p><strong>Meeting Link:</strong> <a href="${link}">${link}</a></p>
+      </div>
+      <p>Check your dashboard for more details.</p>
+    </div>
+  `;
+};
+
+// 3. Reschedule Request (Sent to Student)
+const getRescheduleRequestTemplate = (studentName, mentorName, reason) => {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+      <h2 style="color: #FF9800;">Reschedule Requested ⏳</h2>
+      <p>Hello <strong>${studentName}</strong>,</p>
+      <p>Your mentor, <strong>${mentorName}</strong>, has requested to reschedule your upcoming session.</p>
+      
+      <div style="background-color: #fff3e0; padding: 15px; border-left: 4px solid #FF9800; margin: 20px 0;">
+        <p><strong>Reason provided:</strong> ${reason}</p>
+      </div>
+
+      <p>Please log in to your dashboard to discuss a new time or accept the change.</p>
+    </div>
+  `;
+};
+
+// 4. New Feedback Received (Sent to Mentor)
+const getFeedbackReceivedTemplate = (mentorName, rating, feedbackText) => {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+      <h2 style="color: #FFC107;">You received new feedback! ⭐</h2>
+      <p>Hello <strong>${mentorName}</strong>,</p>
+      <p>A student has left feedback for a recent session.</p>
+      
+      <div style="background-color: #fff8e1; padding: 15px; margin: 20px 0;">
+        <p><strong>Rating:</strong> ${rating} / 5</p>
+        <p><strong>Comment:</strong> "${feedbackText}"</p>
+      </div>
+
+      <p>Keep up the great work!</p>
+    </div>
+  `;
+};
+
+
 // Helper function to convert duration to days
 const convertDurationToDays = (duration) => {
   const [value, unit] = duration.split(" ");
@@ -342,11 +416,11 @@ exports.saveBooking = async (bookingData, createdEvent) => {
       currency,
       startDateTimeUTC,
       endDateTimeUTC,
-      selectedTimezone, // User's timezone
+      selectedTimezone, 
       duration,
       title,
       description,
-    } = bookingData; // Destructure bookingData directly
+    } = bookingData; 
 
     // Validate required fields
     if (
@@ -357,23 +431,20 @@ exports.saveBooking = async (bookingData, createdEvent) => {
       !duration ||
       !meetLink
     ) {
-      return res
-        .status(400)
-        .json({ message: "Missing required booking details." });
+      throw new Error("Missing required booking details.");
     }
 
     // Convert mentorId and user_id to Mongoose ObjectId
     const ObjectId = mongoose.Types.ObjectId;
     if (!ObjectId.isValid(mentorId) || !ObjectId.isValid(user_id)) {
-      return res.status(400).json({ message: "Invalid mentor or user ID." });
+      throw new Error("Invalid mentor or user ID.");
     }
 
     const mentorObjectId = new ObjectId(mentorId);
     const userObjectId = new ObjectId(user_id);
-
     const finalAmountValue = finalAmount || 0;
     const discountPercentValue = discountPercent || 0;
-    const descriptionValue = description || ''; // Provide default empty string if description is missing
+    const descriptionValue = description || ''; 
 
     // Create a new booking record
     const newBooking = new Booking({
@@ -392,11 +463,32 @@ exports.saveBooking = async (bookingData, createdEvent) => {
       description: descriptionValue,
       eventId,
       meetLink,
-      status: "upcoming", // Default status
+      status: "upcoming", 
     });
 
     // Save the booking to the database
     const savedBooking = await newBooking.save();
+
+    // --- NEW EMAIL LOGIC (Notify Student and Mentor) ---
+    try {
+        const mentor = await User.findById(mentorId);
+        const student = await User.findById(user_id);
+
+        if (mentor && student) {
+            // 1. Notify Student
+            const studentMsg = getBookingConfirmationTemplate(student.userName, mentor.userName, title, startDateTimeUTC, meetLink);
+            await send_Notification_mail(student.email, "Booking Confirmed! ✅", studentMsg, student.email, "", {});
+            
+            // 2. Notify Mentor
+            const mentorMsg = getNewBookingAlertTemplate(mentor.userName, student.userName, title, startDateTimeUTC, meetLink);
+            await send_Notification_mail(mentor.email, "New Session Booked! 📅", mentorMsg, mentor.email, "", {});
+            
+            console.log("Booking emails sent successfully.");
+        }
+    } catch (emailErr) {
+        console.error("Failed to send booking emails:", emailErr);
+    }
+    // --- EMAIL LOGIC ENDS ---
 
     return savedBooking;
   } catch (error) {
@@ -475,10 +567,8 @@ exports.updateMentorReschedule = async (req, res) => {
   const { id, booleanValue, rescheduleReason } = req.body;
 
   try {
-    // Log request body
     console.log("Request body:", req.body);
 
-    // Validate input
     if (typeof booleanValue !== "boolean") {
       console.log("Invalid boolean value type:", { booleanValue });
       return res.status(400).json({ error: "booleanValue must be a boolean" });
@@ -486,43 +576,62 @@ exports.updateMentorReschedule = async (req, res) => {
 
     if (typeof rescheduleReason !== "string") {
       console.log("Invalid reschedule reason type:", { rescheduleReason });
-      return res
-        .status(400)
-        .json({ error: "rescheduleReason must be a string" });
+      return res.status(400).json({ error: "rescheduleReason must be a string" });
     }
 
-    // Log document ID
     console.log("Updating document with ID:", id);
 
-    // Find and update the document
     const result = await Booking.findByIdAndUpdate(
       id,
       {
-        mentorReschedule: [booleanValue, rescheduleReason], // Ensure both values are included
+        mentorReschedule: [booleanValue, rescheduleReason], 
       },
       { new: true, runValidators: true }
     );
 
-    // Check if document was found and updated
     if (!result) {
       console.log("Document not found for ID:", id);
       return res.status(404).json({ error: "Document not found" });
     }
 
-    // Log typeof mentorReschedule after the update
-    console.log("Type of mentorReschedule:", typeof result.mentorReschedule);
+    // --- NEW EMAIL LOGIC (Notify Student) ---
+    if (booleanValue === true) { 
+        try {
+            const bookingDetails = await Booking.findById(id)
+                .populate('userId', 'email userName')
+                .populate('mentorId', 'userName');
 
-    // Respond with the updated document
+            if (bookingDetails && bookingDetails.userId) {
+                const emailBody = getRescheduleRequestTemplate(
+                    bookingDetails.userId.userName, 
+                    bookingDetails.mentorId.userName, 
+                    rescheduleReason
+                );
+
+                await send_Notification_mail(
+                    bookingDetails.userId.email,
+                    "Reschedule Request from Mentor ⏳",
+                    emailBody,
+                    bookingDetails.userId.email,
+                    "",
+                    {}
+                );
+                console.log(`Reschedule notification sent to ${bookingDetails.userId.email}`);
+            }
+        } catch (emailErr) {
+            console.error("Failed to send reschedule email:", emailErr);
+        }
+    }
+    // --- EMAIL LOGIC ENDS ---
+
+    console.log("Type of mentorReschedule:", typeof result.mentorReschedule);
     console.log("Document updated successfully:", result);
     res.status(200).json(result);
   } catch (error) {
     console.error("Server error:", error.message);
-
     if (error instanceof mongoose.Error.CastError) {
-      // Handle specific CastError
       return res.status(400).json({ error: `Cast error: ${error.message}` });
     }
-
     res.status(500).json({ error: "Server error" });
   }
 };
@@ -531,13 +640,11 @@ exports.updateMentorReschedule = async (req, res) => {
 exports.addFeedback = async (req, res) => {
   try {
     console.log(req.body);
-    const { feedback, bookingId } = req.body; // Get the feedback from the request body
+    const { feedback, bookingId } = req.body; 
 
-    // Validate feedback array to ensure it contains two elements
     if (!Array.isArray(feedback) || feedback.length !== 2) {
       return res.status(400).json({
-        message:
-          "Feedback must be an array with two strings: [rating, feedback text].",
+        message: "Feedback must be an array with two strings: [rating, feedback text].",
       });
     }
 
@@ -546,21 +653,45 @@ exports.addFeedback = async (req, res) => {
 
     if (isNaN(rating) || typeof feedbackText !== "string") {
       return res.status(400).json({
-        message:
-          "Invalid feedback format: rating should be a string representing a number, and feedback should be a string.",
+        message: "Invalid feedback format: rating should be a string representing a number, and feedback should be a string.",
       });
     }
 
-    // Find the booking by _id and update feedback
     const updatedBooking = await Booking.findByIdAndUpdate(
       bookingId,
-      { $push: { feedback } }, // Add feedback to the existing array
-      { new: true } // Return the updated document
+      { $push: { feedback } }, 
+      { new: true } 
     );
 
     if (!updatedBooking) {
       return res.status(404).json({ message: "Booking not found" });
     }
+
+    // --- NEW EMAIL LOGIC (Notify Mentor) ---
+    try {
+        const bookingDetails = await Booking.findById(bookingId).populate('mentorId', 'email userName');
+
+        if (bookingDetails && bookingDetails.mentorId) {
+            const emailBody = getFeedbackReceivedTemplate(
+                bookingDetails.mentorId.userName, 
+                rating, 
+                feedbackText
+            );
+
+            await send_Notification_mail(
+                bookingDetails.mentorId.email,
+                "New Feedback Received! ",
+                emailBody,
+                bookingDetails.mentorId.email,
+                "",
+                {}
+            );
+            console.log(`Feedback notification sent to ${bookingDetails.mentorId.email}`);
+        }
+    } catch (emailErr) {
+        console.error("Failed to send feedback email:", emailErr);
+    }
+    // --- EMAIL LOGIC ENDS ---
 
     res.status(200).json({
       message: "Feedback added successfully",
