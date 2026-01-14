@@ -21,12 +21,40 @@ const PitchComment = require("../models/PitchCommentModel");
 
 exports.addPitchComment = async (req, res, next) => {
     try {
-        const { pitchId, comment, commentBy, parentCommentId } = req.body
-        const newComment = await PitchComment.create({ comment: comment, commentBy: commentBy, pitchId: pitchId, parentCommentId: parentCommentId })
-        if (parentCommentId !== undefined) {
-            await PitchComment.updateOne({ _id: parentCommentId }, { $push: { subComments: newComment._id}})
+        const { pitchId, comment, commentBy, parentCommentId } = req.body;
+        const files = req.files;
+        
+        // Upload files to cloudinary if present
+        const attachments = [];
+        if (files && files.length > 0) {
+            for (const file of files) {
+                const result = await cloudinary.uploader.upload(file.path, {
+                    resource_type: "auto" // Automatically detect if it's image or video
+                });
+                attachments.push({
+                    url: result.secure_url,
+                    type: result.resource_type,
+                    public_id: result.public_id
+                });
+            }
         }
-        await newComment.save()
+
+        const newComment = await PitchComment.create({ 
+            comment, 
+            commentBy, 
+            pitchId, 
+            parentCommentId,
+            attachments 
+        });
+
+        if (parentCommentId !== undefined) {
+            await PitchComment.updateOne(
+                { _id: parentCommentId }, 
+                { $push: { subComments: newComment._id}}
+            );
+        }
+        
+        await newComment.save();
         return res.status(200).json("Comment Added");
     } catch (err) {
         return res.status(400).json(err);
