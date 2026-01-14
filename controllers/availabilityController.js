@@ -5,6 +5,78 @@ const Availability = require("../models/Availability");
 const Booking = require("../models/Booking");
 const Request = require("../models/RequestSchema.js");
 
+// --- ADDED: Missing Imports for Email Logic ---
+const User = require("../models/UserModel.js");
+const send_Notification_mail = require("../helpers/EmailSending");
+
+// --- ADDED: Email Templates ---
+const getBookingConfirmationTemplate = (studentName, mentorName, topic, date, link) => {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+      <h2 style="color: #4CAF50;">Booking Confirmed! ✅</h2>
+      <p>Hello <strong>${studentName}</strong>,</p>
+      <p>Your session with <strong>${mentorName}</strong> has been successfully booked.</p>
+      
+      <div style="background-color: #f0fdf4; padding: 15px; border-left: 4px solid #4CAF50; margin: 20px 0;">
+        <p><strong>Topic:</strong> ${topic}</p>
+        <p><strong>Date & Time:</strong> ${new Date(date).toUTCString()}</p>
+        <p><strong>Meeting Link:</strong> <a href="${link}">${link}</a></p>
+      </div>
+      <p>Please join the link 5 minutes before the scheduled time.</p>
+    </div>
+  `;
+};
+
+const getNewBookingAlertTemplate = (mentorName, studentName, topic, date, link) => {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+      <h2 style="color: #2196F3;">New Session Booked! 📅</h2>
+      <p>Hello <strong>${mentorName}</strong>,</p>
+      <p><strong>${studentName}</strong> has booked a session with you.</p>
+      
+      <div style="background-color: #e3f2fd; padding: 15px; border-left: 4px solid #2196F3; margin: 20px 0;">
+        <p><strong>Topic:</strong> ${topic}</p>
+        <p><strong>Date & Time:</strong> ${new Date(date).toUTCString()}</p>
+        <p><strong>Meeting Link:</strong> <a href="${link}">${link}</a></p>
+      </div>
+      <p>Check your dashboard for more details.</p>
+    </div>
+  `;
+};
+
+const getRescheduleRequestTemplate = (studentName, mentorName, reason) => {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+      <h2 style="color: #FF9800;">Reschedule Requested ⏳</h2>
+      <p>Hello <strong>${studentName}</strong>,</p>
+      <p>Your mentor, <strong>${mentorName}</strong>, has requested to reschedule your upcoming session.</p>
+      
+      <div style="background-color: #fff3e0; padding: 15px; border-left: 4px solid #FF9800; margin: 20px 0;">
+        <p><strong>Reason provided:</strong> ${reason}</p>
+      </div>
+
+      <p>Please log in to your dashboard to discuss a new time or accept the change.</p>
+    </div>
+  `;
+};
+
+const getFeedbackReceivedTemplate = (mentorName, rating, feedbackText) => {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+      <h2 style="color: #FFC107;">You received new feedback! ⭐</h2>
+      <p>Hello <strong>${mentorName}</strong>,</p>
+      <p>A student has left feedback for a recent session.</p>
+      
+      <div style="background-color: #fff8e1; padding: 15px; margin: 20px 0;">
+        <p><strong>Rating:</strong> ${rating} / 5</p>
+        <p><strong>Comment:</strong> "${feedbackText}"</p>
+      </div>
+
+      <p>Keep up the great work!</p>
+    </div>
+  `;
+};
+
 // Helper function to convert duration to days
 const convertDurationToDays = (duration) => {
   const [value, unit] = duration.split(" ");
@@ -158,7 +230,7 @@ exports.saveSchedule = async (req, res) => {
 // Get availability data for a specific user
 exports.getAvailability = async (req, res) => {
   console.log('API is working');
-    console.log('process.env',process.env.PORT,process.env.EMAIL,process.env.EMAIL_PASSWORD);
+  console.log('process.env',process.env.PORT,process.env.EMAIL,process.env.EMAIL_PASSWORD);
 
   let userId = req.payload.user_id; // Assuming user_id comes from token or session
   console.log(userId);
@@ -194,9 +266,6 @@ exports.getAvailability = async (req, res) => {
     res.status(500).json({ message: 'Error retrieving availability data', error });
   }
 };
-
-
-
 
 exports.saveSingleService = async (req, res) => {
   try {
@@ -258,11 +327,6 @@ exports.saveSingleService = async (req, res) => {
   }
 };
 
-
-
-
-
-
 // Controller to save webinar
 exports.saveWebinar = async (req, res) => {
   const { webinarData } = req.body;
@@ -298,35 +362,6 @@ exports.saveWebinar = async (req, res) => {
       .json({ message: "Error saving webinar. Please try again." });
   }
 };
-
-// exports.createPriorityDm = async (req, res) => {
-//   try {
-//     const { title, description, amount, responseTime } = req.body;
-
-//     const userId = req.payload.user_id;
-
-//     // Find the user's availability record
-//     let availability = await Availability.findOne({ userId });
-
-//     if (!availability) {
-//       availability = new Availability({ userId });
-//     }
-
-//     // Add the new priority DM object to the priorityDMs array
-//     availability.priorityDMs.push({
-//       title,
-//       description,
-//       amount,
-//       responseTime
-//     });
-
-//     await availability.save();
-//     res.status(200).json({ message: 'Priority DM data saved successfully!' });
-//   } catch (error) {
-//     console.error('Error saving priority DM data:', error);
-//     res.status(500).json({ message: 'Error saving priority DM data', error });
-//   }
-// };
 
 exports.saveBooking = async (bookingData, createdEvent) => {
   const meetLink = createdEvent.hangoutLink;
@@ -400,12 +435,34 @@ exports.saveBooking = async (bookingData, createdEvent) => {
 
     // Save the booking to the database
     const savedBooking = await newBooking.save();
-   await Request.findByIdAndUpdate(
+    
+    // --- PRESERVED NEW FEATURE: Request Model Update ---
+    await Request.findByIdAndUpdate(
       requestId,
       { booked: true },
       { new: true }
     );
 
+    // --- ADDED: Your Email Notification Logic ---
+    try {
+        const mentor = await User.findById(mentorId);
+        const student = await User.findById(user_id);
+
+        if (mentor && student) {
+            // 1. Notify Student
+            const studentMsg = getBookingConfirmationTemplate(student.userName, mentor.userName, title, startDateTimeUTC, meetLink);
+            await send_Notification_mail(student.email, "Booking Confirmed! ✅", studentMsg, student.email, "", {});
+            
+            // 2. Notify Mentor
+            const mentorMsg = getNewBookingAlertTemplate(mentor.userName, student.userName, title, startDateTimeUTC, meetLink);
+            await send_Notification_mail(mentor.email, "New Session Booked! 📅", mentorMsg, mentor.email, "", {});
+            
+            console.log("Booking emails sent successfully.");
+        }
+    } catch (emailErr) {
+        console.error("Failed to send booking emails:", emailErr);
+    }
+    // ----------------------------------------------------
 
     return savedBooking;
   } catch (error) {
@@ -432,12 +489,6 @@ exports.getBookingsMentor = async (req, res) => {
       .populate("userId", "email userName phone") // Populate userId with specific fields
       .exec();
 
-    // console.log("Bookings found:", bookings); // Log the bookings retrieved
-
-    // if (!bookings.length) {
-    //   return res.status(400).json({ success: false, message: 'No bookings found for this mentor' });
-    // }
-
     res.status(200).json({ success: true, mentorBookings: bookings });
   } catch (error) {
     console.error("Error getting bookings by mentorId:", error);
@@ -463,8 +514,6 @@ exports.getBookingsUser = async (req, res) => {
       .populate("mentorId", "email userName phone") // Populate mentorId with specific fields
       .populate("userId", "email userName phone") // Populate userId with specific fields
       .exec();
-
-    // console.log("Bookings found:", bookings); // Log the bookings found
 
     if (!bookings.length) {
       return res
@@ -518,6 +567,36 @@ exports.updateMentorReschedule = async (req, res) => {
       return res.status(404).json({ error: "Document not found" });
     }
 
+    // --- ADDED: Your Email Notification Logic for Reschedule ---
+    if (booleanValue === true) { 
+        try {
+            const bookingDetails = await Booking.findById(id)
+                .populate('userId', 'email userName')
+                .populate('mentorId', 'userName');
+
+            if (bookingDetails && bookingDetails.userId) {
+                const emailBody = getRescheduleRequestTemplate(
+                    bookingDetails.userId.userName, 
+                    bookingDetails.mentorId.userName, 
+                    rescheduleReason
+                );
+
+                await send_Notification_mail(
+                    bookingDetails.userId.email,
+                    "Reschedule Request from Mentor ⏳",
+                    emailBody,
+                    bookingDetails.userId.email,
+                    "",
+                    {}
+                );
+                console.log(`Reschedule notification sent to ${bookingDetails.userId.email}`);
+            }
+        } catch (emailErr) {
+            console.error("Failed to send reschedule email:", emailErr);
+        }
+    }
+    // -----------------------------------------------------------
+
     // Log typeof mentorReschedule after the update
     console.log("Type of mentorReschedule:", typeof result.mentorReschedule);
 
@@ -570,6 +649,32 @@ exports.addFeedback = async (req, res) => {
     if (!updatedBooking) {
       return res.status(404).json({ message: "Booking not found" });
     }
+
+    // --- ADDED: Your Email Notification Logic for Feedback ---
+    try {
+        const bookingDetails = await Booking.findById(bookingId).populate('mentorId', 'email userName');
+
+        if (bookingDetails && bookingDetails.mentorId) {
+            const emailBody = getFeedbackReceivedTemplate(
+                bookingDetails.mentorId.userName, 
+                rating, 
+                feedbackText
+            );
+
+            await send_Notification_mail(
+                bookingDetails.mentorId.email,
+                "New Feedback Received! ⭐",
+                emailBody,
+                bookingDetails.mentorId.email,
+                "",
+                {}
+            );
+            console.log(`Feedback notification sent to ${bookingDetails.mentorId.email}`);
+        }
+    } catch (emailErr) {
+        console.error("Failed to send feedback email:", emailErr);
+    }
+    // --------------------------------------------------------
 
     res.status(200).json({
       message: "Feedback added successfully",
@@ -640,5 +745,3 @@ exports.deleteSessionById = async (req, res) => {
     return res.status(500).json({ message: "Server error", error });
   }
 };
-
-
