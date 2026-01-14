@@ -6,6 +6,25 @@ const Calendar = require('../models/Calender'); // Adjust the path according to 
 const calendarApi = google.calendar('v3'); // Using Google Calendar API v3
 const availabilityController = require ('./availabilityController.js');
 const Booking = require('../models/Booking.js'); // Adjust the path according to your project structure
+const send_Notification_mail = require("../helpers/EmailSending");
+
+const getUserRescheduleAlertTemplate = (mentorName, studentName, topic, newDate, link) => {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+      <h2 style="color: #2196F3;">Session Rescheduled by Student 🔄</h2>
+      <p>Hello <strong>${mentorName}</strong>,</p>
+      <p><strong>${studentName}</strong> has updated the date/time for your session.</p>
+      
+      <div style="background-color: #e3f2fd; padding: 15px; border-left: 4px solid #2196F3; margin: 20px 0;">
+        <p><strong>Topic:</strong> ${topic}</p>
+        <p><strong>New Date & Time:</strong> ${new Date(newDate).toUTCString()}</p>
+        <p><strong>Meeting Link:</strong> <a href="${link}">${link}</a></p>
+      </div>
+
+      <p>Please check your calendar to ensure this fits your schedule.</p>
+    </div>
+  `;
+};
 
 
 exports.Redirect = async (req, res, next) => {
@@ -389,64 +408,44 @@ exports.modifyEventDates = async (req, res, next) => {
 
     console.log('eventId:', eventId, 'mentorId:', mentorId);
 
-    console.log('reschedule data', rescheduleBooking)
-  
-
     try {
-        // Check if the mentor has stored credentials
+        // --- GOOGLE AUTH LOGIC START ---
         const userCalendar = await Calendar.findOne({ userId: mentorId });
-
-        console.log('credentials found:', userCalendar.googleCredentials);
-
+        
         if (userCalendar && userCalendar.googleCredentials) {
-            // Set the credentials to the oauth2Client
             oauth2Client.setCredentials({
                 access_token: userCalendar.googleCredentials.accessToken,
                 refresh_token: userCalendar.googleCredentials.refreshToken,
                 expiry_date: userCalendar.googleCredentials.expiryDate.getTime(),
             });
 
-            console.log('credentials set');
-
-            // Optionally check if the access token has expired
             const expiryDate = new Date(userCalendar.googleCredentials.expiryDate);
             if (expiryDate <= new Date()) {
                 if (userCalendar.googleCredentials.refreshToken) {
                     const { credentials } = await oauth2Client.refreshAccessToken();
                     oauth2Client.setCredentials(credentials);
-                    await saveCredentials(mentorId, credentials); // Save new tokens
+                    await saveCredentials(mentorId, credentials); 
                 } else {
-                    return res.status(401).send('Access token expired and no refresh token available. Reauthorization required.');
+                    return res.status(401).send('Reauthorization required.');
                 }
             }
         } else {
-            return res.status(401).send('No credentials found. Reauthorization required.');
+            return res.status(401).send('No credentials found.');
         }
+        // --- GOOGLE AUTH LOGIC END ---
 
-        // Fetch the existing event
+        // Modify event dates on Google Calendar
         const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-        const event = await calendar.events.get({
-            calendarId: 'primary',
-            eventId: eventId,
-        });
-
-        // Modify event dates
         const updatedEvent = await calendar.events.patch({
             calendarId: 'primary',
             eventId: eventId,
             requestBody: {
-                start: {
-                    dateTime: eventDetails.startDateTimeUTC, // New start date
-                    timeZone: 'UTC', // Keep existing time zone
-                },
-                end: {
-                    dateTime: eventDetails.endDateTimeUTC, // New end date
-                    timeZone:'UTC', // Keep existing time zone
-                },
+                start: { dateTime: eventDetails.startDateTimeUTC, timeZone: 'UTC' },
+                end: { dateTime: eventDetails.endDateTimeUTC, timeZone: 'UTC' },
             },
         });
 
-
+        // Update database
         const updateResult = await updateBookingDates(
             eventId,
             eventDetails.startDateTimeUTC,
@@ -454,23 +453,52 @@ exports.modifyEventDates = async (req, res, next) => {
         );
 
         if (!updateResult.success) {
-            // Handle failure in updating the booking
             return res.status(500).send(updateResult.message);
         }
 
-        // Send a success response with both the updated calendar event and the updated booking
+        // 👇 CORRECTED EMAIL LOGIC (Notify MENTOR) 👇
+        try {
+            const bookingDetails = await Booking.findOne({ eventId: eventId })
+                .populate('userId', 'email userName')
+                .populate('mentorId', 'userName email');
+
+            if (bookingDetails && bookingDetails.mentorId) {
+                // Generate email for the MENTOR
+                const emailBody = getUserRescheduleAlertTemplate(
+                    bookingDetails.mentorId.userName,  // Hello Mentor Name
+                    bookingDetails.userId.userName,    // Student Name has updated...
+                    bookingDetails.title || "Mentorship Session",
+                    eventDetails.startDateTimeUTC,
+                    bookingDetails.meetLink || "Check Dashboard"
+                );
+
+                // Send to MENTOR email
+                await send_Notification_mail(
+                    bookingDetails.mentorId.email,
+                    "Session Rescheduled by Student 🔄", // Subject
+                    emailBody,
+                    bookingDetails.mentorId.email,
+                    "",
+                    {}
+                );
+                console.log(`Reschedule alert sent to mentor: ${bookingDetails.mentorId.email}`);
+            }
+        } catch (emailError) {
+            console.error("Failed to send reschedule email notification:", emailError);
+        }
+        // 👆 EMAIL LOGIC ENDS 👆
+
         res.status(200).send({
             message: 'Event and booking dates successfully updated!',
             updatedEvent: updatedEvent.data,
             updatedBooking: updateResult.updatedBooking,
         });
-    } 
-        
-     catch (error) {
+
+    } catch (error) {
         console.error('Error modifying event dates:', error);
         res.status(500).send('Error in modifying event dates.');
     }
-};
+}; 
 
 
 

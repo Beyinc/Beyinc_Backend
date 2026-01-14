@@ -76,6 +76,23 @@ const getFeedbackReceivedTemplate = (mentorName, rating, feedbackText) => {
   `;
 };
 
+const getUserRescheduleAlertTemplate = (mentorName, studentName, topic, newDate, link) => {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+      <h2 style="color: #2196F3;">Session Rescheduled </h2>
+      <p>Hello <strong>${mentorName}</strong>,</p>
+      <p><strong>${studentName}</strong> has rescheduled their session with you.</p>
+      
+      <div style="background-color: #e3f2fd; padding: 15px; border-left: 4px solid #2196F3; margin: 20px 0;">
+        <p><strong>Topic:</strong> ${topic}</p>
+        <p><strong>New Date & Time:</strong> ${new Date(newDate).toUTCString()}</p>
+        <p><strong>Meeting Link:</strong> <a href="${link}">${link}</a></p>
+      </div>
+      <p>Please check your dashboard/calendar for the updated time.</p>
+    </div>
+  `;
+};
+
 
 // Helper function to convert duration to days
 const convertDurationToDays = (duration) => {
