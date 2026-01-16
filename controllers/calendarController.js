@@ -448,6 +448,7 @@ exports.modifyEventDates = async (req, res, next) => {
                     dateTime: eventDetails.endDateTimeUTC, // New end date
                     timeZone:'UTC', // Keep existing time zone
                 },
+                userReschedule:true
             },
         });
 
