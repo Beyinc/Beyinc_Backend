@@ -38,6 +38,9 @@ const bookingSchema = new mongoose.Schema(
     mentorReschedule: {
       type: [mongoose.Schema.Types.Mixed],
     },
+ userReschedule: {
+      type: [mongoose.Schema.Types.Mixed],
+    },
 
     feedback: { type: [String] },
 
