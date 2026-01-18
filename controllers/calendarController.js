@@ -356,25 +356,20 @@ exports.modifyEventDates = async (req, res, next) => {
         // Modify event dates on Google Calendar
         const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
         const updatedEvent = await calendar.events.patch({
-            calendarId: 'primary',
-            eventId: eventId,
-            requestBody: {
-<<<<<<< HEAD
-                start: {
-                    dateTime: eventDetails.startDateTimeUTC, // New start date
-                    timeZone: 'UTC', // Keep existing time zone
-                },
-                end: {
-                    dateTime: eventDetails.endDateTimeUTC, // New end date
-                    timeZone:'UTC', // Keep existing time zone
-                },
-                userReschedule:true
-=======
-                start: { dateTime: eventDetails.startDateTimeUTC, timeZone: 'UTC' },
-                end: { dateTime: eventDetails.endDateTimeUTC, timeZone: 'UTC' },
->>>>>>> 73e2bcd0243d6e631ae19952228d9848f74cd0a6
-            },
-        });
+    calendarId: 'primary',
+    eventId: eventId,
+    requestBody: {
+        start: {
+            dateTime: eventDetails.startDateTimeUTC, // New start date
+            timeZone: 'UTC', // Keep existing time zone
+        },
+        end: {
+            dateTime: eventDetails.endDateTimeUTC, // New end date
+            timeZone: 'UTC', // Keep existing time zone
+        },
+        userReschedule: true
+    },
+});
 
         // Update database
         const updateResult = await updateBookingDates(
