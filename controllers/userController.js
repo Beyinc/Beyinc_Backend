@@ -1507,6 +1507,8 @@ exports.verifyUserPassword = async (req, res, next) => {
 exports.updateProfileImage = async (req, res) => {
   try {
     const { image, userId } = req.body;
+    console.log(req.body);
+    console.log("user id:", userId);
 
     const user = await User.findById(userId);
     if (!user) return res.status(400).send("User not found");
