@@ -90,11 +90,19 @@ exports.getPost = async (req, res, next) => {
 
     if (PostExist) {
       const modifiedPostData = formatPost(PostExist, userId);
-
-      return res.status(200).json(modifiedPostData);
+      if (!res.headersSent) {
+        return res.status(200).json(modifiedPostData);
+      }
+    } else {
+      if (!res.headersSent) {
+        return res.status(404).json({ message: "Post not found" });
+      }
     }
   } catch (error) {
-    console.log(error);
+    console.error("Error in getPost:", error);
+    if (!res.headersSent) {
+      return res.status(500).json({ message: "Server Error", error: error.message });
+    }
   }
 };
 
@@ -153,9 +161,14 @@ exports.getAllPosts = async (req, res, next) => {
 
     const modifiedData = data.map(post => formatPost(post, userId));
 
-    return res.status(200).json(modifiedData);
+    if (!res.headersSent) {
+      return res.status(200).json(modifiedData);
+    }
   } catch (error) {
-    console.log(error);
+    console.error("Error in getAllPosts:", error);
+    if (!res.headersSent) {
+      return res.status(500).json({ message: "Server Error", error: error.message });
+    }
   }
 };
 
@@ -180,10 +193,14 @@ exports.getTopTrendingPosts = async (req, res, next) => {
       },
     ]);
 
-    return res.status(200).json(data);
+    if (!res.headersSent) {
+      return res.status(200).json(data);
+    }
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Server Error", error });
+    console.error("Error in getTopTrendingPosts:", error);
+    if (!res.headersSent) {
+      return res.status(500).json({ message: "Server Error", error: error.message });
+    }
   }
 };
 
@@ -891,10 +908,14 @@ exports.filterposts = async (req, res, next) => {
 
     console.log("filterposts controller - modifiedData length:", modifiedData.length);
 
-    return res.status(200).json(modifiedData);
+    if (!res.headersSent) {
+      return res.status(200).json(modifiedData);
+    }
   } catch (error) {
     console.error("Critical Error in filterposts:", error);
-    return res.status(500).json({ message: "Server error.", error: error.message, stack: error.stack });
+    if (!res.headersSent) {
+      return res.status(500).json({ message: "Server error.", error: error.message });
+    }
   }
 };
 
