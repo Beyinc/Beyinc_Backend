@@ -341,6 +341,7 @@ exports.startupEntryData = async (req, res) => {
       categoryUserRole: "Startup",
       interests: ["Startup"],
       isProfileComplete: true,
+      userName:startupName
     };
 
     // 🔹 PATCH-style nested updates (🔥 THIS IS THE FIX)

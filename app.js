@@ -56,8 +56,8 @@ const corsOptions = {
 };
 
 // Handle CORS preflight requests BEFORE body parsing middleware
-app.options('*', cors(corsOptions)); // handle preflight for all routes and manage something
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 const path = require("path")
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
