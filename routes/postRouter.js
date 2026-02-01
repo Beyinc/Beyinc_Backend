@@ -1,17 +1,17 @@
 const express = require("express");
 const postControllers = require('../controllers/postControllers');
-const { verifyAccessToken } = require("../helpers/jwt_helpers");
+const { verifyAccessToken, optionallyVerifyAccessToken } = require("../helpers/jwt_helpers");
 
 const router = express.Router();
 
 // ============ PUBLIC ROUTES (No Auth Required) ============
 // Guests can view posts without logging in
-router.route("/getPost").post(postControllers.getPost);
-router.route("/getAllPosts").post(postControllers.getAllPosts);
-router.route("/getTopTrendingPosts").post(postControllers.getTopTrendingPosts);
-router.route("/getUsersPost").post(postControllers.getUsersPost);
-router.route('/filterPosts').post(postControllers.filterposts);
-router.route("/getReportedPosts").get(postControllers.getReportedPosts);
+router.route("/getPost").post(optionallyVerifyAccessToken, postControllers.getPost);
+router.route("/getAllPosts").post(optionallyVerifyAccessToken, postControllers.getAllPosts);
+router.route("/getTopTrendingPosts").post(optionallyVerifyAccessToken, postControllers.getTopTrendingPosts);
+router.route("/getUsersPost").post(optionallyVerifyAccessToken, postControllers.getUsersPost);
+router.route('/filterPosts').post(optionallyVerifyAccessToken, postControllers.filterposts);
+router.route("/getReportedPosts").get(optionallyVerifyAccessToken, postControllers.getReportedPosts);
 
 // ============ PROTECTED ROUTES (Auth Required) ============
 // Only logged-in users can perform these actions
