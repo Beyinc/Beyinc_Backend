@@ -284,12 +284,41 @@ exports.createPost = async (req, res, next) => {
       visibility,
     } = req.body;
 
-    // Only upload the image if it's provided
-    let uploadedImage = null;
-    if (image) {
-      uploadedImage = await cloudinary.uploader.upload(image, {
-        folder: `${createdBy.email}/posts`,
-      });
+    // Accept both `images` (array) and legacy `image` (single)
+    const imagesInput = req.body.images || image;
+
+    // Debug: log incoming images count (helps diagnose missing images)
+    try {
+      const incomingCount = Array.isArray(imagesInput) ? imagesInput.length : imagesInput ? 1 : 0;
+      console.log(`createPost: incoming images count = ${incomingCount}`);
+    } catch (e) {
+      console.log('createPost: error counting incoming images', e);
+    }
+
+    // Handle single or multiple images
+    let uploadedImages = [];
+    if (imagesInput) {
+      if (Array.isArray(imagesInput)) {
+        uploadedImages = await Promise.all(
+          imagesInput.map((img) =>
+            img && img.public_id
+              ? img
+              : cloudinary.uploader.upload(img, {
+                  folder: `${createdBy.email}/posts`,
+                })
+          )
+        );
+      } else {
+        uploadedImages = imagesInput.public_id
+          ? [imagesInput]
+          : [await cloudinary.uploader.upload(imagesInput, { folder: `${createdBy.email}/posts` })];
+      }
+
+      // Normalize Cloudinary response to a consistent shape { public_id, url }
+      uploadedImages = uploadedImages.map((u) => ({
+        public_id: u.public_id,
+        url: u.secure_url || u.url || u.secureUrl || u.secure_url,
+      }));
     }
 
     const createdPost = await Posts.create({
@@ -305,7 +334,7 @@ exports.createPost = async (req, res, next) => {
       ...(link && { link }), // Conditional link
       ...(fullDetails && { fullDetails }), // Conditional fullDetails
       ...(groupDiscussion && { groupDiscussion }), // Conditional groupDiscussion
-      ...(uploadedImage && { image: uploadedImage }), // Conditional image
+      ...(uploadedImages.length && { images: uploadedImages, image: uploadedImages[0] }), // Conditional images
     });
     if (tags.length > 0) {
       for (let i = 0; i < tags.length; i++) {
@@ -380,26 +409,44 @@ exports.editPost = async (req, res, next) => {
     } = req.body;
 
     const PostDoesExist = await Posts.findOne({ _id: id });
-    let result = "";
-    if (image && !image.public_id) {
-      if (PostDoesExist?.image.public_id !== undefined) {
-        await cloudinary.uploader.destroy(
-          PostDoesExist?.image.public_id,
-          (error, result) => {
-            if (error) {
-              console.error("Error deleting image:", error);
-            } else {
-              console.log("Image deleted successfully:", result);
-            }
-          }
+    // Determine final images array (keep existing if no changes)
+    let finalImages = PostDoesExist?.images && PostDoesExist.images.length ? PostDoesExist.images : (PostDoesExist?.image ? [PostDoesExist.image] : []);
+
+    // Accept both `images` (array) and legacy `image` (single) for updates
+    const imagesInput = req.body.images || image;
+
+    if (imagesInput) {
+      if (Array.isArray(imagesInput)) {
+        const uploaded = await Promise.all(
+          imagesInput.map((img) =>
+            img && img.public_id
+              ? img
+              : cloudinary.uploader.upload(img, {
+                  folder: `${createdBy.email}/posts`,
+                })
+          )
         );
+        finalImages = uploaded.map((u) => ({ public_id: u.public_id, url: u.secure_url || u.url }));
+      } else {
+        finalImages = imagesInput.public_id
+          ? [imagesInput]
+          : [await cloudinary.uploader.upload(imagesInput, { folder: `${createdBy.email}/posts` })];
+        // normalize single
+        finalImages = finalImages.map((u) => ({ public_id: u.public_id, url: u.secure_url || u.url }));
       }
-      result = await cloudinary.uploader.upload(image, {
-        folder: `${createdBy.email}/posts`,
-      });
-    } else {
-      result = image;
+
+      // Delete images that existed before but are no longer in finalImages
+      const existingImages = PostDoesExist?.images && PostDoesExist.images.length ? PostDoesExist.images : (PostDoesExist?.image ? [PostDoesExist.image] : []);
+      const toRemove = existingImages.filter(ei => ei && ei.public_id && !finalImages.find(fi => fi && fi.public_id === ei.public_id));
+      for (const rem of toRemove) {
+        try {
+          await cloudinary.uploader.destroy(rem.public_id);
+        } catch (err) {
+          console.error("Error deleting old image:", err);
+        }
+      }
     }
+
     await Posts.updateOne(
       { _id: id },
       {
@@ -409,7 +456,8 @@ exports.editPost = async (req, res, next) => {
           fullDetails,
           groupDiscussion,
           postTitle,
-          image: result,
+          images: finalImages,
+          image: finalImages[0] || null,
           type,
           tags: tags?.map((m) => m._id),
           createdBy: createdBy._id,
@@ -579,16 +627,21 @@ exports.updatereportPost = async (req, res, next) => {
       select: ["userName", "email", "image", "role", "_id"],
     });
     if (postDecide == "delete") {
-      await cloudinary.uploader.destroy(
-        result.image.public_id,
-        (error, result) => {
-          if (error) {
-            console.error("Error deleting image:", error);
-          } else {
-            console.log("Image deleted successfully:", result);
+      if (result?.images && result.images.length) {
+        for (const img of result.images) {
+          try {
+            if (img?.public_id) await cloudinary.uploader.destroy(img.public_id);
+          } catch (e) {
+            console.error("Error deleting image:", e);
           }
         }
-      );
+      } else if (result.image && result.image.public_id) {
+        try {
+          await cloudinary.uploader.destroy(result.image.public_id);
+        } catch (e) {
+          console.error("Error deleting image:", e);
+        }
+      }
       await send_Notification_mail(
         result.createdBy.email,
         `Post deleted by admin!`,
@@ -750,18 +803,20 @@ exports.deletePost = async (req, res, next) => {
   try {
     const { id } = req.body;
     const result = await Posts.findOne({ _id: id });
-    if (result.image.public_id) {
-
-      await cloudinary.uploader.destroy(
-        result.image.public_id,
-        (error, result) => {
-          if (error) {
-            console.error("Error deleting image:", error);
-          } else {
-            console.log("Image deleted successfully:", result);
-          }
+    if (result?.images && result.images.length) {
+      for (const img of result.images) {
+        try {
+          if (img?.public_id) await cloudinary.uploader.destroy(img.public_id);
+        } catch (e) {
+          console.error("Error deleting image:", e);
         }
-      );
+      }
+    } else if (result.image && result.image.public_id) {
+      try {
+        await cloudinary.uploader.destroy(result.image.public_id);
+      } catch (e) {
+        console.error("Error deleting image:", e);
+      }
     }
     await PostComment.deleteMany({ postId: id });
     await Posts.deleteOne({ _id: id });

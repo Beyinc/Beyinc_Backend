@@ -23,6 +23,16 @@ const postSchema = new mongoose.Schema(
         type: String,
       },
     },
+    images: [
+      {
+        public_id: {
+          type: String,
+        },
+        url: {
+          type: String,
+        },
+      },
+    ],
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
