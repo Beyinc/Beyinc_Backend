@@ -1,7 +1,40 @@
 const User = require("../models/UserModel");
 const cloudinary = require("../helpers/UploadImage");
 const { default: mongoose } = require("mongoose");
+const userVerify = require("../models/OtpModel");
+const send_Notification_mail = require("../helpers/EmailSending");
 
+const generateInviteTemplate = (founderName, startupName, otp) => {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div style="background-color: #6d28d9; padding: 20px; text-align: center; color: white;">
+        <h2 style="margin: 0;">Co-Founder Invitation</h2>
+      </div>
+      <div style="padding: 30px; background-color: #ffffff;">
+        <p style="font-size: 16px; color: #333;">Hello,</p>
+        <p style="font-size: 16px; color: #333; line-height: 1.5;">
+          <strong>${founderName}</strong> has invited you to join <strong>${startupName}</strong> as a Co-Founder on our platform.
+        </p>
+        <p style="font-size: 16px; color: #333;">
+          To accept this invitation and verify your email, please provide the following One-Time Password (OTP) to the founder:
+        </p>
+        
+        <div style="margin: 30px 0; text-align: center;">
+          <span style="background-color: #f3f4f6; padding: 15px 30px; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #6d28d9; border-radius: 8px; border: 1px dashed #6d28d9;">
+            ${otp}
+          </span>
+        </div>
+
+        <p style="font-size: 14px; color: #666; text-align: center;">
+          This code will expire in 10 minutes.
+        </p>
+      </div>
+      <div style="background-color: #f9fafb; padding: 15px; text-align: center; font-size: 12px; color: #9ca3af;">
+        &copy; ${new Date().getFullYear()} Your Platform Name. All rights reserved.
+      </div>
+    </div>
+  `;
+};
 // Save User Data Function
 exports.saveData = async (req, res) => {
   const { bio, experience, education, skills, user_id } = req.body;
@@ -1318,5 +1351,136 @@ exports.getNewProfiles = async (req, res, next) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+exports.sendCoFounderInvite = async (req, res) => {
+  try {
+    const { email, name, role, startupName } = req.body;
+    const { user_id } = req.payload; 
+
+    if (!email || !name) {
+      return res.status(400).json({ message: "Co-founder Name and Email are required" });
+    }
+
+    const currentUser = await User.findById(user_id);
+    const alreadyExists = currentUser.startupProfile?.cofounders.find(
+      (member) => member.email.toLowerCase() === email.toLowerCase()
+    );
+
+    if (alreadyExists && alreadyExists.status === 'verified') {
+      return res.status(400).json({ message: "This user is already a verified team member." });
+    }
+
+    if (!alreadyExists) {
+      await User.findByIdAndUpdate(user_id, {
+        $push: {
+          "startupProfile.cofounders": {
+            name: name,
+            email: email,
+            position: role || "Co-Founder", 
+            status: "pending",   
+            verified: false,     
+            profileImage: "",   
+            addedAt: new Date()
+          }
+        }
+      });
+    }
+
+    const founderName = currentUser.userName || "A Founder";
+    const actualStartupName = startupName || "their startup";
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await userVerify.findOneAndUpdate(
+      { email: email },
+      { verifyToken: otp },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    // 4. Send Email
+    const emailSubject = `Invitation to join ${actualStartupName} as Co-Founder`;
+    await send_Notification_mail(email, emailSubject, `Your verification code is: ${otp}`);
+    
+    console.log(`[DEV] OTP for ${email}: ${otp}`);
+
+    res.status(200).json({ message: "Invite sent and member added as pending." });
+
+  } catch (error) {
+    console.error("Error sending invite:", error);
+    res.status(500).json({ message: "Server error while sending invite." });
+  }
+};
+
+// 2. Verify OTP and Add to Startup Profile
+exports.verifyAndAddCoFounder = async (req, res) => {
+  try {
+    const { email, otp } = req.body; // We only strictly need email & otp now
+    const { user_id } = req.payload;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required." });
+    }
+
+    const validOtp = await userVerify.findOne({ email: email, verifyToken: otp });
+    if (!validOtp) {
+      return res.status(400).json({ message: "Invalid or expired OTP." });
+    }
+
+    const updatedUser = await User.findOneAndUpdate(
+      { 
+        _id: user_id, 
+        "startupProfile.cofounders.email": email 
+      },
+      {
+        $set: {
+          "startupProfile.cofounders.$.status": "verified", 
+          "startupProfile.cofounders.$.verified": true,     
+        }
+      },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "Founder or pending team member not found." });
+    }
+
+    // 3. Clean up OTP
+    await userVerify.deleteOne({ _id: validOtp._id });
+
+    // 4. Return updated list
+    res.status(200).json({ 
+      message: "Co-founder successfully verified!", 
+      cofounders: updatedUser.startupProfile.cofounders 
+    });
+
+  } catch (error) {
+    console.error("Error verifying co-founder:", error);
+    res.status(500).json({ message: "Server error during verification." });
+  }
+};
+
+exports.getFoundingTeam = async (req, res) => {
+  try {
+    const { user_id } = req.payload;
+
+    // Fetch the user with their startup profile
+    const currentUser = await User.findById(user_id).select('startupProfile.cofounders');
+
+    if (!currentUser || !currentUser.startupProfile) {
+      return res.status(404).json({ message: "Startup profile not found." });
+    }
+
+    // Return the cofounders array
+    const cofounders = currentUser.startupProfile.cofounders || [];
+
+    res.status(200).json({ 
+      success: true,
+      cofounders: cofounders 
+    });
+
+  } catch (error) {
+    console.error("Error fetching founding team:", error);
+    res.status(500).json({ message: "Server error while fetching team." });
   }
 };
