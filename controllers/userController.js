@@ -1849,3 +1849,34 @@ exports.addPayment = async (req, res, next) => {
     return res.status(400).json(err);
   }
 };
+
+exports.verifyUser = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    // Only updating the 'verified' boolean
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { verified: true }, 
+      { new: true } // Returns the updated document so you can confirm the change
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      message: "User verified successfully", 
+      data: updatedUser 
+    });
+
+  } catch (error) {
+    console.error("Error verifying user:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
