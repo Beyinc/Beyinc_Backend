@@ -99,6 +99,8 @@ router.route("/updateVerification").post(userController.updateVerification);
 router.route("/updateProfileImage").post(userController.updateProfileImage);
 router.route("/deleteProfileImage").post(userController.deleteProfileImage);
 
+router.put("/verifyUser", userController.verifyUser);
+
 
 router.route("/addPayment").post(userController.addPayment);
 
