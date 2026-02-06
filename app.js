@@ -18,7 +18,7 @@ const professionalProfileRouter = require("./routes/professionalProfileRouter")
 const calendarController = require("./controllers/calendarController")
 const beyincProfileController = require("./controllers/beyincProfessionalController")
 const userProfileController = require("./controllers/userProfileController")
-//
+// //
 const searchController = require("./controllers/searchController")
 
 const NotificationRouter = require("./routes/NotificationRouter");
@@ -47,7 +47,8 @@ const corsOptions = {
     'http://localhost:3000',
     'https://beyinc-frontend.vercel.app',
     'https://yellow-mushroom-0aec0e610.2.azurestaticapps.net',
-'https://www.bloomr.world',
+    'https://www.bloomr.world',
+    'https://bloomr.world',
     'https://beyinc-frontend-dg45.vercel.app'
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
