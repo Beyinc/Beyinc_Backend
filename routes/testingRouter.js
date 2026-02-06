@@ -62,4 +62,21 @@ router.route("/removeFollower").post(userController.removeFollower);
 
 
 
+// Temporary test route - uploads provided base64 images to Cloudinary and returns normalized results
+const cloudinary = require('cloudinary').v2;
+router.post('/testUpload', async (req, res) => {
+  try {
+    const { images = [], createdBy = { email: 'test' } } = req.body;
+    if (!images || !images.length) return res.status(400).json({ message: 'No images provided' });
+    const uploaded = await Promise.all(
+      images.map((img) => cloudinary.uploader.upload(img, { folder: `${createdBy.email}/test` }))
+    );
+    const normalized = uploaded.map((u) => ({ public_id: u.public_id, url: u.secure_url || u.url }));
+    return res.status(200).json({ uploaded: normalized });
+  } catch (err) {
+    console.error('testUpload error', err);
+    return res.status(500).json({ message: 'Upload failed', error: err.message });
+  }
+});
+
 module.exports = router;
