@@ -18,7 +18,7 @@ const professionalProfileRouter = require("./routes/professionalProfileRouter")
 const calendarController = require("./controllers/calendarController")
 const beyincProfileController = require("./controllers/beyincProfessionalController")
 const userProfileController = require("./controllers/userProfileController")
-//
+// //
 const searchController = require("./controllers/searchController")
 
 const NotificationRouter = require("./routes/NotificationRouter");
@@ -47,7 +47,8 @@ const corsOptions = {
     'http://localhost:3000',
     'https://beyinc-frontend.vercel.app',
     'https://yellow-mushroom-0aec0e610.2.azurestaticapps.net',
-'https://www.bloomr.world',
+    'https://www.bloomr.world',
+    'https://bloomr.world',
     'https://beyinc-frontend-dg45.vercel.app'
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -64,8 +65,9 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // app.js
 app.use(morgan("tiny"));
-app.use(express.json({ limit: "25mb" }));
-app.use(express.urlencoded({ extended: true, limit: "25mb" }));
+// Increased payload limits to support multiple base64 images sent in request bodies
+app.use(express.json({ limit: "100mb" }));
+app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 app.use("/hello", (req, res) => res.send("helooo!"));
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 // ROUTES
