@@ -73,6 +73,7 @@ router.route("/getUsers").post(userController.getUsers);
 router.route("/getFollowers").get(userController.getFollowers);
 router.route("/getFollowings").get(userController.getFollowings);
 router.route("/isProfileComplete").get(userController.getIsProfileComplete);
+router.route('/search-by-email').get(userController.searchUserByEmail);
 router
   .route("/updateProfile")
   .post(userController.updateProfileWithoutVerification);

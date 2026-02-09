@@ -1850,6 +1850,29 @@ exports.addPayment = async (req, res, next) => {
   }
 };
 
+exports.searchUserByEmail = async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email query parameter is required" });
+    }
+
+    // UPDATED QUERY:
+    // We select 'userName' (matches schema) and 'image' (matches schema)
+    const user = await User.findOne({ email: email.toLowerCase() })
+      .select('userName image email role verified');
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json(user);
+
+  } catch (error) {
+    console.error("Search User Error:", error);
+    return res.status(500).json({ message: "Server error while searching for user" });
+  }
 exports.verifyUser = async (req, res) => {
   try {
     const { userId } = req.body;
@@ -1858,20 +1881,38 @@ exports.verifyUser = async (req, res) => {
       return res.status(400).json({ message: "User ID is required" });
     }
 
-    // Only updating the 'verified' boolean
+    // 1. Update the user
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { verified: true }, 
-      { new: true } // Returns the updated document so you can confirm the change
+      { verified: true },
+      { new: true }
     );
 
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // 2. Prepare Email Details
+    // Ensure we have an email address to send to
+    if (updatedUser.email) {
+        const subject = "Account Verification Successful";
+        const htmlContent = getVerificationSuccessTemplate(updatedUser.name);
+
+        // 3. Send the Email
+        // We use 'await' to ensure the email is sent before responding, 
+        // or you can remove 'await' to send it in the background.
+        try {
+            await send_Notification_mail(updatedUser.email, subject, htmlContent);
+        } catch (emailError) {
+            // If email fails, we log it but usually don't fail the whole request 
+            // because the user is already verified in the DB.
+            console.error("Failed to send verification email:", emailError);
+        }
+    }
+
     return res.status(200).json({ 
       success: true, 
-      message: "User verified successfully", 
+      message: "User verified successfully and notification sent.", 
       data: updatedUser 
     });
 
@@ -1879,4 +1920,16 @@ exports.verifyUser = async (req, res) => {
     console.error("Error verifying user:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
+};
+
+// --- Template Helper (Paste this at the bottom of the file or import it) ---
+const getVerificationSuccessTemplate = (userName) => {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee;">
+      <h2 style="color: #4CAF50;">Congratulations!</h2>
+      <p>Hello ${userName || 'User'},</p>
+      <p>Your account has been successfully verified. You can now access all restricted features.</p>
+      <p>Thank you for being with us.</p>
+    </div>
+  `;
 };
