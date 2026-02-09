@@ -1873,6 +1873,7 @@ exports.searchUserByEmail = async (req, res) => {
     console.error("Search User Error:", error);
     return res.status(500).json({ message: "Server error while searching for user" });
   }
+};
 exports.verifyUser = async (req, res) => {
   try {
     const { userId } = req.body;
