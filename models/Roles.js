@@ -11,7 +11,7 @@ const TechPartner = require("./Tech-Partner");
 const TradeBody = require("./TradeBodies");
 
 const jobTitles = {
-  "Individual/Entrepreneur": Entrepreneur,
+  "Enterpreneur": Entrepreneur,
   Startup,
   Mentor,
   Incubator,
