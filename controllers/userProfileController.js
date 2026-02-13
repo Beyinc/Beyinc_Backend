@@ -1,6 +1,80 @@
 const User = require("../models/UserModel");
 const cloudinary = require("../helpers/UploadImage");
 const { default: mongoose } = require("mongoose");
+const userVerify = require("../models/OtpModel");
+const send_Notification_mail = require("../helpers/EmailSending");
+
+const generateInviteTemplate = (founderName, startupName, otp) => {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div style="background-color: #6d28d9; padding: 20px; text-align: center; color: white;">
+        <h2 style="margin: 0;">Co-Founder Invitation</h2>
+      </div>
+      <div style="padding: 30px; background-color: #ffffff;">
+        <p style="font-size: 16px; color: #333;">Hello,</p>
+        <p style="font-size: 16px; color: #333; line-height: 1.5;">
+          <strong>${founderName}</strong> has invited you to join <strong>${startupName}</strong> as a Co-Founder on our platform.
+        </p>
+        <p style="font-size: 16px; color: #333;">
+          To accept this invitation and verify your email, please provide the following One-Time Password (OTP) to the founder:
+        </p>
+        
+        <div style="margin: 30px 0; text-align: center;">
+          <span style="background-color: #f3f4f6; padding: 15px 30px; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #6d28d9; border-radius: 8px; border: 1px dashed #6d28d9;">
+            ${otp}
+          </span>
+        </div>
+
+        <p style="font-size: 14px; color: #666; text-align: center;">
+          This code will expire in 10 minutes.
+        </p>
+      </div>
+      <div style="background-color: #f9fafb; padding: 15px; text-align: center; font-size: 12px; color: #9ca3af;">
+        &copy; ${new Date().getFullYear()} Your Platform Name. All rights reserved.
+      </div>
+    </div>
+  `;
+};
+// const send_Notification_mail = require("../helpers/EmailSending");
+const getStartupVerificationTemplate = (founderName) => {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
+      <p>Hi <strong>${founderName || 'Founder'}</strong>,</p>
+      
+      <p>
+        We’ve just rolled out <strong>Startup Verification</strong> on Bloomr, designed to help serious early-stage founders stand out and get discovered faster.
+      </p>
+
+      <p>Once verified, your startup receives:</p>
+      
+      <ul style="padding-left: 20px; color: #444;">
+        <li>Better visibility across the platform</li>
+        <li>Priority listing when mentors browse startups</li>
+        <li>Verified badge that signals credibility to peers and mentors</li>
+        <li>Higher trust when engaging in discussions and feedback threads</li>
+        <li>Early access to upcoming founder-only features and experiments</li>
+      </ul>
+
+      <p>
+        The verification fee is a one-time <span style="text-decoration: line-through;">₹199</span>.<br/>
+        <strong>However, as an early Bloomr user, verification is completely free for you!</strong>
+      </p>
+
+      <div style="margin: 30px 0; text-align: center;">
+        <a href="https://forms.gle/hDEe8khij9rfatNz7" style="background-color: #007bff; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
+          Click here to get verified →
+        </a>
+      </div>
+
+      <p>
+        If you’re actively building or validating an idea, this is the easiest way to increase signal, visibility, and quality interactions around your startup.
+      </p>
+      
+      <p>See you inside,<br/>
+      <strong>Team Bloomr</strong></p>
+    </div>
+  `;
+};
 
 // Save User Data Function
 exports.saveData = async (req, res) => {
@@ -188,9 +262,9 @@ exports.inputEntryData = async (req, res) => {
       role_level,
       companyStage,
       mentorExpertise,
-      experienceYears, // ✅ Add this
-      linkedinProfile, // ✅ Add this
-      verified, // ✅ Add this
+      experienceYears,
+      linkedinProfile,
+      verified,
     } = req.body;
 
     const { user_id } = req.payload;
@@ -203,8 +277,7 @@ exports.inputEntryData = async (req, res) => {
     if (role_level) updateFields.role_level = role_level;
     if (companyStage) updateFields.companyStage = companyStage;
 
-    if (experienceYears !== undefined)
-      updateFields.experienceYears = experienceYears;
+    if (experienceYears !== undefined) updateFields.experienceYears = experienceYears;
     if (linkedinProfile) updateFields.linkedinProfile = linkedinProfile;
     if (verified !== undefined) updateFields.verified = verified;
 
@@ -242,14 +315,101 @@ exports.inputEntryData = async (req, res) => {
 
     updateFields.isProfileComplete = true;
 
+    // Update the user
     const user = await User.findByIdAndUpdate(
       user_id,
       { $set: updateFields },
-      { new: true },
+      { new: true }
     );
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
+    }
+
+    /* ----------------------------------------------------------- */
+    /* ✅ EMAIL LOGIC ADDED BELOW                                  */
+    /* ----------------------------------------------------------- */
+    if (user.email) {
+      let subject = "";
+      let htmlContent = "";
+      const verificationLink = "https://forms.gle/hDEe8khij9rfatNz7";
+
+      // 1. Template for FOUNDER (Individual/Entrepreneur)
+      if (selectedCategory === "Individual/Entrepreneur") {
+        subject = "Verification is Live - Free for Early Users";
+        htmlContent = `
+          <div style="font-family: Arial, sans-serif; color: #333;">
+            <p>Hi ${user.userName || "there"},</p>
+            <p>We’ve introduced Verification on Bloomr — built to recognise people who are actively building and engaging, not just listing ideas.</p>
+            <p>Bloomr Verification helps you stand out as a serious operator and unlocks better access across the ecosystem.</p>
+            
+            <p><strong>As a Verified Founder, you get:</strong></p>
+            <ul>
+              <li>Higher visibility across discussions and founder feeds</li>
+              <li>Priority discovery by mentors browsing founders to support</li>
+              <li>Verified Founder badge that signals credibility and intent</li>
+              <li>Stronger peer trust, leading to better-quality feedback and conversations</li>
+              <li>Exclusive access to new features and experiments</li>
+              <li>Higher signal presence as Bloomr evolves mentor matching and introductions</li>
+            </ul>
+
+            <p>Founder verification carries a one-time fee of ₹199.</p>
+            <p><strong>However, for early Bloomr users, Verification is completely free!</strong></p>
+
+            <p><a href="${verificationLink}" style="background-color: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Click here to get verified</a></p>
+            
+            <p>If you’re actively building and want your profile to reflect that seriousness, get verified today!</p>
+            
+            <p>See you inside,<br>Team Bloomr</p>
+          </div>
+        `;
+      } 
+      
+      // 2. Template for MENTOR
+      else if (selectedCategory === "Mentor") {
+        subject = "Mentor Verification is Live - Free for Early Users";
+        htmlContent = `
+          <div style="font-family: Arial, sans-serif; color: #333;">
+            <p>Hi ${user.userName || "there"},</p>
+            <p>We’re introducing Mentor Verification on Bloomr — to help founders identify and engage with mentors who bring real experience, intent, and commitment to the ecosystem.</p>
+            <p>Mentor Verification is designed to increase signal, not noise.</p>
+
+            <p><strong>As a Verified Mentor, you receive:</strong></p>
+            <ul>
+              <li>Priority visibility to founders actively seeking guidance</li>
+              <li>Verified Mentor badge that signals credibility and experience</li>
+              <li>Higher-quality inbound requests from serious founders</li>
+              <li>Early access to mentor-specific features and experiments</li>
+              <li>Influence on the ecosystem, including feedback on how Bloomr shapes founder–mentor interactions</li>
+              <li>Reduced noise, as verified status helps founders approach you with clearer intent</li>
+            </ul>
+
+            <p>Mentor verification is a one-time fee of ₹1999.</p>
+            <p><strong>However, as an early mentor on Bloomr, verification is completely free for you!</strong></p>
+
+            <p><a href="${verificationLink}" style="background-color: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Click here to get verified</a></p>
+            
+            <p>If you’re interested in guiding early-stage founders and want your profile to reflect that commitment, you can apply for verification today!</p>
+            
+            <p>Looking forward to building this ecosystem together,<br>Team Bloomr<br>bloomr.world</p>
+          </div>
+        `;
+      }
+
+      // Send the email if a template matched
+      if (subject && htmlContent) {
+        try {
+          await send_Notification_mail({
+            email: user.email,
+            subject: subject,
+            html: htmlContent, // or text, depending on your sendEmail implementation
+          });
+          console.log(`Verification email sent to ${user.email} as ${selectedCategory}`);
+        } catch (emailError) {
+          console.error("Failed to send verification email:", emailError);
+          // We do not return an error response here so the user update remains successful
+        }
+      }
     }
 
     return res.status(200).json({
@@ -330,7 +490,13 @@ exports.startupEntryData = async (req, res) => {
       targetMarket,
     } = req.body;
 
-    const { user_id } = req.payload;
+    // FIX: Safety check to get user_id from payload (middleware) OR body (frontend)
+    // This prevents the "Cannot destructure property of undefined" crash.
+    const user_id = req.payload?.user_id || req.body.user_id;
+
+    if (!user_id) {
+      return res.status(401).json({ message: "Unauthorized: User ID missing" });
+    }
 
     console.log("Received startup data:", req.body);
     console.log("Saving startup data for user:", user_id);
@@ -341,56 +507,69 @@ exports.startupEntryData = async (req, res) => {
       categoryUserRole: "Startup",
       interests: ["Startup"],
       isProfileComplete: true,
-      userName:startupName
+      userName: startupName // Updating main username to Startup Name
     };
 
-    // 🔹 PATCH-style nested updates (🔥 THIS IS THE FIX)
+    // 🔹 PATCH-style nested updates
     if (startupName) updateFields["startupProfile.startupName"] = startupName;
-
-    if (startupTagline)
-      updateFields["startupProfile.startupTagline"] = startupTagline;
-
+    if (startupTagline) updateFields["startupProfile.startupTagline"] = startupTagline;
     if (founderName) updateFields["startupProfile.founderName"] = founderName;
-
-    if (startupEmail)
-      updateFields["startupProfile.startupEmail"] = startupEmail;
-
-    if (visibilityMode)
-      updateFields["startupProfile.visibilityMode"] = visibilityMode;
-
+    if (startupEmail) updateFields["startupProfile.startupEmail"] = startupEmail;
+    if (visibilityMode) updateFields["startupProfile.visibilityMode"] = visibilityMode;
     if (startupStage) updateFields["startupProfile.stage"] = startupStage;
-
-    if (startupTeamSize)
-      updateFields["startupProfile.teamSize"] = startupTeamSize;
-
+    if (startupTeamSize) updateFields["startupProfile.teamSize"] = startupTeamSize;
     if (industries && Array.isArray(industries) && industries.length > 0)
       updateFields["startupProfile.industries"] = industries;
-
-    if (targetMarket)
-      updateFields["startupProfile.targetMarket"] = targetMarket;
+    if (targetMarket) updateFields["startupProfile.targetMarket"] = targetMarket;
 
     // 🔹 Guard: prevent empty startup updates
+    // We check if only the 5 base fields exist (meaning no startup info was sent)
     if (Object.keys(updateFields).length === 5) {
-      // only role-related fields exist
       return res.status(400).json({
         message: "No startup data provided to update",
       });
     }
 
+    // 🔹 Update Database
     const user = await User.findByIdAndUpdate(
       user_id,
       { $set: updateFields },
-      { new: true },
+      { new: true }
     );
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // ---------------------------------------------------------
+    // 🔹 EMAIL NOTIFICATION LOGIC
+    // ---------------------------------------------------------
+    // Wrapped in try/catch so email failure does not crash the API response
+    try {
+      // Prioritize the user's account email, fallback to the startup contact email
+      const emailRecipient = user.email || startupEmail;
+      
+      if (emailRecipient) {
+        // Use the founderName from req.body or fetch from the updated user object
+        const recipientName = founderName || user.startupProfile?.founderName || "Founder";
+        
+        const htmlContent = getStartupVerificationTemplate(recipientName);
+        const subject = "Startup Verification is Live - Free for Early Users";
+
+        await send_Notification_mail(emailRecipient, subject, htmlContent);
+        console.log(`Startup verification email sent to ${emailRecipient}`);
+      }
+    } catch (emailError) {
+      // Log error but continue
+      console.error("Failed to send startup verification email:", emailError);
+    }
+    // ---------------------------------------------------------
+
     return res.status(200).json({
       message: "Startup profile updated successfully",
       user,
     });
+
   } catch (error) {
     console.error("Error updating startup profile:", error);
     return res.status(500).json({ message: "Server error" });
@@ -1318,5 +1497,136 @@ exports.getNewProfiles = async (req, res, next) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+exports.sendCoFounderInvite = async (req, res) => {
+  try {
+    const { email, name, role, startupName } = req.body;
+    const { user_id } = req.payload; 
+
+    if (!email || !name) {
+      return res.status(400).json({ message: "Co-founder Name and Email are required" });
+    }
+
+    const currentUser = await User.findById(user_id);
+    const alreadyExists = currentUser.startupProfile?.cofounders.find(
+      (member) => member.email.toLowerCase() === email.toLowerCase()
+    );
+
+    if (alreadyExists && alreadyExists.status === 'verified') {
+      return res.status(400).json({ message: "This user is already a verified team member." });
+    }
+
+    if (!alreadyExists) {
+      await User.findByIdAndUpdate(user_id, {
+        $push: {
+          "startupProfile.cofounders": {
+            name: name,
+            email: email,
+            position: role || "Co-Founder", 
+            status: "pending",   
+            verified: false,     
+            profileImage: "",   
+            addedAt: new Date()
+          }
+        }
+      });
+    }
+
+    const founderName = currentUser.userName || "A Founder";
+    const actualStartupName = startupName || "their startup";
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await userVerify.findOneAndUpdate(
+      { email: email },
+      { verifyToken: otp },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    // 4. Send Email
+    const emailSubject = `Invitation to join ${actualStartupName} as Co-Founder`;
+    await send_Notification_mail(email, emailSubject, `Your verification code is: ${otp}`);
+    
+    console.log(`[DEV] OTP for ${email}: ${otp}`);
+
+    res.status(200).json({ message: "Invite sent and member added as pending." });
+
+  } catch (error) {
+    console.error("Error sending invite:", error);
+    res.status(500).json({ message: "Server error while sending invite." });
+  }
+};
+
+// 2. Verify OTP and Add to Startup Profile
+exports.verifyAndAddCoFounder = async (req, res) => {
+  try {
+    const { email, otp } = req.body; // We only strictly need email & otp now
+    const { user_id } = req.payload;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required." });
+    }
+
+    const validOtp = await userVerify.findOne({ email: email, verifyToken: otp });
+    if (!validOtp) {
+      return res.status(400).json({ message: "Invalid or expired OTP." });
+    }
+
+    const updatedUser = await User.findOneAndUpdate(
+      { 
+        _id: user_id, 
+        "startupProfile.cofounders.email": email 
+      },
+      {
+        $set: {
+          "startupProfile.cofounders.$.status": "verified", 
+          "startupProfile.cofounders.$.verified": true,     
+        }
+      },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "Founder or pending team member not found." });
+    }
+
+    // 3. Clean up OTP
+    await userVerify.deleteOne({ _id: validOtp._id });
+
+    // 4. Return updated list
+    res.status(200).json({ 
+      message: "Co-founder successfully verified!", 
+      cofounders: updatedUser.startupProfile.cofounders 
+    });
+
+  } catch (error) {
+    console.error("Error verifying co-founder:", error);
+    res.status(500).json({ message: "Server error during verification." });
+  }
+};
+
+exports.getFoundingTeam = async (req, res) => {
+  try {
+    const { user_id } = req.payload;
+
+    // Fetch the user with their startup profile
+    const currentUser = await User.findById(user_id).select('startupProfile.cofounders');
+
+    if (!currentUser || !currentUser.startupProfile) {
+      return res.status(404).json({ message: "Startup profile not found." });
+    }
+
+    // Return the cofounders array
+    const cofounders = currentUser.startupProfile.cofounders || [];
+
+    res.status(200).json({ 
+      success: true,
+      cofounders: cofounders 
+    });
+
+  } catch (error) {
+    console.error("Error fetching founding team:", error);
+    res.status(500).json({ message: "Server error while fetching team." });
   }
 };
