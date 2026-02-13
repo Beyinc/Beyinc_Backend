@@ -50,7 +50,8 @@ const corsOptions = {
     'https://www.bloomr.world',
     'https://bloomr.world',
     'https://beyinc-frontend-dg45.vercel.app',
-    'https://beyinc-frontend-dg45-git-development-admin-22092120s-projects.vercel.app'
+    'https://beyinc-frontend-dg45-git-development-admin-22092120s-projects.vercel.app',
+    'https://bloomr-dev-server.netlify.app'
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
