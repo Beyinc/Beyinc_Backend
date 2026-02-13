@@ -283,7 +283,7 @@ exports.inputEntryData = async (req, res) => {
 
     /* ---------------- INDIVIDUAL / ENTREPRENEUR ---------------- */
     if (
-      selectedCategory === "Individual/Entrepreneur" &&
+      (selectedCategory === "Enterpreneur" || selectedCategory === "Individual") &&
       mentorExpertise &&
       typeof mentorExpertise === "object"
     ) {
