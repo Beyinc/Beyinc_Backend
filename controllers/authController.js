@@ -169,10 +169,11 @@ exports.googleSSORegister = async (req, res, next) => {
       );
       await send_Notification_mail(
         email,
-        "Beyinc System generated password for you",
-        `Your temporary password is <b>${userName}@Beyinc1</b>. If you want to change password please logout and change that in forgot password page`,
+        "Welcome to Bloomr - Your Account is Ready!",
+        `Your temporary password is <b>${userName}@Beyinc1</b>. <br><br>We recommend you login and change your password immediately from the "Forgot Password" page if you wish to set your own custom password.`,
         userName,
         "",
+        { communityLink: "https://chat.whatsapp.com/IUPLhcXQandBLA7nck7igm" }
       );
       await send_Notification_mail(
         process.env.ADMIN_EMAIL,
