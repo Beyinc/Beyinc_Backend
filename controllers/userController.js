@@ -1953,6 +1953,19 @@ const getVerificationSuccessTemplate = (userName, role) => {
             <a href="https://chat.whatsapp.com/DYZrkmeoDqYINWIVAHW86t" style="display: inline-block; padding: 12px 30px; background-color: #25D366; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; box-shadow: 0 2px 5px rgba(37, 211, 102, 0.2);">Join WhatsApp Group</a>
         </div>
       `;
+  } else if (role === 'Enterpreneur') {
+    extraContent = `
+        <div style="margin-top: 25px; border-top: 1px solid #eee; padding-top: 25px;">
+            <p style="font-weight: 600; color: #333; margin-bottom: 20px; font-size: 16px;">Join our Exclusive Entrepreneur Communities:</p>
+            <div style="width: 100%;">
+                <a href="https://chat.whatsapp.com/F10Fw1Srf9L4jj17edmrB8?mode=gi_t" style="display: block; margin: 0 auto 12px; padding: 12px 20px; background-color: #25D366; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; border: none; max-width: 320px; box-shadow: 0 2px 5px rgba(37, 211, 102, 0.2);">Idea Stage Founders' Club Group</a>
+                
+                <a href="https://chat.whatsapp.com/LiL0OSJLQydGPSYqu0js3T?mode=gi_t" style="display: block; margin: 0 auto 12px; padding: 12px 20px; background-color: #25D366; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; border: none; max-width: 320px; box-shadow: 0 2px 5px rgba(37, 211, 102, 0.2);">Exclusive Group for Early Stage Founders</a>
+                
+                <a href="https://chat.whatsapp.com/E9WULQrgumDJXr7mpAv4Y0?mode=gi_t" style="display: block; margin: 0 auto 12px; padding: 12px 20px; background-color: #25D366; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; border: none; max-width: 320px; box-shadow: 0 2px 5px rgba(37, 211, 102, 0.2);">Founders Group</a>
+            </div>
+        </div>
+      `;
   }
 
   return `

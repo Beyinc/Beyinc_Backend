@@ -32,7 +32,7 @@ const send_Notification_mail = async (to, subject, body, userName, fLink, ...arg
             </div>
             <h2 style="color: #333; margin-bottom: 20px; font-weight: 600; text-align: center;">Welcome to Bloomr!</h2>
             <p style="color: #555; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">Hi <b>${userName}</b>,</p>
-            <div style="color: #555; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+            <div style="color: #555; font-size: 16px; line-height: 1.6; margin-bottom: 30px; text-align: center;">
                 ${body}
             </div>
             
