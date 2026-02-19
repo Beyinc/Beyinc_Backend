@@ -48,6 +48,28 @@ const StartupProfileSchema = new mongoose.Schema(
     targetMarket: {
       type: String,
     },
+    cofounders: [
+      {
+        name: { type: String, required: true },
+        email: { type: String, required: true },
+        position: { type: String, required: true }, 
+        profileImage: { type: String },
+        
+        // --- NEW FIELDS ADDED HERE ---
+        status: { 
+          type: String, 
+          enum: ["pending", "verified"], 
+          default: "pending" 
+        },
+        verified: { 
+          type: Boolean, 
+          default: false 
+        },
+        // -----------------------------
+        
+        addedAt: { type: Date, default: Date.now }
+      }
+    ],
   },
   { _id: false },
 );

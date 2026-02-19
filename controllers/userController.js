@@ -1850,6 +1850,30 @@ exports.addPayment = async (req, res, next) => {
   }
 };
 
+exports.searchUserByEmail = async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email query parameter is required" });
+    }
+
+    // UPDATED QUERY:
+    // We select 'userName' (matches schema) and 'image' (matches schema)
+    const user = await User.findOne({ email: email.toLowerCase() })
+      .select('userName image email role verified');
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json(user);
+
+  } catch (error) {
+    console.error("Search User Error:", error);
+    return res.status(500).json({ message: "Server error while searching for user" });
+  }
+};
 exports.verifyUser = async (req, res) => {
   try {
     const { userId } = req.body;
@@ -1858,25 +1882,103 @@ exports.verifyUser = async (req, res) => {
       return res.status(400).json({ message: "User ID is required" });
     }
 
-    // Only updating the 'verified' boolean
+    // 1. Update the user
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { verified: true }, 
-      { new: true } // Returns the updated document so you can confirm the change
+      { verified: true },
+      { new: true }
     );
 
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    return res.status(200).json({ 
-      success: true, 
-      message: "User verified successfully", 
-      data: updatedUser 
+    // 2. Prepare Email Details
+    // Ensure we have an email address to send to
+    if (updatedUser.email) {
+      const subject = "Account Verification Successful";
+      const htmlContent = getVerificationSuccessTemplate(updatedUser.userName, updatedUser.role);
+
+      // 3. Send the Email
+      // We use 'await' to ensure the email is sent before responding, 
+      // or you can remove 'await' to send it in the background.
+      try {
+        await send_Notification_mail(
+          updatedUser.email,
+          subject,
+          htmlContent,
+          updatedUser.userName,
+          ""
+        );
+      } catch (emailError) {
+        // If email fails, we log it but usually don't fail the whole request 
+        // because the user is already verified in the DB.
+        console.error("Failed to send verification email:", emailError);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User verified successfully and notification sent.",
+      data: updatedUser
     });
 
   } catch (error) {
     console.error("Error verifying user:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
+};
+
+// --- Template Helper (Paste this at the bottom of the file or import it) ---
+const getVerificationSuccessTemplate = (userName, role) => {
+  let extraContent = '';
+
+  if (role === 'Startup') {
+    extraContent = `
+        <div style="margin-top: 25px; border-top: 1px solid #eee; padding-top: 25px;">
+            <p style="font-weight: 600; color: #333; margin-bottom: 20px; font-size: 16px;">Join our Exclusive Startup Communities:</p>
+            <div style="width: 100%;">
+                <a href="https://chat.whatsapp.com/F10Fw1Srf9L4jj17edmrB8?mode=gi_t" style="display: block; margin: 0 auto 12px; padding: 12px 20px; background-color: #25D366; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; border: none; max-width: 320px; box-shadow: 0 2px 5px rgba(37, 211, 102, 0.2);">Idea Stage Founders' Club Group</a>
+                
+                <a href="https://chat.whatsapp.com/LiL0OSJLQydGPSYqu0js3T?mode=gi_t" style="display: block; margin: 0 auto 12px; padding: 12px 20px; background-color: #25D366; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; border: none; max-width: 320px; box-shadow: 0 2px 5px rgba(37, 211, 102, 0.2);">Exclusive Group for Early Stage Founders</a>
+                
+                <a href="https://chat.whatsapp.com/E9WULQrgumDJXr7mpAv4Y0?mode=gi_t" style="display: block; margin: 0 auto 12px; padding: 12px 20px; background-color: #25D366; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; border: none; max-width: 320px; box-shadow: 0 2px 5px rgba(37, 211, 102, 0.2);">Founders Group</a>
+            </div>
+        </div>
+      `;
+  } else if (role === 'Mentor') {
+    extraContent = `
+        <div style="margin-top: 25px; border-top: 1px solid #eee; padding-top: 25px; text-align: center;">
+            <p style="font-weight: 600; color: #333; margin-bottom: 20px; font-size: 16px;">Join our Exclusive Mentor Community:</p>
+            <a href="https://chat.whatsapp.com/DYZrkmeoDqYINWIVAHW86t" style="display: inline-block; padding: 12px 30px; background-color: #25D366; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; box-shadow: 0 2px 5px rgba(37, 211, 102, 0.2);">Join WhatsApp Group</a>
+        </div>
+      `;
+  } else if (role === 'Enterpreneur') {
+    extraContent = `
+        <div style="margin-top: 25px; border-top: 1px solid #eee; padding-top: 25px;">
+            <p style="font-weight: 600; color: #333; margin-bottom: 20px; font-size: 16px;">Join our Exclusive Entrepreneur Communities:</p>
+            <div style="width: 100%;">
+                <a href="https://chat.whatsapp.com/F10Fw1Srf9L4jj17edmrB8?mode=gi_t" style="display: block; margin: 0 auto 12px; padding: 12px 20px; background-color: #25D366; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; border: none; max-width: 320px; box-shadow: 0 2px 5px rgba(37, 211, 102, 0.2);">Idea Stage Founders' Club Group</a>
+                
+                <a href="https://chat.whatsapp.com/LiL0OSJLQydGPSYqu0js3T?mode=gi_t" style="display: block; margin: 0 auto 12px; padding: 12px 20px; background-color: #25D366; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; border: none; max-width: 320px; box-shadow: 0 2px 5px rgba(37, 211, 102, 0.2);">Exclusive Group for Early Stage Founders</a>
+                
+                <a href="https://chat.whatsapp.com/E9WULQrgumDJXr7mpAv4Y0?mode=gi_t" style="display: block; margin: 0 auto 12px; padding: 12px 20px; background-color: #25D366; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; border: none; max-width: 320px; box-shadow: 0 2px 5px rgba(37, 211, 102, 0.2);">Founders Group</a>
+            </div>
+        </div>
+      `;
+  }
+
+  return `
+    <div style="text-align: center;">
+      <h2 style="color: #4CAF50; margin-bottom: 20px; font-size: 24px; font-weight: bold;">Congratulations!</h2>
+      <p style="font-size: 16px; color: #555; line-height: 1.6; margin-bottom: 10px;">Your account has been successfully verified.</p>
+      <p style="font-size: 16px; color: #555; line-height: 1.6;">You can now access all restricted features on Bloomr.</p>
+      
+      ${extraContent}
+
+      <div style="margin-top: 30px;">
+        <p style="font-size: 14px; color: #888;">Thank you for being with us.</p>
+      </div>
+    </div>
+  `;
 };

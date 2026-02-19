@@ -72,5 +72,9 @@ router.post(
   userProfileController.UpdateExperienceDetails,
 );
 
+router.post('/startup/invite-cofounder', userProfileController.sendCoFounderInvite);
+router.post('/startup/verify-cofounder', userProfileController.verifyAndAddCoFounder);
+router.get('/founding-team', userProfileController.getFoundingTeam);
+
 // Add more routes as needed
 module.exports = router;
