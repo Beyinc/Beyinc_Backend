@@ -195,3 +195,44 @@ exports.getQuickMatchRoomDetails = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch room data" });
   }
 };
+
+
+exports.getUserRooms = async (req, res) => {
+  try {
+    const userId = req.payload.user_id;
+
+    // Find all rooms where user is a participant
+    const rooms = await QuickMatchRoom.find({
+      "participants.userId": userId,
+    })
+      .populate({
+        path: "participants.userId",
+        select: "userName email image industries interests expertise experienceYears",
+      })
+      .sort({ updatedAt: -1 });
+
+    if (!rooms || rooms.length === 0) {
+      return res.json({ rooms: [], message: "No rooms found" });
+    }
+
+    // Fetch latest message for each room
+    const roomsWithLastMessage = await Promise.all(
+      rooms.map(async (room) => {
+        const lastMessage = await QuickMatchMessage.findOne({ roomId: room._id })
+          .sort({ createdAt: -1 })
+          .populate("senderId", "userName image");
+
+        return {
+          ...room.toObject(),
+          lastMessage: lastMessage || null,
+        };
+      })
+    );
+
+    res.json({ rooms: roomsWithLastMessage });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch user rooms" });
+  }
+};
