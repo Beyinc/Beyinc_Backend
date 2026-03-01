@@ -396,6 +396,10 @@ const userSchema = new mongoose.Schema(
           type: String,
         },
       },
+     
+      interests: {
+        type: [String],
+      },
 
       working: {
         public_id: {

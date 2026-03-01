@@ -265,8 +265,10 @@ exports.inputEntryData = async (req, res) => {
       experienceYears,
       linkedinProfile,
       verified,
+      yearsOfExperience,
     } = req.body;
 
+    console.log("yearsOfExperience received:", yearsOfExperience);
     const { user_id } = req.payload;
     const updateFields = {};
 
@@ -276,7 +278,7 @@ exports.inputEntryData = async (req, res) => {
     if (selectedCategory) updateFields.role = selectedCategory;
     if (role_level) updateFields.role_level = role_level;
     if (companyStage) updateFields.companyStage = companyStage;
-
+    if (yearsOfExperience !== undefined) updateFields.experienceYears = yearsOfExperience;
     if (experienceYears !== undefined) updateFields.experienceYears = experienceYears;
     if (linkedinProfile) updateFields.linkedinProfile = linkedinProfile;
     if (verified !== undefined) updateFields.verified = verified;

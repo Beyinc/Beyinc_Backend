@@ -3,59 +3,7 @@ const QuickMatchRoom = require("../../models/quickMatchRoomSchema");
 const { normalizeUserForMatching, findSuitableRoom } =
   require("./service");
 
-// exports.quickMatch = async (req, res) => {
 
-//   const user = await User.findById(req.payload.user_id);
-
-//   if(!user) {
-//     return res.status(404).json({ error: "User not found" });
-//   }
-//   const normalUser = normalizeUserForMatching(user);
-
-//   let room = await findSuitableRoom(normalUser);
-
-//   // CREATE ROOM
-//   if (!room) {
-
-//     room = await QuickMatchRoom.create({
-//       name: `Collab Room ${Math.floor(Math.random()*1000)}`,
-//       participants: [{
-//         userId: normalUser.userId,
-//         experience: normalUser.experience,
-//       }],
-//       sharedSkills: normalUser.skills,
-//       sharedIndustries: normalUser.industries,
-//       sharedInterests: normalUser.interests,
-//       minExperience: normalUser.experience,
-//       maxExperience: normalUser.experience,
-//     });
-
-//     return res.json({ room, created: true });
-//   }
-
-//   // JOIN ROOM
-//   room.participants.push({
-//     userId: normalUser.userId,
-//     experience: normalUser.experience,
-//   });
-
-//   room.minExperience = Math.min(
-//     room.minExperience,
-//     normalUser.experience
-//   );
-
-//   room.maxExperience = Math.max(
-//     room.maxExperience,
-//     normalUser.experience
-//   );
-
-//   if (room.participants.length >= room.maxParticipants)
-//     room.isLocked = true;
-
-//   await room.save();
-
-//   res.json({ room, created: false });
-// };
 exports.quickMatch = async (req, res) => {
   try {
     const user = await User.findById(req.payload.user_id);
@@ -154,25 +102,96 @@ const QuickMatchMessage =
   require("../../models/quickMatchMessage");
 
 exports.sendMessage = async (req,res)=>{
+  try {
+    const { roomId, message, senderName } = req.body;
+    const senderId = req.payload.user_id;
 
-  const { roomId, message } = req.body;
+    const msg = await QuickMatchMessage.create({
+      roomId,
+      senderId,
+      message
+    });
 
-  const msg = await QuickMatchMessage.create({
-    roomId,
-    senderId: req.user._id,
-    message
-  });
+    // Populate sender info
+    const populatedMsg = await msg.populate("senderId", "userName email image");
 
-  res.json(msg);
+    // Return full message object with sender details
+    res.json({
+      ...msg.toObject(),
+      senderName: senderName || populatedMsg.senderId?.userName || "Anonymous",
+    });
+  } catch (err) {
+    console.error("Send message error:", err);
+    res.status(500).json({ error: "Failed to send message" });
+  }
 };
 
 exports.getMessages = async (req,res)=>{
+  try {
+    const { roomId } = req.params;
 
-  const { roomId } = req.params;
+    const messages = await QuickMatchMessage
+      .find({ roomId })
+      .populate("senderId", "userName email image")
+      .sort({ createdAt: 1 });
 
-  const messages = await QuickMatchMessage
-    .find({ roomId })
-    .sort({ createdAt: 1 });
+    // Map to include senderName for consistency
+    const mappedMessages = messages.map(msg => ({
+      ...msg.toObject(),
+      senderName: msg.senderId?.userName || "Anonymous"
+    }));
 
-  res.json(messages);
+    res.json(mappedMessages);
+  } catch (err) {
+    console.error("Get messages error:", err);
+    res.status(500).json({ error: "Failed to fetch messages" });
+  }
+};
+
+
+
+
+exports.getQuickMatchRoomDetails = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const userId = req.payload.user_id;
+
+    // 1️⃣ Find room + populate participants
+    const room = await QuickMatchRoom.findById(roomId)
+      .populate({
+        path: "participants.userId",
+        select: "userName email image industries interests expertise experienceYears",
+      });
+
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+
+    // 2️⃣ Check user is part of room (security)
+    const isParticipant = room.participants.some(
+      (p) => p.userId._id.toString() === userId.toString()
+    );
+
+    if (!isParticipant) {
+      return res.status(403).json({
+        error: "You are not part of this room",
+      });
+    }
+
+    // 3️⃣ Fetch messages
+    const messages = await QuickMatchMessage.find({ roomId })
+      .populate("senderId", "name profilePic")
+      .sort({ createdAt: 1 });
+
+    // 4️⃣ Response
+    res.json({
+       room,
+      participants: room.participants,
+      messages,
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch room data" });
+  }
 };

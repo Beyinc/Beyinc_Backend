@@ -3,7 +3,8 @@ const express = require("express");
 const {
   quickMatch,
   sendMessage,
-  getMessages,joinQuickMatchRoom
+  getMessages,joinQuickMatchRoom,
+  getQuickMatchRoomDetails
 //   getUserRooms,
 //   leaveRoom,
 } = require("../controllers/chatRoom/index");
@@ -12,6 +13,8 @@ const router = express.Router();
 
 router.route("/quickMatch").post(quickMatch);
 router.route("/joinRoom").post(joinQuickMatchRoom);
+
+router.route("/roomDetails/:roomId").get(getQuickMatchRoomDetails);
 /**
  * SEND MESSAGE TO ROOM
  */
