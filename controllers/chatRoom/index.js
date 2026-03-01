@@ -160,7 +160,7 @@ exports.getQuickMatchRoomDetails = async (req, res) => {
     const room = await QuickMatchRoom.findById(roomId)
       .populate({
         path: "participants.userId",
-        select: "userName email image industries interests expertise experienceYears",
+        select: "userName email image industries interests expertise mentorExpertise skills experienceYears",
       });
 
     if (!room) {
@@ -169,7 +169,7 @@ exports.getQuickMatchRoomDetails = async (req, res) => {
 
     // 2️⃣ Check user is part of room (security)
     const isParticipant = room.participants.some(
-      (p) => p.userId._id.toString() === userId.toString()
+      (p) => p.userId && p.userId._id && p.userId._id.toString() === userId.toString()
     );
 
     if (!isParticipant) {
@@ -207,7 +207,7 @@ exports.getUserRooms = async (req, res) => {
     })
       .populate({
         path: "participants.userId",
-        select: "userName email image industries interests expertise experienceYears",
+        select: "userName email image industries interests expertise mentorExpertise skills experienceYears",
       })
       .sort({ updatedAt: -1 });
 
