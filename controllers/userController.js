@@ -24,7 +24,7 @@ const razorpay = require("../helpers/Razorpay");
 exports.userDetails = async (req, res, next) => {
   // console.log(req)
   try {
-    // const { id } = req.body;  // Extract the id from the request body
+    const { id } = req.body;  // Extract the id from the request body
     const { user_id } = req.payload; // Extract the user_id from the payload (e.g., JWT token)
 
     // Find the user by ID (either from body or from the authenticated user)
