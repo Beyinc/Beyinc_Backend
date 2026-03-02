@@ -35,8 +35,7 @@ const filterRoutes = require('./routes/filterRoutes');
 const paymentController = require('./controllers/paymentController.js')
 const postLiveChatRouter = require('./routes/postLiveChatRouter');
 
-const matchRouter = require("./routes/MatchRouter");
-
+const matchRouter = require('./routes/matchRouter');
 const cors = require("cors");
 const morgan = require("morgan");
 

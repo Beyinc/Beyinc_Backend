@@ -7,7 +7,7 @@ const {
   joinQuickMatchRoom,
   getQuickMatchRoomDetails,
   getUserRooms,
-//   leaveRoom,
+  //   leaveRoom,
 } = require("../controllers/chatRoom/index");
 const router = express.Router();
 ///
