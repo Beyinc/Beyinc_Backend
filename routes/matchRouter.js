@@ -7,7 +7,7 @@ const {
   joinQuickMatchRoom,
   getQuickMatchRoomDetails,
   getUserRooms,
-  //   leaveRoom,
+  leaveRoom,
 } = require("../controllers/chatRoom/index");
 const router = express.Router();
 ///
@@ -31,6 +31,9 @@ router.route("/messages/:roomId").get(getMessages);
  */
 router.route("/myRooms").get(getUserRooms);
 
-// router.route("/leaveRoom/:roomId").post(leaveRoom);
+/**
+ * LEAVE A ROOM
+ */
+router.route("/leaveRoom").post(leaveRoom);
 
 module.exports = router;

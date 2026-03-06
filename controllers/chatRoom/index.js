@@ -236,3 +236,59 @@ exports.getUserRooms = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch user rooms" });
   }
 };
+
+
+exports.leaveRoom = async (req, res) => {
+  try {
+    const { roomId } = req.body;
+    const userId = req.payload.user_id;
+
+    if (!roomId) {
+      return res.status(400).json({ error: "Room ID is required" });
+    }
+
+    const room = await QuickMatchRoom.findById(roomId);
+
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+
+    // Check if user is a participant
+    const participantIndex = room.participants.findIndex(
+      (p) => p.userId.toString() === userId.toString()
+    );
+
+    if (participantIndex === -1) {
+      return res.status(400).json({ error: "User is not a participant in this room" });
+    }
+
+    // Remove user from participants
+    room.participants.splice(participantIndex, 1);
+
+    // Unlock room if it was locked and now has space
+    if (room.isLocked && room.participants.length < room.maxParticipants) {
+      room.isLocked = false;
+    }
+
+    // If no participants left, optionally delete the room or mark it
+    if (room.participants.length === 0) {
+      await QuickMatchRoom.findByIdAndDelete(roomId);
+      return res.json({ 
+        message: "Room deleted as it has no participants",
+        roomDeleted: true 
+      });
+    }
+
+    await room.save();
+
+    res.json({ 
+      message: "Successfully left the room",
+      room,
+      roomDeleted: false
+    });
+
+  } catch (err) {
+    console.error("Leave room error:", err);
+    res.status(500).json({ error: "Failed to leave room" });
+  }
+};
