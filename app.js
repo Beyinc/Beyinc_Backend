@@ -35,6 +35,7 @@ const filterRoutes = require('./routes/filterRoutes');
 const paymentController = require('./controllers/paymentController.js')
 const postLiveChatRouter = require('./routes/postLiveChatRouter');
 
+const matchRouter = require('./routes/matchRouter');
 const cors = require("cors");
 const morgan = require("morgan");
 
@@ -128,5 +129,9 @@ app.use('/api', verifyAccessToken, filterRoutes);
 app.use('/api/postLiveChat', verifyAccessToken, postLiveChatRouter);
 
 app.get("/api/searchProfiles", verifyAccessToken, searchController.searchProfiles);
+
+
+
+app.use("/api/chatroom",verifyAccessToken, matchRouter);
 
 module.exports = app;

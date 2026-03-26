@@ -41,7 +41,7 @@ exports.fetchProfileData = async (req, res) => {
 
   try {
     const user = await User.findById(user_id).select(
-      "beyincProfile industries expertise -_id"
+      "beyincProfile industries expertise mentorExpertise stages investmentRange -_id"
     );
 
     if (!user) {
